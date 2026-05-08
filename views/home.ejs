@@ -36,6 +36,14 @@
         <span><i class="fa-solid fa-check-circle" style="color:#10B981"></i> No spam</span>
         <span><i class="fa-solid fa-check-circle" style="color:#10B981"></i> Community moderated</span>
       </div>
+
+      <!-- Mobile-only community stats (shown when float cards are hidden) -->
+      <div class="hero-mobile-stats">
+        <span class="hero-stat-pill"><strong><%= (stats.total_users || 0).toLocaleString() %></strong> members</span>
+        <span class="hero-stat-pill"><strong><%= (stats.total_posts || 0).toLocaleString() %></strong> discussions</span>
+        <span class="hero-stat-pill"><strong><%= (stats.total_jobs || 0).toLocaleString() %></strong> active jobs</span>
+        <span class="hero-stat-pill"><strong><%= (stats.total_skills || 0).toLocaleString() %></strong> skills</span>
+      </div>
     </div>
 
     <div class="hero-visual" aria-hidden="true">
