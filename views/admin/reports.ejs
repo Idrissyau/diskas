@@ -1,31 +1,40 @@
-<% if (reports.length === 0) { %>
-  <div class="admin-card">
-    <div class="empty-state"><p>No pending reports. 🎉</p></div>
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title"><i class="fa-solid fa-flag" style="color:#EF4444"></i> Pending Reports</div>
+    <span class="badge badge-banned"><%= reports.length %></span>
   </div>
-<% } else { %>
-  <div class="admin-card">
-    <table class="admin-table">
-      <thead><tr><th>Reporter</th><th>Target Type</th><th>Target ID</th><th>Reason</th><th>Date</th><th>Actions</th></tr></thead>
+  <div class="panel-body-flush">
+    <% if (reports.length === 0) { %>
+      <div class="empty-box"><i class="fa-solid fa-check-circle" style="color:#10B981"></i><p>No pending reports. All clear! 🎉</p></div>
+    <% } else { %>
+    <table class="data-table">
+      <thead>
+        <tr><th>Reporter</th><th>Type</th><th>Target</th><th>Reason</th><th>Date</th><th>Actions</th></tr>
+      </thead>
       <tbody>
         <% reports.forEach(r => { %>
-          <tr>
-            <td><%= r.reporter_name %></td>
-            <td><span class="badge"><%= r.target_type %></span></td>
-            <td>#<%= r.target_id %></td>
-            <td><%= r.reason %><% if (r.details) { %><br><small class="text-muted"><%= r.details %></small><% } %></td>
-            <td class="text-muted"><%= new Date(r.created_at).toLocaleDateString() %></td>
-            <td>
-              <form action="/admin/reports/<%= r.id %>" method="POST" class="inline-form">
-                <select name="status" class="form-select form-select-xs">
-                  <option value="resolved">Resolve</option>
-                  <option value="dismissed">Dismiss</option>
-                </select>
-                <button class="btn btn-sm btn-primary">Save</button>
-              </form>
-            </td>
-          </tr>
+        <tr>
+          <td style="font-weight:600;color:#0F172A"><%= r.reporter_name %></td>
+          <td><span class="badge badge-pending" style="text-transform:capitalize"><%= r.target_type %></span></td>
+          <td style="color:#64748B">#<%= r.target_id %></td>
+          <td>
+            <span style="color:#334155"><%= r.reason %></span>
+            <% if (r.details) { %><br><small style="color:#94A3B8;font-size:.72rem"><%= r.details %></small><% } %>
+          </td>
+          <td style="color:#94A3B8;font-size:.75rem"><%= new Date(r.created_at).toLocaleDateString() %></td>
+          <td>
+            <form action="/admin/reports/<%= r.id %>" method="POST" class="inline-form">
+              <select name="status" class="form-control form-control-xs" style="width:auto">
+                <option value="resolved">Resolve</option>
+                <option value="dismissed">Dismiss</option>
+              </select>
+              <button class="btn btn-primary btn-xs"><i class="fa-solid fa-save"></i></button>
+            </form>
+          </td>
+        </tr>
         <% }) %>
       </tbody>
     </table>
+    <% } %>
   </div>
-<% } %>
+</div>

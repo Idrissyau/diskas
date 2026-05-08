@@ -1,37 +1,49 @@
-<div class="admin-filters">
-  <form action="/admin/skills" method="GET" class="filter-form">
-    <select name="status" class="form-select">
-      <option value="pending" <%= currentStatus === 'pending' ? 'selected' : '' %>>Pending</option>
-      <option value="active" <%= currentStatus === 'active' ? 'selected' : '' %>>Active</option>
-      <option value="draft" <%= currentStatus === 'draft' ? 'selected' : '' %>>Draft/Rejected</option>
+<div class="filter-bar">
+  <form action="/admin/skills" method="GET" style="display:flex;gap:.75rem">
+    <select name="status" class="form-control" style="width:auto">
+      <option value="pending"  <%= currentStatus==='pending' ?'selected':'' %>>Pending Review</option>
+      <option value="active"   <%= currentStatus==='active'  ?'selected':'' %>>Active</option>
+      <option value="draft"    <%= currentStatus==='draft'   ?'selected':'' %>>Rejected</option>
     </select>
-    <button class="btn btn-primary">Filter</button>
+    <button class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
   </form>
 </div>
 
-<div class="admin-card">
-  <table class="admin-table">
-    <thead><tr><th>Title</th><th>Author</th><th>Level</th><th>Views</th><th>Date</th><th>Actions</th></tr></thead>
-    <tbody>
-      <% skills.forEach(skill => { %>
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title"><i class="fa-solid fa-book-open"></i> Skills — <span style="color:#A855F7;text-transform:capitalize"><%= currentStatus %></span></div>
+    <% if (typeof pagination !== 'undefined') { %><span class="badge badge-pending"><%= pagination.total %> total</span><% } %>
+  </div>
+  <div class="panel-body-flush">
+    <% if (!skills || skills.length === 0) { %>
+      <div class="empty-box"><i class="fa-solid fa-book-open"></i><p>No skills in this category.</p></div>
+    <% } else { %>
+    <table class="data-table">
+      <thead>
+        <tr><th>Title</th><th>Author</th><th>Level</th><th>Views</th><th>Date</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        <% skills.forEach(skill => { %>
         <tr>
-          <td><a href="/skills/<%= skill.slug %>"><%= skill.title.substring(0,50) %></a></td>
-          <td><%= skill.author_name %></td>
-          <td><span class="badge badge-level-<%= skill.level %>"><%= skill.level %></span></td>
-          <td><%= skill.views %></td>
-          <td class="text-muted"><%= new Date(skill.created_at).toLocaleDateString() %></td>
+          <td><a href="/skills/<%= skill.slug %>"><%= skill.title.substring(0,45) %></a></td>
+          <td style="color:#64748B"><%= skill.author_name %></td>
+          <td><span class="badge badge-<%= skill.level %>"><%= skill.level %></span></td>
+          <td style="color:#94A3B8"><%= skill.views %></td>
+          <td style="color:#94A3B8;font-size:.75rem"><%= skill.timeAgo || new Date(skill.created_at).toLocaleDateString() %></td>
           <td>
             <form action="/admin/skills/<%= skill.id %>" method="POST" class="inline-form">
-              <select name="status" class="form-select form-select-xs">
-                <option value="active" <%= skill.status === 'active' ? 'selected' : '' %>>Approve</option>
-                <option value="pending" <%= skill.status === 'pending' ? 'selected' : '' %>>Pending</option>
-                <option value="draft" <%= skill.status === 'draft' ? 'selected' : '' %>>Reject</option>
+              <select name="status" class="form-control form-control-xs" style="width:auto">
+                <option value="active"  <%= skill.status==='active' ?'selected':'' %>>Approve</option>
+                <option value="pending" <%= skill.status==='pending'?'selected':'' %>>Pending</option>
+                <option value="draft"   <%= skill.status==='draft'  ?'selected':'' %>>Reject</option>
               </select>
-              <button class="btn btn-sm btn-primary">Save</button>
+              <button class="btn btn-primary btn-xs"><i class="fa-solid fa-save"></i></button>
             </form>
           </td>
         </tr>
-      <% }) %>
-    </tbody>
-  </table>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </div>
 </div>

@@ -1,49 +1,56 @@
-<div class="admin-filters">
-  <form action="/admin/posts" method="GET" class="filter-form">
-    <input type="text" name="q" placeholder="Search posts..." value="<%= filters.q || '' %>" />
-    <select name="status" class="form-select">
+<div class="filter-bar">
+  <form action="/admin/posts" method="GET" style="display:flex;gap:.75rem;flex-wrap:wrap;width:100%">
+    <input type="text" name="q" class="form-control" placeholder="Search posts..." value="<%= filters.q || '' %>" style="max-width:280px" />
+    <select name="status" class="form-control" style="width:auto">
       <option value="">All Status</option>
-      <option value="active" <%= filters.status === 'active' ? 'selected' : '' %>>Active</option>
-      <option value="pinned" <%= filters.status === 'pinned' ? 'selected' : '' %>>Pinned</option>
-      <option value="closed" <%= filters.status === 'closed' ? 'selected' : '' %>>Closed</option>
+      <option value="active"  <%= filters.status==='active' ?'selected':'' %>>Active</option>
+      <option value="pinned"  <%= filters.status==='pinned' ?'selected':'' %>>Pinned</option>
+      <option value="closed"  <%= filters.status==='closed' ?'selected':'' %>>Closed</option>
     </select>
-    <button class="btn btn-primary">Filter</button>
+    <button class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
     <a href="/admin/posts" class="btn btn-outline">Reset</a>
   </form>
 </div>
 
-<div class="admin-card">
-  <table class="admin-table">
-    <thead><tr><th>Title</th><th>Author</th><th>Type</th><th>Status</th><th>Views</th><th>Date</th><th>Actions</th></tr></thead>
-    <tbody>
-      <% posts.forEach(post => { %>
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title"><i class="fa-solid fa-comments"></i> All Posts (<%= pagination.total %>)</div>
+  </div>
+  <div class="panel-body-flush">
+    <table class="data-table">
+      <thead>
+        <tr><th>Title</th><th>Author</th><th>Type</th><th>Status</th><th>Views</th><th>Date</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        <% posts.forEach(post => { %>
         <tr>
-          <td><a href="/discussions/<%= post.slug %>"><%= post.title.substring(0,50) %>...</a></td>
-          <td><%= post.author_name %></td>
-          <td><span class="badge badge-type"><%= post.type %></span></td>
+          <td><a href="/discussions/<%= post.slug %>"><%= post.title.substring(0,50) %><%= post.title.length>50?'…':'' %></a></td>
+          <td style="color:#64748B"><%= post.author_name %></td>
+          <td><span class="badge badge-<%= post.type %>"><%= post.type %></span></td>
           <td><span class="badge badge-<%= post.status %>"><%= post.status %></span></td>
-          <td><%= post.views %></td>
-          <td class="text-muted"><%= post.timeAgo %></td>
+          <td style="color:#94A3B8"><%= post.views %></td>
+          <td style="color:#94A3B8;font-size:.75rem"><%= post.timeAgo %></td>
           <td>
             <form action="/admin/posts/<%= post.id %>" method="POST" class="inline-form">
-              <select name="status" class="form-select form-select-xs">
-                <option value="active" <%= post.status === 'active' ? 'selected' : '' %>>Active</option>
-                <option value="pinned" <%= post.status === 'pinned' ? 'selected' : '' %>>Pinned</option>
-                <option value="closed" <%= post.status === 'closed' ? 'selected' : '' %>>Closed</option>
-                <option value="deleted" <%= post.status === 'deleted' ? 'selected' : '' %>>Delete</option>
+              <select name="status" class="form-control form-control-xs" style="width:auto">
+                <option value="active"  <%= post.status==='active' ?'selected':'' %>>Active</option>
+                <option value="pinned"  <%= post.status==='pinned' ?'selected':'' %>>Pinned</option>
+                <option value="closed"  <%= post.status==='closed' ?'selected':'' %>>Closed</option>
+                <option value="deleted" <%= post.status==='deleted'?'selected':'' %>>Delete</option>
               </select>
-              <button class="btn btn-sm btn-primary">Save</button>
+              <button class="btn btn-primary btn-xs"><i class="fa-solid fa-save"></i></button>
             </form>
           </td>
         </tr>
-      <% }) %>
-    </tbody>
-  </table>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
   <% if (pagination.totalPages > 1) { %>
     <div class="pagination">
-      <% if (pagination.hasPrev) { %><a href="?page=<%= pagination.page - 1 %>" class="page-btn">‹ Prev</a><% } %>
+      <% if (pagination.hasPrev) { %><a href="?page=<%= pagination.page-1 %>" class="page-btn">‹ Prev</a><% } %>
       <span class="page-info">Page <%= pagination.page %> of <%= pagination.totalPages %></span>
-      <% if (pagination.hasNext) { %><a href="?page=<%= pagination.page + 1 %>" class="page-btn">Next ›</a><% } %>
+      <% if (pagination.hasNext) { %><a href="?page=<%= pagination.page+1 %>" class="page-btn">Next ›</a><% } %>
     </div>
   <% } %>
 </div>

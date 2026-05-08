@@ -1,59 +1,74 @@
-<div class="admin-grid-2">
-  <div class="admin-card">
-    <h3>Add Category</h3>
-    <form action="/admin/categories" method="POST">
-      <div class="form-group">
-        <label>Name</label>
-        <input type="text" name="name" required />
-      </div>
-      <div class="form-group">
-        <label>Description</label>
-        <input type="text" name="description" />
-      </div>
-      <div class="form-row">
+<div class="layout-2col">
+
+  <!-- Add Category -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title"><i class="fa-solid fa-plus"></i> Add Category</div>
+    </div>
+    <div class="panel-body">
+      <form action="/admin/categories" method="POST">
         <div class="form-group">
-          <label>Color</label>
-          <input type="color" name="color" value="#6366f1" />
+          <label>Name</label>
+          <input type="text" name="name" class="form-ctrl" required />
         </div>
         <div class="form-group">
-          <label>Icon (feather name)</label>
-          <input type="text" name="icon" placeholder="e.g. folder, briefcase" />
+          <label>Description</label>
+          <input type="text" name="description" class="form-ctrl" />
         </div>
-      </div>
-      <div class="form-group">
-        <label>Type</label>
-        <select name="type" class="form-select">
-          <option value="discussion">Discussion</option>
-          <option value="job">Job</option>
-          <option value="skill">Skill</option>
-        </select>
-      </div>
-      <button type="submit" class="btn btn-primary">Create Category</button>
-    </form>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>Color</label>
+            <input type="color" name="color" class="form-ctrl" value="#6366f1" style="height:42px;padding:.3rem" />
+          </div>
+          <div class="form-group">
+            <label>Icon (Font Awesome name)</label>
+            <input type="text" name="icon" class="form-ctrl" placeholder="e.g. folder, briefcase" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select name="type" class="form-ctrl">
+            <option value="discussion">Discussion</option>
+            <option value="job">Job</option>
+            <option value="skill">Skill</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Create Category</button>
+      </form>
+    </div>
   </div>
 
-  <div class="admin-card">
-    <h3>All Categories (<%= categories.length %>)</h3>
-    <table class="admin-table">
-      <thead><tr><th>Name</th><th>Type</th><th>Slug</th><th>Action</th></tr></thead>
-      <tbody>
-        <% categories.forEach(cat => { %>
+  <!-- Category List -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title"><i class="fa-solid fa-tags"></i> All Categories</div>
+      <span class="badge badge-user"><%= categories.length %> total</span>
+    </div>
+    <div class="panel-body-flush">
+      <table class="data-table">
+        <thead>
+          <tr><th>Name</th><th>Type</th><th>Slug</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          <% categories.forEach(cat => { %>
           <tr>
             <td>
-              <span class="cat-dot" style="background:<%= cat.color %>"></span>
-              <%= cat.name %>
+              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:<%= cat.color %>;margin-right:.45rem;vertical-align:middle"></span>
+              <span style="font-weight:600;color:#0F172A"><%= cat.name %></span>
             </td>
-            <td><span class="badge"><%= cat.type %></span></td>
-            <td class="text-muted"><%= cat.slug %></td>
+            <td><span class="badge badge-<%= cat.type %>" style="text-transform:capitalize"><%= cat.type %></span></td>
+            <td style="color:#94A3B8;font-size:.78rem"><%= cat.slug %></td>
             <td>
               <form action="/admin/categories/<%= cat.id %>/delete" method="POST" class="inline-form"
                     onsubmit="return confirm('Delete this category?')">
-                <button class="btn btn-sm btn-danger">Delete</button>
+                <button class="btn btn-danger btn-xs"><i class="fa-solid fa-trash"></i></button>
               </form>
             </td>
           </tr>
-        <% }) %>
-      </tbody>
-    </table>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
   </div>
+
 </div>
