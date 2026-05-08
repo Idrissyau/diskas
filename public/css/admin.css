@@ -1,13 +1,13 @@
 /* ── Admin Layout ─────────────────────────────────────────────────────────── */
 .admin-body { background: #f1f3f9; }
 .admin-wrapper { display: flex; min-height: 100vh; }
-.admin-sidebar { width: 240px; background: #1a1a2e; color: #ccc; position: fixed; top: 0; left: 0; bottom: 0; display: flex; flex-direction: column; z-index: 50; overflow-y: auto; }
+.admin-sidebar { width: 240px; background: #0F172A; color: #ccc; position: fixed; top: 0; left: 0; bottom: 0; display: flex; flex-direction: column; z-index: 50; overflow-y: auto; }
 .admin-brand { padding: 1.5rem 1.25rem 1rem; border-bottom: 1px solid #2d2d3f; }
 .admin-brand a { display: flex; align-items: center; gap: .5rem; color: #fff; font-weight: 700; font-size: 1.1rem; }
 .admin-nav { padding: 1rem .75rem; flex: 1; }
 .admin-nav-item { display: flex; align-items: center; gap: .75rem; padding: .65rem .75rem; border-radius: 8px; font-size: .9rem; font-weight: 500; color: #9ca3af; transition: all .15s; margin-bottom: .15rem; text-decoration: none; }
 .admin-nav-item:hover { background: rgba(255,255,255,.07); color: #fff; }
-.admin-nav-item.active { background: #6366f1; color: #fff; }
+.admin-nav-item.active { background: #0EA5E9; color: #fff; }
 .admin-nav-divider { height: 1px; background: #2d2d3f; margin: .75rem 0; }
 .text-danger { color: #ef4444 !important; }
 .admin-main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
