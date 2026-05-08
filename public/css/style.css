@@ -706,13 +706,40 @@ textarea { resize: vertical; }
   .mobile-menu-btn { display: block; }
 
   /* Hero */
-  .hero { padding: 2.75rem 0 2.25rem; }
+  .hero { padding: 2.75rem 0 2.25rem; overflow-x: hidden; }
+  .hero-content { min-width: 0; overflow: hidden; }
   .hero-content h1 { font-size: 2.15rem; letter-spacing: -.3px; }
   .hero-content p { font-size: 1rem; }
-  .hero-search-bar { max-width: 100%; }
+
+  /* Search bar — full width, compact Search button, hide decorative icon */
+  .hero-search-bar {
+    width: 100%; max-width: 100%;
+    gap: .5rem; padding: .35rem .4rem .35rem .9rem;
+    box-sizing: border-box;
+  }
+  .hero-search-icon { display: none; }
+  .hero-search-bar input { font-size: .9rem; min-width: 0; }
+  .hero-search-bar .btn {
+    padding: .6rem 1rem; font-size: .86rem;
+    white-space: nowrap; flex-shrink: 0;
+  }
+
+  /* Action buttons — stack full-width on all phones */
+  .hero-actions {
+    flex-direction: column; align-items: stretch;
+    gap: .65rem; margin-bottom: 1.1rem;
+  }
+  .hero-actions .btn {
+    width: 100%; justify-content: center;
+    padding: .78rem 1rem; font-size: .95rem;
+  }
+  .hero-actions .btn-hero-outline {
+    background: rgba(255,255,255,.15);
+    border: 2px solid rgba(255,255,255,.85);
+    color: #fff;
+  }
+
   .hero-trust { gap: .6rem; font-size: .78rem; }
-  .hero-actions { gap: .6rem; }
-  .hero-actions .btn-lg { padding: .7rem 1.35rem; font-size: .94rem; }
 
   /* Trending */
   .trending-section { padding: 1.25rem 0 1.5rem; }
@@ -758,27 +785,13 @@ textarea { resize: vertical; }
   /* Hero float cards: hide scroll strip, show stat pills only */
   .hero-visual { display: none; }
 
-  /* Hero */
+  /* Hero — tighter spacing */
   .hero { padding: 2.25rem 0 2rem; }
-  .hero-content { overflow: hidden; min-width: 0; }
-  .hero-content h1 { font-size: 1.9rem; }
-  .hero-content p { font-size: .92rem; margin-bottom: 1.35rem; }
-
-  /* Search bar — prevent overflow and shrink the Search button */
-  .hero-search-bar { width: 100%; max-width: 100%; gap: .5rem; padding: .35rem .35rem .35rem .85rem; }
-  .hero-search-bar .btn { padding: .55rem .9rem; font-size: .82rem; white-space: nowrap; flex-shrink: 0; }
-  .hero-search-bar input { font-size: .88rem; }
-
-  /* Action buttons — full width, outline button clearly visible */
-  .hero-actions { flex-direction: column; align-items: stretch; gap: .7rem; }
-  .hero-actions .btn { width: 100%; justify-content: center; padding: .78rem 1rem; font-size: .95rem; }
-  .hero-actions .btn-hero-outline {
-    background: rgba(255,255,255,.18);
-    border: 2px solid rgba(255,255,255,.9);
-    color: #fff;
-  }
+  .hero-content h1 { font-size: 1.85rem; }
+  .hero-content p { font-size: .9rem; margin-bottom: 1.25rem; }
+  .hero-search-bar .btn { padding: .55rem .85rem; font-size: .82rem; }
   .hero-trust { gap: .45rem; }
-  .hero-mobile-stats { gap: .45rem; }
+  .hero-mobile-stats { gap: .4rem; }
 
   /* Trending */
   .trending-votes { display: none; }
