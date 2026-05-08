@@ -1,44 +1,56 @@
-<div class="admin-filters">
-  <form action="/admin/jobs" method="GET" class="filter-form">
-    <select name="status" class="form-select">
-      <option value="pending" <%= currentStatus === 'pending' ? 'selected' : '' %>>Pending Review</option>
-      <option value="active" <%= currentStatus === 'active' ? 'selected' : '' %>>Active</option>
-      <option value="closed" <%= currentStatus === 'closed' ? 'selected' : '' %>>Closed</option>
-      <option value="draft" <%= currentStatus === 'draft' ? 'selected' : '' %>>Rejected/Draft</option>
+<div class="filter-bar">
+  <form action="/admin/jobs" method="GET" style="display:flex;gap:.75rem">
+    <select name="status" class="form-control" style="width:auto">
+      <option value="pending" <%= currentStatus==='pending'?'selected':'' %>>Pending Review</option>
+      <option value="active" <%= currentStatus==='active'?'selected':'' %>>Active</option>
+      <option value="closed" <%= currentStatus==='closed'?'selected':'' %>>Closed</option>
+      <option value="draft" <%= currentStatus==='draft'?'selected':'' %>>Rejected</option>
     </select>
-    <button class="btn btn-primary">Filter</button>
+    <button class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button>
   </form>
 </div>
 
-<div class="admin-card">
-  <table class="admin-table">
-    <thead><tr><th>Job</th><th>Company</th><th>Type</th><th>Posted by</th><th>Views</th><th>Date</th><th>Actions</th></tr></thead>
-    <tbody>
-      <% jobs.forEach(job => { %>
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title"><i class="fa-solid fa-briefcase"></i> Jobs — <span style="color:#F97316;text-transform:capitalize"><%= currentStatus %></span></div>
+    <span class="badge badge-pending"><%= pagination.total %> total</span>
+  </div>
+  <div class="panel-body-flush">
+    <% if (jobs.length === 0) { %>
+      <div class="empty-box"><i class="fa-solid fa-briefcase"></i><p>No jobs in this category.</p></div>
+    <% } else { %>
+    <table class="data-table">
+      <thead>
+        <tr><th>Job</th><th>Company</th><th>Type</th><th>Posted By</th><th>Views</th><th>Date</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        <% jobs.forEach(job => { %>
         <tr>
           <td><a href="/jobs/<%= job.slug %>"><%= job.title.substring(0,40) %></a></td>
-          <td><%= job.company %></td>
-          <td><span class="tag"><%= job.type %></span></td>
-          <td><%= job.poster_name %></td>
-          <td><%= job.views %></td>
-          <td class="text-muted"><%= job.timeAgo %></td>
+          <td style="color:#64748B"><%= job.company %></td>
+          <td><span class="badge badge-user" style="text-transform:capitalize"><%= job.type %></span></td>
+          <td style="color:#64748B"><%= job.poster_name %></td>
+          <td style="color:#94A3B8"><%= job.views %></td>
+          <td style="color:#94A3B8;font-size:.75rem"><%= job.timeAgo %></td>
           <td>
             <form action="/admin/jobs/<%= job.id %>" method="POST" class="inline-form">
-              <select name="status" class="form-select form-select-xs">
-                <option value="active" <%= job.status === 'active' ? 'selected' : '' %>>Approve</option>
-                <option value="pending" <%= job.status === 'pending' ? 'selected' : '' %>>Pending</option>
-                <option value="closed" <%= job.status === 'closed' ? 'selected' : '' %>>Close</option>
-                <option value="draft" <%= job.status === 'draft' ? 'selected' : '' %>>Reject</option>
+              <select name="status" class="form-control form-control-xs" style="width:auto">
+                <option value="active" <%= job.status==='active'?'selected':'' %>>Approve</option>
+                <option value="pending" <%= job.status==='pending'?'selected':'' %>>Pending</option>
+                <option value="closed" <%= job.status==='closed'?'selected':'' %>>Close</option>
+                <option value="draft" <%= job.status==='draft'?'selected':'' %>>Reject</option>
               </select>
-              <select name="featured" class="form-select form-select-xs">
-                <option value="0" <%= !job.featured ? 'selected' : '' %>>Normal</option>
-                <option value="1" <%= job.featured ? 'selected' : '' %>>Featured</option>
+              <select name="featured" class="form-control form-control-xs" style="width:auto">
+                <option value="0" <%= !job.featured?'selected':'' %>>Normal</option>
+                <option value="1" <%= job.featured?'selected':'' %>>Featured</option>
               </select>
-              <button class="btn btn-sm btn-primary">Save</button>
+              <button class="btn btn-primary btn-xs"><i class="fa-solid fa-save"></i></button>
             </form>
           </td>
         </tr>
-      <% }) %>
-    </tbody>
-  </table>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </div>
 </div>

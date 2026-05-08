@@ -1,144 +1,203 @@
-<div class="stats-grid">
-  <div class="stat-box">
-    <div class="stat-box-icon" style="background:#eef2ff;color:#6366f1">👥</div>
-    <div>
-      <div class="stat-box-value"><%= stats.total_users %></div>
-      <div class="stat-box-label">Total Users</div>
-      <div class="stat-box-sub">+<%= stats.new_users_today %> today</div>
+<!-- ── STAT CARDS ──────────────────────────────────────────────────────────── -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <div class="stat-card-label">Total Users</div>
+      <div class="stat-card-value"><%= stats.total_users || 0 %></div>
+      <div class="stat-card-sub"><span class="up">+<%= stats.new_users_today || 0 %></span> joined today</div>
+    </div>
+    <div class="stat-card-icon" style="background:#EFF6FF;color:#0EA5E9">
+      <i class="fa-solid fa-users"></i>
     </div>
   </div>
-  <div class="stat-box">
-    <div class="stat-box-icon" style="background:#f0fdf4;color:#10b981">💬</div>
-    <div>
-      <div class="stat-box-value"><%= stats.total_posts %></div>
-      <div class="stat-box-label">Total Posts</div>
-      <div class="stat-box-sub"><%= stats.total_comments %> comments</div>
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <div class="stat-card-label">Total Posts</div>
+      <div class="stat-card-value"><%= stats.total_posts || 0 %></div>
+      <div class="stat-card-sub"><%= stats.total_comments || 0 %> total comments</div>
+    </div>
+    <div class="stat-card-icon" style="background:#F0FDF4;color:#10B981">
+      <i class="fa-solid fa-comments"></i>
     </div>
   </div>
-  <div class="stat-box">
-    <div class="stat-box-icon" style="background:#fffbeb;color:#f59e0b">💼</div>
-    <div>
-      <div class="stat-box-value"><%= stats.active_jobs %></div>
-      <div class="stat-box-label">Active Jobs</div>
-      <div class="stat-box-sub"><%= stats.pending_jobs %> pending</div>
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <div class="stat-card-label">Active Jobs</div>
+      <div class="stat-card-value"><%= stats.active_jobs || 0 %></div>
+      <div class="stat-card-sub"><span class="down"><%= stats.pending_jobs || 0 %></span> awaiting review</div>
+    </div>
+    <div class="stat-card-icon" style="background:#FFF7ED;color:#F97316">
+      <i class="fa-solid fa-briefcase"></i>
     </div>
   </div>
-  <div class="stat-box">
-    <div class="stat-box-icon" style="background:#fdf4ff;color:#a855f7">📚</div>
-    <div>
-      <div class="stat-box-value"><%= stats.active_skills %></div>
-      <div class="stat-box-label">Active Skills</div>
-      <div class="stat-box-sub"><%= stats.pending_skills %> pending</div>
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <div class="stat-card-label">Active Skills</div>
+      <div class="stat-card-value"><%= stats.active_skills || 0 %></div>
+      <div class="stat-card-sub"><span class="down"><%= stats.pending_skills || 0 %></span> awaiting review</div>
     </div>
-  </div>
-  <div class="stat-box">
-    <div class="stat-box-icon" style="background:#fff1f2;color:#ef4444">🚩</div>
-    <div>
-      <div class="stat-box-value"><%= stats.pending_reports %></div>
-      <div class="stat-box-label">Pending Reports</div>
-      <div class="stat-box-sub"><a href="/admin/reports">Review →</a></div>
+    <div class="stat-card-icon" style="background:#FDF4FF;color:#A855F7">
+      <i class="fa-solid fa-book-open"></i>
     </div>
   </div>
 </div>
 
-<div class="admin-grid-2">
+<!-- ── ROW 2 ────────────────────────────────────────────────────────────── -->
+<div class="grid-3">
+
   <!-- Recent Users -->
-  <div class="admin-card">
-    <div class="admin-card-header">
-      <h3>Recent Users</h3>
-      <a href="/admin/users" class="btn btn-sm btn-outline">View All</a>
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title"><i class="fa-solid fa-users"></i> Recent Members</div>
+      <a href="/admin/users" class="btn btn-outline btn-sm">View All</a>
     </div>
-    <table class="admin-table">
-      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
-      <tbody>
-        <% recentUsers.forEach(u => { %>
+    <div class="panel-body-flush">
+      <table class="data-table">
+        <thead>
           <tr>
-            <td><strong><%= u.name %></strong></td>
-            <td><%= u.email %></td>
-            <td><span class="badge badge-<%= u.role %>"><%= u.role %></span></td>
-            <td class="text-muted"><%= u.timeAgo %></td>
+            <th>Member</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Joined</th>
           </tr>
+        </thead>
+        <tbody>
+          <% recentUsers.forEach(u => { %>
+          <tr>
+            <td>
+              <div class="user-cell">
+                <div class="user-cell-avatar"><%= u.name.charAt(0).toUpperCase() %></div>
+                <div>
+                  <div class="user-cell-name"><%= u.name %></div>
+                  <div class="user-cell-email"><%= u.email %></div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge badge-<%= u.role %>"><%= u.role %></span></td>
+            <td><span class="badge badge-<%= u.status %>"><%= u.status %></span></td>
+            <td style="color:#94A3B8;font-size:.78rem"><%= u.timeAgo %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Quick Actions Panel -->
+  <div style="display:flex;flex-direction:column;gap:1.25rem">
+
+    <!-- Pending Reports -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><i class="fa-solid fa-flag" style="color:#EF4444"></i> Pending Reports</div>
+        <span class="badge badge-banned"><%= stats.pending_reports || 0 %></span>
+      </div>
+      <% if (!stats.pending_reports || stats.pending_reports == 0) { %>
+        <div class="empty-box"><i class="fa-solid fa-check-circle" style="color:#10B981"></i><p>No pending reports</p></div>
+      <% } else { %>
+        <div class="panel-body">
+          <a href="/admin/reports" class="btn btn-danger btn-sm" style="width:100%;justify-content:center">
+            <i class="fa-solid fa-eye"></i> Review <%= stats.pending_reports %> Report(s)
+          </a>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Pending Jobs -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><i class="fa-solid fa-briefcase" style="color:#F97316"></i> Pending Jobs</div>
+        <span class="badge badge-pending"><%= stats.pending_jobs || 0 %></span>
+      </div>
+      <% if (pendingJobs.length === 0) { %>
+        <div class="empty-box"><i class="fa-solid fa-check-circle" style="color:#10B981"></i><p>No pending jobs</p></div>
+      <% } else { %>
+        <% pendingJobs.forEach(job => { %>
+          <div class="pending-item">
+            <div class="pending-item-info">
+              <strong><%= job.title %></strong>
+              <span><%= job.company %> &bull; by <%= job.poster_name %></span>
+            </div>
+            <div class="pending-item-actions">
+              <form action="/admin/jobs/<%= job.id %>" method="POST" class="inline-form">
+                <input type="hidden" name="status" value="active" />
+                <button class="btn btn-success btn-xs"><i class="fa-solid fa-check"></i></button>
+              </form>
+              <form action="/admin/jobs/<%= job.id %>" method="POST" class="inline-form">
+                <input type="hidden" name="status" value="draft" />
+                <button class="btn btn-danger btn-xs"><i class="fa-solid fa-xmark"></i></button>
+              </form>
+            </div>
+          </div>
         <% }) %>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Pending Jobs -->
-  <div class="admin-card">
-    <div class="admin-card-header">
-      <h3>Pending Jobs</h3>
-      <a href="/admin/jobs" class="btn btn-sm btn-outline">View All</a>
+      <% } %>
     </div>
-    <% if (pendingJobs.length === 0) { %>
-      <p class="text-muted">No pending jobs.</p>
-    <% } else { %>
-      <% pendingJobs.forEach(job => { %>
-        <div class="admin-item">
-          <div>
-            <strong><%= job.title %></strong> — <%= job.company %>
-            <div class="text-muted">by <%= job.poster_name %></div>
-          </div>
-          <div class="admin-actions">
-            <form action="/admin/jobs/<%= job.id %>" method="POST" class="inline-form">
-              <input type="hidden" name="status" value="active" />
-              <button class="btn btn-sm btn-success">Approve</button>
-            </form>
-            <form action="/admin/jobs/<%= job.id %>" method="POST" class="inline-form">
-              <input type="hidden" name="status" value="draft" />
-              <button class="btn btn-sm btn-danger">Reject</button>
-            </form>
-          </div>
-        </div>
-      <% }) %>
-    <% } %>
-  </div>
 
-  <!-- Pending Skills -->
-  <div class="admin-card">
-    <div class="admin-card-header">
-      <h3>Pending Skills</h3>
-      <a href="/admin/skills" class="btn btn-sm btn-outline">View All</a>
+    <!-- Pending Skills -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title"><i class="fa-solid fa-book-open" style="color:#A855F7"></i> Pending Skills</div>
+        <span class="badge badge-discussion"><%= stats.pending_skills || 0 %></span>
+      </div>
+      <% if (pendingSkills.length === 0) { %>
+        <div class="empty-box"><i class="fa-solid fa-check-circle" style="color:#10B981"></i><p>No pending skills</p></div>
+      <% } else { %>
+        <% pendingSkills.forEach(skill => { %>
+          <div class="pending-item">
+            <div class="pending-item-info">
+              <strong><%= skill.title %></strong>
+              <span>by <%= skill.author_name %></span>
+            </div>
+            <div class="pending-item-actions">
+              <form action="/admin/skills/<%= skill.id %>" method="POST" class="inline-form">
+                <input type="hidden" name="status" value="active" />
+                <button class="btn btn-success btn-xs"><i class="fa-solid fa-check"></i></button>
+              </form>
+              <form action="/admin/skills/<%= skill.id %>" method="POST" class="inline-form">
+                <input type="hidden" name="status" value="draft" />
+                <button class="btn btn-danger btn-xs"><i class="fa-solid fa-xmark"></i></button>
+              </form>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
     </div>
-    <% if (pendingSkills.length === 0) { %>
-      <p class="text-muted">No pending skills.</p>
-    <% } else { %>
-      <% pendingSkills.forEach(skill => { %>
-        <div class="admin-item">
-          <div>
-            <strong><%= skill.title %></strong>
-            <div class="text-muted">by <%= skill.author_name %></div>
-          </div>
-          <div class="admin-actions">
-            <form action="/admin/skills/<%= skill.id %>" method="POST" class="inline-form">
-              <input type="hidden" name="status" value="active" />
-              <button class="btn btn-sm btn-success">Approve</button>
-            </form>
-            <form action="/admin/skills/<%= skill.id %>" method="POST" class="inline-form">
-              <input type="hidden" name="status" value="draft" />
-              <button class="btn btn-sm btn-danger">Reject</button>
-            </form>
-          </div>
-        </div>
-      <% }) %>
-    <% } %>
-  </div>
 
-  <!-- Recent Posts -->
-  <div class="admin-card">
-    <div class="admin-card-header">
-      <h3>Recent Posts</h3>
-      <a href="/admin/posts" class="btn btn-sm btn-outline">View All</a>
-    </div>
-    <table class="admin-table">
-      <thead><tr><th>Title</th><th>Author</th><th>Status</th><th>Time</th></tr></thead>
+  </div>
+</div>
+
+<!-- ── RECENT POSTS ────────────────────────────────────────────────────────── -->
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title"><i class="fa-solid fa-comments"></i> Recent Discussions</div>
+    <a href="/admin/posts" class="btn btn-outline btn-sm">View All</a>
+  </div>
+  <div class="panel-body-flush">
+    <table class="data-table">
+      <thead>
+        <tr><th>Title</th><th>Author</th><th>Type</th><th>Status</th><th>Views</th><th>Date</th><th>Action</th></tr>
+      </thead>
       <tbody>
         <% recentPosts.forEach(p => { %>
-          <tr>
-            <td><a href="/discussions/<%= p.slug %>"><%= p.title.substring(0,40) %>...</a></td>
-            <td><%= p.author_name %></td>
-            <td><span class="badge badge-<%= p.status %>"><%= p.status %></span></td>
-            <td class="text-muted"><%= p.timeAgo %></td>
-          </tr>
+        <tr>
+          <td><a href="/discussions/<%= p.slug %>"><%= p.title.substring(0,50) %><%= p.title.length > 50 ? '…' : '' %></a></td>
+          <td style="color:#64748B"><%= p.author_name %></td>
+          <td><span class="badge badge-<%= p.type %>"><%= p.type %></span></td>
+          <td><span class="badge badge-<%= p.status %>"><%= p.status %></span></td>
+          <td style="color:#64748B"><%= p.views %></td>
+          <td style="color:#94A3B8;font-size:.75rem"><%= p.timeAgo %></td>
+          <td>
+            <form action="/admin/posts/<%= p.id %>" method="POST" class="inline-form">
+              <select name="status" class="form-control form-control-xs" style="width:auto">
+                <option value="active" <%= p.status==='active'?'selected':'' %>>Active</option>
+                <option value="pinned" <%= p.status==='pinned'?'selected':'' %>>Pinned</option>
+                <option value="closed" <%= p.status==='closed'?'selected':'' %>>Closed</option>
+                <option value="deleted">Delete</option>
+              </select>
+              <button class="btn btn-primary btn-xs">Save</button>
+            </form>
+          </td>
+        </tr>
         <% }) %>
       </tbody>
     </table>
