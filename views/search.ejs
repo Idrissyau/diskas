@@ -1,49 +1,115 @@
 <div class="page-header">
   <div class="container">
-    <h1>Search Results: "<%= query %>"</h1>
+    <h1>
+      <% if (query) { %>
+        Search: "<%= query %>"
+      <% } else { %>
+        Search Diskas
+      <% } %>
+    </h1>
+    <p>
+      <% const total = ((results.posts||[]).length + (results.jobs||[]).length + (results.skills||[]).length); %>
+      <% if (query) { %><%= total %> result<%= total !== 1 ? 's' : '' %> found<% } else { %>Search discussions, jobs, and skills<% } %>
+    </p>
+    <form class="search-bar-full" action="/search" method="GET" role="search" style="margin-top:1rem">
+      <input type="search" name="q" placeholder="Search discussions, jobs, skills..." value="<%= query || '' %>" aria-label="Search" />
+      <button type="submit" class="btn btn-primary">
+        <i class="fa-solid fa-magnifying-glass fa-sm"></i> Search
+      </button>
+    </form>
   </div>
 </div>
-<div class="container">
-  <% if (results.posts && results.posts.length) { %>
-    <div class="card mb-4">
-      <h2>Discussions (<%= results.posts.length %>)</h2>
-      <% results.posts.forEach(p => { %>
-        <div class="post-card post-card-compact">
-          <a href="/discussions/<%= p.slug %>" class="post-title"><%= p.title %></a>
-          <span class="text-muted">by <%= p.author_name %></span>
-        </div>
-      <% }) %>
-    </div>
-  <% } %>
-  <% if (results.jobs && results.jobs.length) { %>
-    <div class="card mb-4">
-      <h2>Jobs (<%= results.jobs.length %>)</h2>
-      <% results.jobs.forEach(j => { %>
-        <div class="post-card post-card-compact">
-          <a href="/jobs/<%= j.slug %>" class="post-title"><%= j.title %> — <%= j.company %></a>
-          <span class="tag"><%= j.type %></span> <span class="tag"><%= j.location %></span>
-        </div>
-      <% }) %>
-    </div>
-  <% } %>
-  <% if (results.skills && results.skills.length) { %>
-    <div class="card mb-4">
-      <h2>Skills (<%= results.skills.length %>)</h2>
-      <% results.skills.forEach(s => { %>
-        <div class="post-card post-card-compact">
-          <a href="/skills/<%= s.slug %>" class="post-title"><%= s.title %></a>
-          <span class="badge badge-level-<%= s.level %>"><%= s.level %></span>
-          <span class="text-muted">by <%= s.author_name %></span>
-        </div>
-      <% }) %>
-    </div>
-  <% } %>
-  <% const hasResults = (results.posts && results.posts.length) || (results.jobs && results.jobs.length) || (results.skills && results.skills.length); %>
-  <% if (!hasResults) { %>
+
+<div class="container" style="padding:2rem 1.25rem">
+  <% if (!query) { %>
     <div class="empty-state card">
-      <i data-feather="search"></i>
-      <h3>No results found</h3>
-      <p>Try different keywords or browse our <a href="/discussions">discussions</a>.</p>
+      <i class="fa-solid fa-magnifying-glass" style="font-size:2.5rem;color:#CBD5E1;display:block;margin-bottom:.75rem"></i>
+      <h3>Enter a search term above</h3>
+      <p>Search for discussions, jobs, and skills across the Diskas community.</p>
     </div>
+  <% } else if (total === 0) { %>
+    <div class="empty-state card">
+      <i class="fa-solid fa-face-frown" style="font-size:2.5rem;color:#CBD5E1;display:block;margin-bottom:.75rem"></i>
+      <h3>No results for "<%= query %>"</h3>
+      <p>Try different keywords, or browse <a href="/discussions">discussions</a>, <a href="/jobs">jobs</a>, or <a href="/skills">skills</a>.</p>
+    </div>
+  <% } else { %>
+
+    <% if (results.posts && results.posts.length) { %>
+      <div class="card mb-4">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <h2 style="font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:.5rem">
+            <i class="fa-solid fa-comments" style="color:#0EA5E9"></i>
+            Discussions (<%= results.posts.length %>)
+          </h2>
+          <a href="/discussions" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        <div class="posts-list">
+          <% results.posts.forEach(p => { %>
+            <div class="post-card post-card-compact">
+              <a href="/discussions/<%= p.slug %>" class="post-title"><%= p.title %></a>
+              <div class="post-info">
+                <span><i class="fa-solid fa-user fa-xs"></i> <%= p.author_name %></span>
+                <% if (p.type === 'question') { %><span class="badge badge-question">Q&amp;A</span><% } %>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    <% } %>
+
+    <% if (results.jobs && results.jobs.length) { %>
+      <div class="card mb-4">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <h2 style="font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:.5rem">
+            <i class="fa-solid fa-briefcase" style="color:#10B981"></i>
+            Jobs (<%= results.jobs.length %>)
+          </h2>
+          <a href="/jobs" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        <div class="jobs-list">
+          <% results.jobs.forEach(j => { %>
+            <a href="/jobs/<%= j.slug %>" class="job-list-card">
+              <div class="company-logo-placeholder" style="width:40px;height:40px;font-size:1rem;flex-shrink:0" aria-hidden="true"><%= j.company.charAt(0) %></div>
+              <div class="job-list-body">
+                <h3 style="font-size:.95rem"><%= j.title %></h3>
+                <p class="job-company"><%= j.company %></p>
+                <div class="job-tags">
+                  <span class="tag tag-type"><%= j.type %></span>
+                  <span class="tag"><i class="fa-solid fa-location-dot fa-xs"></i> <%= j.location %></span>
+                </div>
+              </div>
+            </a>
+          <% }) %>
+        </div>
+      </div>
+    <% } %>
+
+    <% if (results.skills && results.skills.length) { %>
+      <div class="card mb-4">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <h2 style="font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:.5rem">
+            <i class="fa-solid fa-book-open" style="color:#F59E0B"></i>
+            Skills (<%= results.skills.length %>)
+          </h2>
+          <a href="/skills" class="btn btn-outline btn-sm">View All</a>
+        </div>
+        <div class="skills-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
+          <% results.skills.forEach(s => { %>
+            <a href="/skills/<%= s.slug %>" class="skill-card">
+              <div class="skill-thumb-placeholder" style="height:90px" aria-hidden="true">
+                <i class="fa-solid fa-book fa-lg"></i>
+              </div>
+              <div class="skill-card-body">
+                <span class="badge badge-level-<%= s.level %>"><%= s.level %></span>
+                <h3><%= s.title %></h3>
+                <p class="skill-author">by <%= s.author_name %></p>
+              </div>
+            </a>
+          <% }) %>
+        </div>
+      </div>
+    <% } %>
+
   <% } %>
 </div>

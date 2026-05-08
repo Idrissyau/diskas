@@ -6,12 +6,20 @@
         <p>Discover your next career opportunity</p>
       </div>
       <% if (currentUser) { %>
-        <a href="/jobs/new" class="btn btn-primary"><i data-feather="plus"></i> Post a Job</a>
+        <a href="/jobs/new" class="btn btn-primary">
+          <i class="fa-solid fa-plus fa-sm"></i> Post a Job
+        </a>
+      <% } else { %>
+        <a href="/auth/register" class="btn btn-primary">
+          <i class="fa-solid fa-user-plus fa-sm"></i> Join to Post
+        </a>
       <% } %>
     </div>
-    <form class="search-bar-full" action="/jobs" method="GET">
-      <input type="text" name="q" placeholder="Search jobs, companies..." value="<%= filters.q || '' %>" />
-      <button type="submit" class="btn btn-primary">Search</button>
+    <form class="search-bar-full" action="/jobs" method="GET" role="search">
+      <input type="search" name="q" placeholder="Search jobs, companies, locations..." value="<%= filters.q || '' %>" aria-label="Search jobs" />
+      <button type="submit" class="btn btn-primary">
+        <i class="fa-solid fa-magnifying-glass fa-sm"></i> Search
+      </button>
     </form>
   </div>
 </div>
@@ -19,20 +27,25 @@
 <div class="container main-layout">
   <aside class="sidebar">
     <div class="card">
-      <h4>Job Type</h4>
-      <nav class="filter-nav">
+      <h4 style="font-weight:700;margin-bottom:.5rem">Job Type</h4>
+      <nav class="filter-nav" aria-label="Job type filter">
+        <a href="/jobs<%= filters.category ? '?category=' + filters.category : '' %>"
+           class="filter-item <%= !filters.type ? 'active' : '' %>">All Types</a>
         <% ['full-time','part-time','contract','remote','internship'].forEach(t => { %>
-          <a href="/jobs?type=<%= t %>&category=<%= filters.category || '' %>"
-             class="filter-item <%= filters.type === t ? 'active' : '' %>"><%= t %></a>
+          <a href="/jobs?type=<%= t %><%= filters.category ? '&category=' + filters.category : '' %>"
+             class="filter-item <%= filters.type === t ? 'active' : '' %>" style="text-transform:capitalize">
+            <%= t %>
+          </a>
         <% }) %>
       </nav>
     </div>
     <div class="card mt-3">
-      <h4>Categories</h4>
-      <nav class="filter-nav">
-        <a href="/jobs" class="filter-item <%= !filters.category ? 'active' : '' %>">All</a>
+      <h4 style="font-weight:700;margin-bottom:.5rem">Categories</h4>
+      <nav class="filter-nav" aria-label="Category filter">
+        <a href="/jobs<%= filters.type ? '?type=' + filters.type : '' %>"
+           class="filter-item <%= !filters.category ? 'active' : '' %>">All Categories</a>
         <% categories.forEach(cat => { %>
-          <a href="/jobs?category=<%= cat.slug %>"
+          <a href="/jobs?category=<%= cat.slug %><%= filters.type ? '&type=' + filters.type : '' %>"
              class="filter-item <%= filters.category === cat.slug ? 'active' : '' %>"><%= cat.name %></a>
         <% }) %>
       </nav>
@@ -42,49 +55,55 @@
   <div class="content-area">
     <% if (jobs.length === 0) { %>
       <div class="empty-state card">
-        <i data-feather="briefcase"></i>
+        <i class="fa-solid fa-briefcase" style="font-size:2.5rem;color:#CBD5E1;display:block;margin-bottom:.75rem"></i>
         <h3>No jobs found</h3>
         <p>Try different filters or <a href="/jobs/new">post the first job</a>.</p>
       </div>
     <% } else { %>
       <div class="jobs-list">
         <% jobs.forEach(job => { %>
-          <a href="/jobs/<%= job.slug %>" class="job-list-card <%= job.featured ? 'job-featured' : '' %>">
+          <a href="/jobs/<%= job.slug %>" class="job-list-card <%= job.featured ? 'job-featured' : '' %>"
+             itemscope itemtype="https://schema.org/JobPosting">
             <div class="job-list-logo">
               <% if (job.company_logo) { %>
-                <img src="<%= job.company_logo %>" alt="" class="company-logo" />
+                <img src="<%= job.company_logo %>" alt="<%= job.company %> logo" class="company-logo" loading="lazy" />
               <% } else { %>
-                <div class="company-logo-placeholder"><%= job.company.charAt(0) %></div>
+                <div class="company-logo-placeholder" aria-hidden="true"><%= job.company.charAt(0) %></div>
               <% } %>
             </div>
             <div class="job-list-body">
               <div class="job-list-top">
-                <h3><%= job.title %></h3>
-                <% if (job.featured) { %><span class="badge badge-featured">Featured</span><% } %>
+                <h3 itemprop="title"><%= job.title %></h3>
+                <% if (job.featured) { %><span class="badge badge-featured">⭐ Featured</span><% } %>
               </div>
-              <p class="job-company"><%= job.company %></p>
+              <p class="job-company" itemprop="hiringOrganization" itemscope itemtype="https://schema.org/Organization">
+                <span itemprop="name"><%= job.company %></span>
+              </p>
               <div class="job-tags">
-                <span class="tag"><i data-feather="map-pin"></i> <%= job.location %></span>
+                <span class="tag"><i class="fa-solid fa-location-dot fa-xs"></i> <%= job.location %></span>
                 <span class="tag tag-type"><%= job.type %></span>
                 <% if (job.salary_min) { %>
-                  <span class="tag"><i data-feather="dollar-sign"></i> <%= job.salary_min.toLocaleString() %>–<%= (job.salary_max||0).toLocaleString() %></span>
+                  <span class="tag"><i class="fa-solid fa-dollar-sign fa-xs"></i> <%= job.salary_min.toLocaleString() %>–<%= (job.salary_max||0).toLocaleString() %></span>
                 <% } %>
                 <% if (job.category_name) { %>
                   <span class="tag" style="color:<%= job.category_color %>"><%= job.category_name %></span>
                 <% } %>
               </div>
             </div>
-            <div class="job-list-time"><%= job.timeAgo %></div>
+            <div class="job-list-time">
+              <i class="fa-regular fa-clock fa-xs"></i>
+              <time datetime="<%= job.created_at %>"><%= job.timeAgo %></time>
+            </div>
           </a>
         <% }) %>
       </div>
 
       <% if (pagination.totalPages > 1) { %>
-        <div class="pagination">
+        <nav class="pagination" aria-label="Page navigation">
           <% if (pagination.hasPrev) { %><a href="?page=<%= pagination.page - 1 %>" class="page-btn">‹ Prev</a><% } %>
           <span class="page-info">Page <%= pagination.page %> of <%= pagination.totalPages %></span>
           <% if (pagination.hasNext) { %><a href="?page=<%= pagination.page + 1 %>" class="page-btn">Next ›</a><% } %>
-        </div>
+        </nav>
       <% } %>
     <% } %>
   </div>

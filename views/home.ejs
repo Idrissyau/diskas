@@ -1,161 +1,269 @@
-<!-- Hero -->
-<section class="hero">
-  <div class="container">
+<!-- ══ HERO ═══════════════════════════════════════════════════════════════ -->
+<section class="hero" aria-label="Welcome to Diskas">
+  <div class="container hero-inner">
     <div class="hero-content">
-      <h1>Connect. Learn. <span class="text-gradient">Grow.</span></h1>
-      <p>Diskas is a community for people from all backgrounds to find job opportunities, learn new skills, ask questions, and share knowledge.</p>
+      <div class="hero-eyebrow">🌍 Global Community Platform</div>
+      <h1>Connect. Learn.<br><span class="text-gradient">Grow Together.</span></h1>
+      <p>Join thousands of professionals and learners to find job opportunities, share knowledge, learn new skills, and get your questions answered.</p>
+
+      <!-- Hero Search -->
+      <form class="hero-search-bar" action="/search" method="GET" role="search">
+        <i class="fa-solid fa-magnifying-glass hero-search-icon"></i>
+        <input type="search" name="q" placeholder="Search jobs, skills, discussions..." aria-label="Search Diskas" autocomplete="off" />
+        <button type="submit" class="btn btn-primary">Search</button>
+      </form>
+
       <div class="hero-actions">
         <% if (!currentUser) { %>
-          <a href="/auth/register" class="btn btn-primary btn-lg">Join the Community</a>
-          <a href="/discussions" class="btn btn-outline btn-lg">Browse Discussions</a>
+          <a href="/auth/register" class="btn btn-primary btn-lg">
+            <i class="fa-solid fa-user-plus"></i> Join for Free
+          </a>
+          <a href="/discussions" class="btn btn-hero-outline btn-lg">
+            <i class="fa-solid fa-comments"></i> Browse Discussions
+          </a>
         <% } else { %>
-          <a href="/discussions/new" class="btn btn-primary btn-lg">Start a Discussion</a>
-          <a href="/jobs" class="btn btn-outline btn-lg">Browse Jobs</a>
+          <a href="/discussions/new" class="btn btn-primary btn-lg">
+            <i class="fa-solid fa-pen"></i> Start a Discussion
+          </a>
+          <a href="/jobs" class="btn btn-hero-outline btn-lg">
+            <i class="fa-solid fa-briefcase"></i> Browse Jobs
+          </a>
         <% } %>
       </div>
+
+      <div class="hero-trust">
+        <span><i class="fa-solid fa-check-circle" style="color:#10B981"></i> Free to join</span>
+        <span><i class="fa-solid fa-check-circle" style="color:#10B981"></i> No spam</span>
+        <span><i class="fa-solid fa-check-circle" style="color:#10B981"></i> Community moderated</span>
+      </div>
     </div>
-    <div class="hero-stats">
-      <div class="stat-card">
-        <span class="stat-number"><%= stats.total_users || 0 %></span>
-        <span class="stat-label">Members</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-number"><%= stats.total_posts || 0 %></span>
-        <span class="stat-label">Discussions</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-number"><%= stats.total_jobs || 0 %></span>
-        <span class="stat-label">Jobs</span>
-      </div>
-      <div class="stat-card">
-        <span class="stat-number"><%= stats.total_skills || 0 %></span>
-        <span class="stat-label">Skills</span>
+
+    <div class="hero-visual" aria-hidden="true">
+      <div class="hero-card-stack">
+        <div class="hero-float-card hc-job">
+          <i class="fa-solid fa-briefcase"></i>
+          <div>
+            <strong>New Job Posted</strong>
+            <span>Frontend Developer · Remote</span>
+          </div>
+        </div>
+        <div class="hero-float-card hc-skill">
+          <i class="fa-solid fa-book-open"></i>
+          <div>
+            <strong>New Skill Shared</strong>
+            <span>Python for Beginners</span>
+          </div>
+        </div>
+        <div class="hero-float-card hc-qa">
+          <i class="fa-solid fa-circle-question"></i>
+          <div>
+            <strong>Question Answered</strong>
+            <span>Best practices for REST APIs</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Features -->
-<section class="features section">
+<!-- ══ COMMUNITY STATS BAR ════════════════════════════════════════════════ -->
+<div class="stats-bar">
+  <div class="container stats-bar-inner">
+    <div class="stats-bar-item">
+      <strong><%= (stats.total_users || 0).toLocaleString() %></strong>
+      <span>Members</span>
+    </div>
+    <div class="stats-bar-divider"></div>
+    <div class="stats-bar-item">
+      <strong><%= (stats.total_posts || 0).toLocaleString() %></strong>
+      <span>Discussions</span>
+    </div>
+    <div class="stats-bar-divider"></div>
+    <div class="stats-bar-item">
+      <strong><%= (stats.total_jobs || 0).toLocaleString() %></strong>
+      <span>Active Jobs</span>
+    </div>
+    <div class="stats-bar-divider"></div>
+    <div class="stats-bar-item">
+      <strong><%= (stats.total_skills || 0).toLocaleString() %></strong>
+      <span>Skills Shared</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HOW IT WORKS ═══════════════════════════════════════════════════════ -->
+<section class="section how-it-works bg-light" aria-label="How Diskas works">
+  <div class="container">
+    <div class="section-header">
+      <h2>How Diskas Works</h2>
+      <p>Get started in minutes — no credit card required.</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <div class="step-icon" style="background:#EFF6FF;color:#0EA5E9">
+          <i class="fa-solid fa-user-plus"></i>
+        </div>
+        <h3>Create Your Account</h3>
+        <p>Sign up for free in seconds. No hidden costs, no credit card needed — just your name and email.</p>
+        <a href="/auth/register" class="step-link">Get started <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <div class="step-icon" style="background:#F0FDF4;color:#10B981">
+          <i class="fa-solid fa-compass"></i>
+        </div>
+        <h3>Explore the Community</h3>
+        <p>Browse job listings, discover skills, join discussions, and find topics that matter to your career and interests.</p>
+        <a href="/discussions" class="step-link">Explore now <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <div class="step-icon" style="background:#FFF7ED;color:#F97316">
+          <i class="fa-solid fa-rocket"></i>
+        </div>
+        <h3>Contribute & Grow</h3>
+        <p>Post jobs, share your expertise, answer questions, and build your professional network across all backgrounds.</p>
+        <a href="/jobs/new" class="step-link">Start contributing <i class="fa-solid fa-arrow-right"></i></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FEATURES ═══════════════════════════════════════════════════════════ -->
+<section class="section features" aria-label="Platform features">
   <div class="container">
     <div class="section-header">
       <h2>Everything you need in one place</h2>
-      <p>Built for a global community of learners and professionals.</p>
+      <p>Built for a global community of professionals, learners, and creators.</p>
     </div>
     <div class="features-grid">
       <div class="feature-card">
-        <div class="feature-icon" style="background:#eef2ff">
-          <i data-feather="users" style="color:#6366f1"></i>
+        <div class="feature-icon" style="background:#EEF2FF;color:#6366F1">
+          <i class="fa-solid fa-comments fa-lg"></i>
         </div>
         <h3>Community Discussions</h3>
-        <p>Engage in meaningful conversations, share ideas, and connect with like-minded people from around the world.</p>
-        <a href="/discussions" class="feature-link">Browse Discussions <i data-feather="arrow-right"></i></a>
+        <p>Engage in meaningful conversations, share ideas, ask questions, and connect with like-minded people worldwide.</p>
+        <a href="/discussions" class="feature-link">Browse Discussions <i class="fa-solid fa-arrow-right fa-xs"></i></a>
       </div>
       <div class="feature-card">
-        <div class="feature-icon" style="background:#f0fdf4">
-          <i data-feather="briefcase" style="color:#10b981"></i>
+        <div class="feature-icon" style="background:#F0FDF4;color:#10B981">
+          <i class="fa-solid fa-briefcase fa-lg"></i>
         </div>
         <h3>Job Opportunities</h3>
         <p>Discover full-time, part-time, remote, and contract jobs. Post openings and find the right talent.</p>
-        <a href="/jobs" class="feature-link">Find Jobs <i data-feather="arrow-right"></i></a>
+        <a href="/jobs" class="feature-link">Find Jobs <i class="fa-solid fa-arrow-right fa-xs"></i></a>
       </div>
       <div class="feature-card">
-        <div class="feature-icon" style="background:#fffbeb">
-          <i data-feather="book-open" style="color:#f59e0b"></i>
+        <div class="feature-icon" style="background:#FFFBEB;color:#F59E0B">
+          <i class="fa-solid fa-book-open fa-lg"></i>
         </div>
         <h3>Learn New Skills</h3>
-        <p>Access community-shared courses, tutorials, and resources to level up your career and personal growth.</p>
-        <a href="/skills" class="feature-link">Browse Skills <i data-feather="arrow-right"></i></a>
+        <p>Access community-shared guides, tutorials, and resources to level up your career and personal development.</p>
+        <a href="/skills" class="feature-link">Browse Skills <i class="fa-solid fa-arrow-right fa-xs"></i></a>
       </div>
       <div class="feature-card">
-        <div class="feature-icon" style="background:#fdf4ff">
-          <i data-feather="help-circle" style="color:#a855f7"></i>
+        <div class="feature-icon" style="background:#FDF4FF;color:#A855F7">
+          <i class="fa-solid fa-circle-question fa-lg"></i>
         </div>
         <h3>Q&amp;A Platform</h3>
-        <p>Ask any question and get answered by community experts. Upvote the best answers.</p>
-        <a href="/discussions?type=question" class="feature-link">Ask a Question <i data-feather="arrow-right"></i></a>
+        <p>Ask any question and get clear answers from community experts. Upvote the best answers to highlight quality.</p>
+        <a href="/discussions?type=question" class="feature-link">Ask a Question <i class="fa-solid fa-arrow-right fa-xs"></i></a>
       </div>
     </div>
   </div>
 </section>
 
-<!-- Latest Discussions -->
-<section class="section bg-light">
+<!-- ══ LATEST DISCUSSIONS ════════════════════════════════════════════════ -->
+<section class="section bg-light" aria-label="Latest discussions">
   <div class="container">
     <div class="section-header-row">
-      <h2>Latest Discussions</h2>
-      <a href="/discussions" class="btn btn-outline btn-sm">View All</a>
+      <div>
+        <h2>Latest Discussions</h2>
+        <p style="color:#64748B;font-size:.9rem;margin-top:.2rem">Join the conversation happening right now</p>
+      </div>
+      <a href="/discussions" class="btn btn-outline btn-sm">View All <i class="fa-solid fa-arrow-right fa-xs"></i></a>
     </div>
     <% if (posts.length === 0) { %>
       <div class="empty-state">
-        <i data-feather="message-circle"></i>
-        <p>No discussions yet. <a href="/discussions/new">Be the first!</a></p>
+        <i class="fa-solid fa-comments" style="width:auto;font-size:2.5rem;color:#CBD5E1"></i>
+        <h3>No discussions yet</h3>
+        <p><a href="/discussions/new">Be the first to start one!</a></p>
       </div>
     <% } else { %>
       <div class="posts-list">
         <% posts.forEach(post => { %>
-          <div class="post-card">
+          <article class="post-card" itemscope itemtype="https://schema.org/DiscussionForumPosting">
             <div class="post-meta-left">
               <% if (post.author_avatar) { %>
-                <img src="<%= post.author_avatar %>" alt="<%= post.author_name %>" class="avatar-sm" />
+                <img src="<%= post.author_avatar %>" alt="<%= post.author_name %>" class="avatar-sm" loading="lazy" />
               <% } else { %>
-                <div class="avatar-placeholder-sm"><%= (post.author_name || 'U').charAt(0).toUpperCase() %></div>
+                <div class="avatar-placeholder-sm" aria-hidden="true"><%= (post.author_name || 'U').charAt(0).toUpperCase() %></div>
               <% } %>
             </div>
             <div class="post-body">
-              <% if (post.status === 'pinned') { %><span class="badge badge-pinned">Pinned</span><% } %>
-              <% if (post.type === 'question') { %><span class="badge badge-question">Q&amp;A</span><% } %>
-              <% if (post.category_name) { %>
-                <span class="badge" style="background: <%= post.category_color %>22; color: <%= post.category_color %>">
-                  <%= post.category_name %>
-                </span>
-              <% } %>
-              <a href="/discussions/<%= post.slug %>" class="post-title"><%= post.title %></a>
+              <div class="post-badges">
+                <% if (post.status === 'pinned') { %><span class="badge badge-pinned">📌 Pinned</span><% } %>
+                <% if (post.type === 'question') { %><span class="badge badge-question">Q&amp;A</span><% } %>
+                <% if (post.category_name) { %>
+                  <span class="badge" style="background:<%= post.category_color %>22;color:<%= post.category_color %>"><%= post.category_name %></span>
+                <% } %>
+              </div>
+              <a href="/discussions/<%= post.slug %>" class="post-title" itemprop="headline"><%= post.title %></a>
               <div class="post-info">
-                <span><i data-feather="user"></i> <%= post.author_name %></span>
-                <span><i data-feather="clock"></i> <%= post.timeAgo %></span>
-                <span><i data-feather="eye"></i> <%= post.views %></span>
-                <span><i data-feather="message-circle"></i> <%= post.reply_count || 0 %></span>
+                <span itemprop="author" itemscope itemtype="https://schema.org/Person"><i class="fa-solid fa-user fa-xs"></i> <span itemprop="name"><%= post.author_name %></span></span>
+                <span><i class="fa-regular fa-clock fa-xs"></i> <time itemprop="datePublished" datetime="<%= post.created_at %>"><%= post.timeAgo %></time></span>
+                <span><i class="fa-regular fa-eye fa-xs"></i> <%= post.views %></span>
+                <span><i class="fa-regular fa-comment fa-xs"></i> <%= post.reply_count || 0 %></span>
               </div>
             </div>
-          </div>
+          </article>
         <% }) %>
       </div>
     <% } %>
   </div>
 </section>
 
-<!-- Jobs -->
-<section class="section">
+<!-- ══ LATEST JOBS ════════════════════════════════════════════════════════ -->
+<section class="section" aria-label="Latest job listings">
   <div class="container">
     <div class="section-header-row">
-      <h2>Latest Jobs</h2>
-      <a href="/jobs" class="btn btn-outline btn-sm">View All</a>
+      <div>
+        <h2>Latest Jobs</h2>
+        <p style="color:#64748B;font-size:.9rem;margin-top:.2rem">Your next opportunity is waiting</p>
+      </div>
+      <a href="/jobs" class="btn btn-outline btn-sm">View All <i class="fa-solid fa-arrow-right fa-xs"></i></a>
     </div>
     <% if (jobs.length === 0) { %>
-      <div class="empty-state"><i data-feather="briefcase"></i><p>No jobs posted yet. <a href="/jobs/new">Post one!</a></p></div>
+      <div class="empty-state">
+        <i class="fa-solid fa-briefcase" style="width:auto;font-size:2.5rem;color:#CBD5E1"></i>
+        <h3>No jobs posted yet</h3>
+        <p><a href="/jobs/new">Post the first job!</a></p>
+      </div>
     <% } else { %>
       <div class="jobs-grid">
         <% jobs.forEach(job => { %>
-          <a href="/jobs/<%= job.slug %>" class="job-card">
+          <a href="/jobs/<%= job.slug %>" class="job-card" itemprop="url" itemscope itemtype="https://schema.org/JobPosting">
             <div class="job-card-header">
               <% if (job.company_logo) { %>
-                <img src="<%= job.company_logo %>" alt="<%= job.company %>" class="company-logo" />
+                <img src="<%= job.company_logo %>" alt="<%= job.company %> logo" class="company-logo" loading="lazy" />
               <% } else { %>
-                <div class="company-logo-placeholder"><%= job.company.charAt(0).toUpperCase() %></div>
+                <div class="company-logo-placeholder" aria-hidden="true"><%= job.company.charAt(0).toUpperCase() %></div>
               <% } %>
-              <% if (job.featured) { %><span class="badge badge-featured">Featured</span><% } %>
+              <% if (job.featured) { %><span class="badge badge-featured">⭐ Featured</span><% } %>
             </div>
-            <h3><%= job.title %></h3>
-            <p class="job-company"><%= job.company %></p>
+            <h3 itemprop="title"><%= job.title %></h3>
+            <p class="job-company" itemprop="hiringOrganization" itemscope itemtype="https://schema.org/Organization">
+              <span itemprop="name"><%= job.company %></span>
+            </p>
             <div class="job-tags">
-              <span class="tag"><i data-feather="map-pin"></i> <%= job.location %></span>
-              <span class="tag"><i data-feather="clock"></i> <%= job.type %></span>
+              <span class="tag"><i class="fa-solid fa-location-dot fa-xs"></i> <%= job.location %></span>
+              <span class="tag"><i class="fa-regular fa-clock fa-xs"></i> <%= job.type %></span>
               <% if (job.salary_min) { %>
-                <span class="tag"><i data-feather="dollar-sign"></i> <%= job.salary_min.toLocaleString() %>–<%= (job.salary_max || 0).toLocaleString() %> <%= job.currency %></span>
+                <span class="tag"><i class="fa-solid fa-dollar-sign fa-xs"></i> <%= job.salary_min.toLocaleString() %>–<%= (job.salary_max || 0).toLocaleString() %> <%= job.currency %></span>
               <% } %>
             </div>
-            <span class="job-time"><%= job.timeAgo %></span>
+            <span class="job-time"><i class="fa-regular fa-calendar fa-xs"></i> <%= job.timeAgo %></span>
           </a>
         <% }) %>
       </div>
@@ -163,28 +271,37 @@
   </div>
 </section>
 
-<!-- Skills -->
-<section class="section bg-light">
+<!-- ══ LATEST SKILLS ══════════════════════════════════════════════════════ -->
+<section class="section bg-light" aria-label="Community skills and tutorials">
   <div class="container">
     <div class="section-header-row">
-      <h2>Learn New Skills</h2>
-      <a href="/skills" class="btn btn-outline btn-sm">View All</a>
+      <div>
+        <h2>Learn New Skills</h2>
+        <p style="color:#64748B;font-size:.9rem;margin-top:.2rem">Community-shared guides and tutorials</p>
+      </div>
+      <a href="/skills" class="btn btn-outline btn-sm">View All <i class="fa-solid fa-arrow-right fa-xs"></i></a>
     </div>
     <% if (skills.length === 0) { %>
-      <div class="empty-state"><i data-feather="book-open"></i><p>No skills shared yet. <a href="/skills/new">Share yours!</a></p></div>
+      <div class="empty-state">
+        <i class="fa-solid fa-book-open" style="width:auto;font-size:2.5rem;color:#CBD5E1"></i>
+        <h3>No skills shared yet</h3>
+        <p><a href="/skills/new">Be the first to share!</a></p>
+      </div>
     <% } else { %>
       <div class="skills-grid">
         <% skills.forEach(skill => { %>
-          <a href="/skills/<%= skill.slug %>" class="skill-card">
+          <a href="/skills/<%= skill.slug %>" class="skill-card" itemscope itemtype="https://schema.org/Course">
             <% if (skill.thumbnail) { %>
-              <img src="<%= skill.thumbnail %>" alt="<%= skill.title %>" class="skill-thumb" />
+              <img src="<%= skill.thumbnail %>" alt="<%= skill.title %>" class="skill-thumb" loading="lazy" itemprop="image" />
             <% } else { %>
-              <div class="skill-thumb-placeholder"><i data-feather="book"></i></div>
+              <div class="skill-thumb-placeholder" aria-hidden="true">
+                <i class="fa-solid fa-book fa-2x"></i>
+              </div>
             <% } %>
             <div class="skill-card-body">
               <span class="badge badge-level-<%= skill.level %>"><%= skill.level %></span>
-              <h3><%= skill.title %></h3>
-              <p class="skill-author">by <%= skill.author_name %></p>
+              <h3 itemprop="name"><%= skill.title %></h3>
+              <p class="skill-author">by <span itemprop="author"><%= skill.author_name %></span></p>
             </div>
           </a>
         <% }) %>
@@ -193,15 +310,31 @@
   </div>
 </section>
 
-<!-- CTA -->
-<section class="cta-section">
+<!-- ══ CTA ════════════════════════════════════════════════════════════════ -->
+<section class="cta-section" aria-label="Call to action">
   <div class="container">
-    <h2>Ready to join Diskas?</h2>
-    <p>Connect with thousands of members, find your next opportunity, and never stop learning.</p>
-    <% if (!currentUser) { %>
-      <a href="/auth/register" class="btn btn-white btn-lg">Get Started for Free</a>
-    <% } else { %>
-      <a href="/discussions/new" class="btn btn-white btn-lg">Start a Discussion</a>
-    <% } %>
+    <div class="cta-inner">
+      <div class="cta-text">
+        <h2>Ready to join Diskas?</h2>
+        <p>Connect with thousands of members, find your next opportunity, and never stop learning — it's completely free.</p>
+      </div>
+      <div class="cta-actions">
+        <% if (!currentUser) { %>
+          <a href="/auth/register" class="btn btn-white btn-lg">
+            <i class="fa-solid fa-user-plus"></i> Create Free Account
+          </a>
+          <a href="/discussions" class="btn btn-cta-outline btn-lg">
+            <i class="fa-solid fa-eye"></i> Browse First
+          </a>
+        <% } else { %>
+          <a href="/discussions/new" class="btn btn-white btn-lg">
+            <i class="fa-solid fa-pen"></i> Start a Discussion
+          </a>
+          <a href="/jobs/new" class="btn btn-cta-outline btn-lg">
+            <i class="fa-solid fa-briefcase"></i> Post a Job
+          </a>
+        <% } %>
+      </div>
+    </div>
   </div>
 </section>

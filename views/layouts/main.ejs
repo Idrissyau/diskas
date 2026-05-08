@@ -3,32 +3,69 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title><%= title %> | Diskas</title>
-  <meta name="description" content="Diskas - Connect, Learn, and Grow together." />
-  <link rel="stylesheet" href="/css/style.css" />
+
+  <!-- ── Primary Meta ─────────────────────────────────────────────────── -->
+  <title><%= title === 'Home' ? 'Diskas — Find Jobs, Learn Skills & Connect' : title + ' | Diskas' %></title>
+  <meta name="description" content="<%= (metaDesc || 'Diskas — a free community to find jobs, learn new skills, ask questions, and connect with people from all backgrounds.').replace(/"/g, '&quot;') %>" />
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  <link rel="canonical" href="<%= appUrl %><%= canonicalPath || '/' %>" />
+
+  <!-- ── Open Graph ───────────────────────────────────────────────────── -->
+  <meta property="og:type"        content="<%= typeof ogType !== 'undefined' && ogType ? ogType : 'website' %>" />
+  <meta property="og:site_name"   content="Diskas" />
+  <meta property="og:title"       content="<%= (title === 'Home' ? 'Diskas — Find Jobs, Learn Skills & Connect' : title + ' | Diskas').replace(/"/g, '&quot;') %>" />
+  <meta property="og:description" content="<%= (metaDesc || 'Diskas — a free community to find jobs, learn new skills, ask questions, and connect with people from all backgrounds.').replace(/"/g, '&quot;') %>" />
+  <meta property="og:url"         content="<%= appUrl %><%= canonicalPath || '/' %>" />
+  <meta property="og:image"       content="<%= (ogImage || appUrl + '/img/og-default.png') %>" />
+  <meta property="og:image:width"  content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale"      content="en_US" />
+
+  <!-- ── Twitter Card ─────────────────────────────────────────────────── -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:title"       content="<%= (title === 'Home' ? 'Diskas — Find Jobs, Learn Skills & Connect' : title + ' | Diskas').replace(/"/g, '&quot;') %>" />
+  <meta name="twitter:description" content="<%= (metaDesc || 'Diskas — a free community to find jobs, learn new skills, ask questions, and connect with people from all backgrounds.').replace(/"/g, '&quot;') %>" />
+  <meta name="twitter:image"       content="<%= (ogImage || appUrl + '/img/og-default.png') %>" />
+
+  <!-- ── Structured Data ──────────────────────────────────────────────── -->
+  <% if (pageSchema) { %>
+  <script type="application/ld+json"><%-  pageSchema %></script>
+  <% } %>
+
+  <!-- ── Favicons ─────────────────────────────────────────────────────── -->
+  <link rel="icon" type="image/svg+xml" href="/img/favicon.svg" />
+  <link rel="icon" type="image/png"     href="/img/favicon.png" sizes="32x32" />
+  <link rel="apple-touch-icon"          href="/img/apple-touch-icon.png" />
+
+  <!-- ── Fonts & Icons ────────────────────────────────────────────────── -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://unpkg.com/feather-icons/dist/feather.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <!-- ── Stylesheet ───────────────────────────────────────────────────── -->
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
 
 <!-- ── NAVBAR ──────────────────────────────────────────────────────────────── -->
-<nav class="navbar">
+<nav class="navbar" role="navigation" aria-label="Main navigation">
   <div class="container nav-inner">
-    <a href="/" class="nav-logo">
-      <span class="logo-icon">D</span>
+    <a href="/" class="nav-logo" aria-label="Diskas home">
+      <span class="logo-icon" aria-hidden="true">D</span>
       <span class="logo-text">Diskas</span>
     </a>
 
     <div class="nav-links">
       <a href="/discussions" class="nav-link">Discussions</a>
-      <a href="/jobs" class="nav-link">Jobs</a>
-      <a href="/skills" class="nav-link">Skills</a>
+      <a href="/jobs"        class="nav-link">Jobs</a>
+      <a href="/skills"      class="nav-link">Skills</a>
     </div>
 
-    <form class="nav-search" action="/search" method="GET">
-      <input type="text" name="q" placeholder="Search..." value="<%= typeof query !== 'undefined' ? query : '' %>" />
-      <button type="submit"><i data-feather="search"></i></button>
+    <form class="nav-search" action="/search" method="GET" role="search">
+      <label for="navSearch" class="sr-only">Search Diskas</label>
+      <input id="navSearch" type="search" name="q" placeholder="Search..." value="<%= typeof query !== 'undefined' ? query : '' %>" autocomplete="off" />
+      <button type="submit" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
     </form>
 
     <div class="nav-actions">
@@ -37,102 +74,147 @@
           <a href="/admin" class="btn btn-sm btn-outline">Admin</a>
         <% } %>
         <div class="dropdown">
-          <button class="avatar-btn">
+          <button class="avatar-btn" aria-haspopup="true" aria-expanded="false">
             <% if (currentUser.avatar) { %>
               <img src="<%= currentUser.avatar %>" alt="<%= currentUser.name %>" class="avatar-sm" />
             <% } else { %>
-              <div class="avatar-placeholder-sm"><%= currentUser.name.charAt(0).toUpperCase() %></div>
+              <div class="avatar-placeholder-sm" aria-hidden="true"><%= currentUser.name.charAt(0).toUpperCase() %></div>
             <% } %>
             <span class="nav-username"><%= currentUser.name %></span>
+            <i class="fa-solid fa-chevron-down" style="font-size:.65rem;color:#94A3B8"></i>
           </button>
           <div class="dropdown-menu">
-            <a href="/profile" class="dropdown-item"><i data-feather="user"></i> Profile</a>
-            <a href="/discussions/new" class="dropdown-item"><i data-feather="edit-3"></i> New Post</a>
-            <a href="/jobs/new" class="dropdown-item"><i data-feather="briefcase"></i> Post Job</a>
-            <a href="/skills/new" class="dropdown-item"><i data-feather="book-open"></i> Share Skill</a>
+            <a href="/profile"        class="dropdown-item"><i class="fa-solid fa-user"></i> Profile</a>
+            <a href="/discussions/new" class="dropdown-item"><i class="fa-solid fa-pen"></i> New Post</a>
+            <a href="/jobs/new"        class="dropdown-item"><i class="fa-solid fa-briefcase"></i> Post Job</a>
+            <a href="/skills/new"      class="dropdown-item"><i class="fa-solid fa-book-open"></i> Share Skill</a>
             <div class="dropdown-divider"></div>
-            <a href="/auth/logout" class="dropdown-item text-danger"><i data-feather="log-out"></i> Logout</a>
+            <a href="/auth/logout"     class="dropdown-item text-danger"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
           </div>
         </div>
       <% } else { %>
-        <a href="/auth/login" class="btn btn-outline btn-sm">Sign In</a>
+        <a href="/auth/login"    class="btn btn-outline btn-sm">Sign In</a>
         <a href="/auth/register" class="btn btn-primary btn-sm">Join Free</a>
       <% } %>
     </div>
 
-    <button class="mobile-menu-btn" id="mobileMenuBtn">
-      <i data-feather="menu"></i>
+    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu" aria-expanded="false">
+      <i class="fa-solid fa-bars"></i>
     </button>
   </div>
 
   <!-- Mobile menu -->
-  <div class="mobile-menu" id="mobileMenu">
+  <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+    <form action="/search" method="GET" class="mobile-search-form">
+      <input type="search" name="q" placeholder="Search Diskas..." />
+      <button type="submit" class="btn btn-primary btn-sm">Search</button>
+    </form>
     <a href="/discussions">Discussions</a>
     <a href="/jobs">Jobs</a>
     <a href="/skills">Skills</a>
     <% if (currentUser) { %>
       <a href="/profile">Profile</a>
-      <% if (['admin','moderator'].includes(currentUser.role)) { %><a href="/admin">Admin</a><% } %>
-      <a href="/auth/logout">Logout</a>
+      <a href="/discussions/new">New Discussion</a>
+      <a href="/jobs/new">Post a Job</a>
+      <% if (['admin','moderator'].includes(currentUser.role)) { %><a href="/admin">Admin Panel</a><% } %>
+      <a href="/auth/logout" class="text-danger">Logout</a>
     <% } else { %>
       <a href="/auth/login">Sign In</a>
-      <a href="/auth/register">Join Free</a>
+      <a href="/auth/register" style="color:#0EA5E9;font-weight:700">Join Free →</a>
     <% } %>
   </div>
 </nav>
 
 <!-- ── FLASH MESSAGES ──────────────────────────────────────────────────────── -->
 <% if (flashSuccess && flashSuccess.length) { %>
-  <div class="flash flash-success"><i data-feather="check-circle"></i> <%= flashSuccess[0] %></div>
+  <div class="flash flash-success" role="alert"><i class="fa-solid fa-circle-check"></i> <%= flashSuccess[0] %></div>
 <% } %>
 <% if (flashError && flashError.length) { %>
-  <div class="flash flash-error"><i data-feather="alert-circle"></i> <%= flashError[0] %></div>
+  <div class="flash flash-error" role="alert"><i class="fa-solid fa-circle-xmark"></i> <%= flashError[0] %></div>
 <% } %>
 <% if (flashInfo && flashInfo.length) { %>
-  <div class="flash flash-info"><i data-feather="info"></i> <%= flashInfo[0] %></div>
+  <div class="flash flash-info" role="alert"><i class="fa-solid fa-circle-info"></i> <%= flashInfo[0] %></div>
 <% } %>
 
 <!-- ── MAIN CONTENT ────────────────────────────────────────────────────────── -->
-<main>
+<main id="main-content">
   <%- body %>
 </main>
 
 <!-- ── FOOTER ─────────────────────────────────────────────────────────────── -->
-<footer class="footer">
+<footer class="footer" role="contentinfo">
   <div class="container footer-inner">
     <div class="footer-brand">
-      <span class="logo-icon">D</span>
-      <span class="logo-text">Diskas</span>
-      <p>Connect people of different backgrounds.<br>Find opportunities, learn skills, ask questions.</p>
+      <a href="/" class="footer-logo-link" aria-label="Diskas home">
+        <span class="logo-icon">D</span>
+        <span class="logo-text">Diskas</span>
+      </a>
+      <p>Connecting people of all backgrounds.<br>Find opportunities, learn skills, share knowledge.</p>
+      <div class="footer-social">
+        <span style="font-size:.8rem;color:#64748B">© <%= new Date().getFullYear() %> Diskas</span>
+      </div>
     </div>
     <div class="footer-links">
       <div>
         <h4>Community</h4>
-        <a href="/discussions">Discussions</a>
+        <a href="/discussions">All Discussions</a>
         <a href="/discussions?type=question">Q&amp;A</a>
+        <a href="/discussions?type=announcement">Announcements</a>
         <a href="/discussions/new">Start Discussion</a>
       </div>
       <div>
         <h4>Opportunities</h4>
         <a href="/jobs">Job Board</a>
+        <a href="/jobs?type=remote">Remote Jobs</a>
         <a href="/jobs/new">Post a Job</a>
-        <a href="/skills">Skills</a>
+        <a href="/skills">Browse Skills</a>
         <a href="/skills/new">Share a Skill</a>
       </div>
       <div>
         <h4>Account</h4>
-        <a href="/auth/register">Register</a>
+        <a href="/auth/register">Join Free</a>
         <a href="/auth/login">Sign In</a>
-        <a href="/profile">Profile</a>
+        <a href="/profile">My Profile</a>
+        <a href="/search">Search</a>
       </div>
     </div>
   </div>
   <div class="footer-bottom">
-    <p>&copy; <%= new Date().getFullYear() %> Diskas. All rights reserved.</p>
+    <div class="container">
+      <span>Built with ❤ for the global community · <a href="/sitemap.xml" style="color:#64748B">Sitemap</a></span>
+    </div>
   </div>
 </footer>
 
-<script src="https://unpkg.com/feather-icons"></script>
-<script src="/js/main.js"></script>
+<!-- ── Scripts ─────────────────────────────────────────────────────────────── -->
+<script src="/js/main.js" defer></script>
+<script>
+  // Mobile menu toggle
+  const mobileBtn  = document.getElementById('mobileMenuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  if (mobileBtn && mobileMenu) {
+    mobileBtn.addEventListener('click', () => {
+      const open = mobileMenu.classList.toggle('open');
+      mobileBtn.setAttribute('aria-expanded', open);
+      mobileMenu.setAttribute('aria-hidden', !open);
+    });
+  }
+  // Auto-dismiss flash messages
+  document.querySelectorAll('.flash').forEach(f => {
+    setTimeout(() => { f.style.transition='opacity .5s'; f.style.opacity='0'; setTimeout(()=>f.remove(),500); }, 5000);
+  });
+  // Dropdown close on outside click
+  document.addEventListener('click', e => {
+    document.querySelectorAll('.dropdown.open').forEach(d => {
+      if (!d.contains(e.target)) d.classList.remove('open');
+    });
+  });
+  document.querySelectorAll('.avatar-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      btn.closest('.dropdown').classList.toggle('open');
+    });
+  });
+</script>
 </body>
 </html>

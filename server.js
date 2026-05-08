@@ -81,6 +81,45 @@ app.response.render = function(view, options, fn) {
   });
 };
 
+// ── Sitemap ────────────────────────────────────────────────────────────────
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const { query: dbQuery } = require('./helpers/db');
+    const base = process.env.APP_URL || 'https://diskas.idrisyau.com';
+    const now = new Date().toISOString().split('T')[0];
+
+    const [posts, jobs, skills] = await Promise.all([
+      dbQuery(`SELECT slug, created_at FROM posts WHERE status IN ('active','pinned') ORDER BY created_at DESC LIMIT 5000`),
+      dbQuery(`SELECT slug, created_at FROM jobs  WHERE status = 'active'             ORDER BY created_at DESC LIMIT 5000`),
+      dbQuery(`SELECT slug, created_at FROM skills WHERE status = 'active'            ORDER BY created_at DESC LIMIT 5000`),
+    ]);
+
+    const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const url = (loc, lastmod, freq, priority) =>
+      `  <url><loc>${esc(loc)}</loc><lastmod>${lastmod}</lastmod><changefreq>${freq}</changefreq><priority>${priority}</priority></url>`;
+
+    const lines = [
+      `<?xml version="1.0" encoding="UTF-8"?>`,
+      `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`,
+      url(`${base}/`,            now,       'daily',  '1.0'),
+      url(`${base}/discussions`, now,       'hourly', '0.9'),
+      url(`${base}/jobs`,        now,       'hourly', '0.9'),
+      url(`${base}/skills`,      now,       'daily',  '0.9'),
+      ...posts.map(p  => url(`${base}/discussions/${p.slug}`,  new Date(p.created_at).toISOString().split('T')[0],  'weekly',  '0.7')),
+      ...jobs.map(j   => url(`${base}/jobs/${j.slug}`,         new Date(j.created_at).toISOString().split('T')[0],  'weekly',  '0.8')),
+      ...skills.map(s => url(`${base}/skills/${s.slug}`,       new Date(s.created_at).toISOString().split('T')[0],  'monthly', '0.7')),
+      `</urlset>`,
+    ];
+
+    res.set('Content-Type', 'application/xml; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.send(lines.join('\n'));
+  } catch (err) {
+    console.error('Sitemap error:', err);
+    res.status(500).send('Sitemap generation failed');
+  }
+});
+
 // ── Routes ─────────────────────────────────────────────────────────────────
 const homeController = require('./controllers/homeController');
 app.get('/', homeController.index);

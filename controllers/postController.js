@@ -101,10 +101,30 @@ exports.show = async (req, res) => {
     }
 
     const commentsWithTime = comments.map(c => ({ ...c, timeAgo: timeAgo(c.created_at) }));
+    const postObj = { ...post, timeAgo: timeAgo(post.created_at) };
+    const appUrl = process.env.APP_URL || 'https://diskas.idrisyau.com';
+    const snippet = (post.content || '').replace(/\s+/g, ' ').trim().substring(0, 160);
+    const schemaType = post.type === 'question' ? 'QAPage' : 'DiscussionForumPosting';
 
     res.render('posts/show', {
       title: post.title,
-      post: { ...post, timeAgo: timeAgo(post.created_at) },
+      metaDesc: snippet || `Discussion by ${post.author_name} on Diskas`,
+      canonicalPath: `/discussions/${post.slug}`,
+      ogType: 'article',
+      pageSchema: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': schemaType,
+        headline: post.title,
+        text: snippet,
+        author: { '@type': 'Person', name: post.author_name },
+        datePublished: new Date(post.created_at).toISOString(),
+        url: `${appUrl}/discussions/${post.slug}`,
+        interactionStatistic: [
+          { '@type': 'InteractionCounter', interactionType: 'https://schema.org/ViewAction', userInteractionCount: post.views },
+          { '@type': 'InteractionCounter', interactionType: 'https://schema.org/CommentAction', userInteractionCount: comments.length }
+        ]
+      }),
+      post: postObj,
       comments: commentsWithTime,
       related,
       userVote,

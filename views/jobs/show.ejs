@@ -1,39 +1,69 @@
 <div class="container post-layout">
   <div class="post-main">
-    <article class="card job-detail">
+    <article class="card job-detail" itemscope itemtype="https://schema.org/JobPosting">
       <div class="job-detail-header">
         <div class="job-company-info">
           <% if (job.company_logo) { %>
-            <img src="<%= job.company_logo %>" alt="" class="company-logo-lg" />
+            <img src="<%= job.company_logo %>" alt="<%= job.company %> logo" class="company-logo-lg" loading="lazy" />
           <% } else { %>
-            <div class="company-logo-placeholder-lg"><%= job.company.charAt(0) %></div>
+            <div class="company-logo-placeholder-lg" aria-hidden="true"><%= job.company.charAt(0) %></div>
           <% } %>
           <div>
-            <h1><%= job.title %></h1>
-            <p class="job-company"><%= job.company %></p>
+            <h1 itemprop="title"><%= job.title %></h1>
+            <p class="job-company" itemprop="hiringOrganization" itemscope itemtype="https://schema.org/Organization">
+              <i class="fa-solid fa-building fa-sm" style="color:#0EA5E9"></i>
+              <span itemprop="name"><%= job.company %></span>
+            </p>
           </div>
         </div>
         <% if (job.apply_url) { %>
-          <a href="<%= job.apply_url %>" target="_blank" rel="noopener" class="btn btn-primary btn-lg">Apply Now</a>
+          <a href="<%= job.apply_url %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg">
+            <i class="fa-solid fa-arrow-up-right-from-square fa-sm"></i> Apply Now
+          </a>
         <% } else if (job.apply_email) { %>
-          <a href="mailto:<%= job.apply_email %>" class="btn btn-primary btn-lg">Apply via Email</a>
+          <a href="mailto:<%= job.apply_email %>" class="btn btn-primary btn-lg">
+            <i class="fa-solid fa-envelope fa-sm"></i> Apply via Email
+          </a>
         <% } %>
       </div>
 
       <div class="job-meta-grid">
-        <div class="job-meta-item"><i data-feather="map-pin"></i><span><%= job.location %></span></div>
-        <div class="job-meta-item"><i data-feather="clock"></i><span><%= job.type %></span></div>
+        <div class="job-meta-item">
+          <i class="fa-solid fa-location-dot" style="color:#0EA5E9"></i>
+          <span itemprop="jobLocation" itemscope itemtype="https://schema.org/Place">
+            <span itemprop="address"><%= job.location %></span>
+          </span>
+        </div>
+        <div class="job-meta-item">
+          <i class="fa-regular fa-clock" style="color:#0EA5E9"></i>
+          <span itemprop="employmentType" style="text-transform:capitalize"><%= job.type %></span>
+        </div>
         <% if (job.salary_min) { %>
-          <div class="job-meta-item"><i data-feather="dollar-sign"></i><span><%= job.salary_min.toLocaleString() %> – <%= (job.salary_max||0).toLocaleString() %> <%= job.currency %></span></div>
+          <div class="job-meta-item">
+            <i class="fa-solid fa-dollar-sign" style="color:#10B981"></i>
+            <span itemprop="baseSalary" itemscope itemtype="https://schema.org/MonetaryAmount">
+              <span itemprop="currency" content="<%= job.currency %>"></span>
+              <%= job.salary_min.toLocaleString() %> – <%= (job.salary_max || 0).toLocaleString() %> <%= job.currency %>
+            </span>
+          </div>
         <% } %>
         <% if (job.category_name) { %>
-          <div class="job-meta-item"><i data-feather="tag"></i><span><%= job.category_name %></span></div>
+          <div class="job-meta-item">
+            <i class="fa-solid fa-tag" style="color:#0EA5E9"></i>
+            <span><%= job.category_name %></span>
+          </div>
         <% } %>
-        <div class="job-meta-item"><i data-feather="eye"></i><span><%= job.views %> views</span></div>
-        <div class="job-meta-item"><i data-feather="calendar"></i><span>Posted <%= job.timeAgo %></span></div>
+        <div class="job-meta-item">
+          <i class="fa-regular fa-eye" style="color:#94A3B8"></i>
+          <span><%= job.views %> views</span>
+        </div>
+        <div class="job-meta-item">
+          <i class="fa-regular fa-calendar" style="color:#94A3B8"></i>
+          <time itemprop="datePosted" datetime="<%= job.created_at %>">Posted <%= job.timeAgo %></time>
+        </div>
       </div>
 
-      <div class="content-section">
+      <div class="content-section" itemprop="description">
         <h2>Job Description</h2>
         <div class="prose"><%= job.description %></div>
       </div>
@@ -53,9 +83,13 @@
       <div class="job-apply-box">
         <h3>Interested in this role?</h3>
         <% if (job.apply_url) { %>
-          <a href="<%= job.apply_url %>" target="_blank" rel="noopener" class="btn btn-primary btn-lg">Apply on Company Website</a>
+          <a href="<%= job.apply_url %>" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg">
+            <i class="fa-solid fa-arrow-up-right-from-square fa-sm"></i> Apply on Company Website
+          </a>
         <% } else if (job.apply_email) { %>
-          <a href="mailto:<%= job.apply_email %>" class="btn btn-primary btn-lg">Send Application to <%= job.apply_email %></a>
+          <a href="mailto:<%= job.apply_email %>" class="btn btn-primary btn-lg">
+            <i class="fa-solid fa-envelope fa-sm"></i> Send Application to <%= job.apply_email %>
+          </a>
         <% } else { %>
           <p class="text-muted">Contact the company directly for application details.</p>
         <% } %>
@@ -65,23 +99,43 @@
 
   <aside class="post-sidebar">
     <div class="card">
-      <h4>Job Summary</h4>
+      <h4 style="font-weight:700;margin-bottom:1rem">
+        <i class="fa-solid fa-list-check fa-sm" style="color:#0EA5E9"></i> Job Summary
+      </h4>
       <ul class="summary-list">
-        <li><strong>Type:</strong> <%= job.type %></li>
-        <li><strong>Location:</strong> <%= job.location %></li>
+        <li><span>Type</span> <strong style="text-transform:capitalize"><%= job.type %></strong></li>
+        <li><span>Location</span> <strong><%= job.location %></strong></li>
         <% if (job.salary_min) { %>
-          <li><strong>Salary:</strong> <%= job.salary_min.toLocaleString() %>–<%= (job.salary_max||0).toLocaleString() %> <%= job.currency %></li>
+          <li><span>Salary</span> <strong><%= job.salary_min.toLocaleString() %>–<%= (job.salary_max||0).toLocaleString() %> <%= job.currency %></strong></li>
         <% } %>
-        <% if (job.expires_at) { %><li><strong>Deadline:</strong> <%= new Date(job.expires_at).toLocaleDateString() %></li><% } %>
+        <% if (job.expires_at) { %>
+          <li><span>Deadline</span> <strong><%= new Date(job.expires_at).toLocaleDateString() %></strong></li>
+        <% } %>
+        <li><span>Views</span> <strong><%= job.views %></strong></li>
       </ul>
     </div>
+
     <% if (related.length) { %>
-      <div class="card mt-3">
-        <h4>Similar Jobs</h4>
+      <div class="card">
+        <h4 style="font-weight:700;margin-bottom:.75rem">
+          <i class="fa-solid fa-briefcase fa-xs" style="color:#0EA5E9"></i> Similar Jobs
+        </h4>
         <% related.forEach(r => { %>
-          <a href="/jobs/<%= r.slug %>" class="related-item"><%= r.title %><br><small><%= r.company %></small></a>
+          <a href="/jobs/<%= r.slug %>" class="related-item">
+            <strong><%= r.title %></strong><br>
+            <small style="color:#94A3B8"><%= r.company %></small>
+          </a>
         <% }) %>
       </div>
     <% } %>
+
+    <div class="card">
+      <h4 style="font-weight:700;margin-bottom:.75rem">
+        <i class="fa-solid fa-briefcase fa-xs" style="color:#0EA5E9"></i> Looking for talent?
+      </h4>
+      <a href="/jobs/new" class="btn btn-primary btn-sm btn-full">
+        <i class="fa-solid fa-plus fa-xs"></i> Post a Job
+      </a>
+    </div>
   </aside>
 </div>

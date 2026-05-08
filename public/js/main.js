@@ -1,34 +1,29 @@
-feather.replace();
+// Diskas main.js — all JS for the public-facing site
 
-// Mobile menu toggle
-const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-const mobileMenu = document.getElementById('mobileMenu');
-if (mobileMenuBtn && mobileMenu) {
-  mobileMenuBtn.addEventListener('click', () => {
-    mobileMenu.classList.toggle('open');
-  });
-}
+// ── Vote handler (post detail page) ───────────────────────────────────────
+document.querySelectorAll('.vote-group').forEach(group => {
+  group.querySelectorAll('.vote-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id   = group.dataset.id;
+      const type = group.dataset.type;
+      const vote = btn.dataset.vote;
 
-// Auto-hide flash messages
-const flashes = document.querySelectorAll('.flash');
-flashes.forEach(flash => {
-  setTimeout(() => {
-    flash.style.transition = 'opacity .5s';
-    flash.style.opacity = '0';
-    setTimeout(() => flash.remove(), 500);
-  }, 4000);
-});
-
-// Dropdown toggle on mobile
-document.querySelectorAll('.dropdown').forEach(dropdown => {
-  const btn = dropdown.querySelector('.avatar-btn');
-  if (btn) {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      dropdown.classList.toggle('open');
+      try {
+        const res = await fetch('/vote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, type, value: vote }),
+        });
+        if (res.status === 401) { window.location = '/auth/login'; return; }
+        const data = await res.json();
+        if (data.success) {
+          const totalEl = group.querySelector('.vote-total');
+          if (totalEl) totalEl.textContent = data.total;
+          // Toggle voted class
+          group.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('voted'));
+          btn.classList.add('voted');
+        }
+      } catch (e) { /* ignore network errors */ }
     });
-  }
-});
-document.addEventListener('click', () => {
-  document.querySelectorAll('.dropdown.open').forEach(d => d.classList.remove('open'));
+  });
 });

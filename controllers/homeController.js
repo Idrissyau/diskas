@@ -41,8 +41,31 @@ exports.index = async (req, res) => {
     const postsWithTime = latestPosts.map(p => ({ ...p, timeAgo: timeAgo(p.created_at) }));
     const jobsWithTime = latestJobs.map(j => ({ ...j, timeAgo: timeAgo(j.created_at) }));
 
+    const appUrl = process.env.APP_URL || 'https://diskas.idrisyau.com';
     res.render('home', {
       title: 'Home',
+      metaDesc: 'Diskas — find jobs, learn new skills, ask questions, and connect with a global community of professionals and learners.',
+      canonicalPath: '/',
+      pageSchema: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'WebSite',
+            '@id': `${appUrl}/#website`,
+            name: 'Diskas',
+            url: appUrl,
+            description: 'Community platform to find jobs, learn skills, and discuss ideas.',
+            potentialAction: { '@type': 'SearchAction', target: { '@type': 'EntryPoint', urlTemplate: `${appUrl}/search?q={search_term_string}` }, 'query-input': 'required name=search_term_string' }
+          },
+          {
+            '@type': 'Organization',
+            '@id': `${appUrl}/#organization`,
+            name: 'Diskas',
+            url: appUrl,
+            sameAs: []
+          }
+        ]
+      }),
       posts: postsWithTime,
       jobs: jobsWithTime,
       skills: latestSkills,

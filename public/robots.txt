@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /auth/login
+Disallow: /auth/register
+Disallow: /profile/edit
+Disallow: /search?
+
+# Sitemaps
+Sitemap: https://diskas.idrisyau.com/sitemap.xml

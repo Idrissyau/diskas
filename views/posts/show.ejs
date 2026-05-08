@@ -1,17 +1,18 @@
 <div class="container post-layout">
   <div class="post-main">
-    <!-- Post -->
-    <article class="card post-article">
+    <article class="card post-article" itemscope itemtype="https://schema.org/DiscussionForumPosting">
       <div class="post-article-header">
-        <div class="post-author">
+        <div class="post-author" itemprop="author" itemscope itemtype="https://schema.org/Person">
           <% if (post.author_avatar) { %>
-            <img src="<%= post.author_avatar %>" alt="<%= post.author_name %>" class="avatar-md" />
+            <img src="<%= post.author_avatar %>" alt="<%= post.author_name %>" class="avatar-md" loading="lazy" />
           <% } else { %>
-            <div class="avatar-placeholder-md"><%= (post.author_name || 'U').charAt(0) %></div>
+            <div class="avatar-placeholder-md" aria-hidden="true"><%= (post.author_name || 'U').charAt(0) %></div>
           <% } %>
           <div>
-            <strong><%= post.author_name %></strong>
-            <span class="text-muted"><%= post.timeAgo %></span>
+            <strong itemprop="name"><%= post.author_name %></strong>
+            <span class="text-muted" style="display:block;font-size:.8rem">
+              <time itemprop="datePublished" datetime="<%= post.created_at %>"><%= post.timeAgo %></time>
+            </span>
           </div>
         </div>
         <div class="post-badges">
@@ -23,127 +24,135 @@
         </div>
       </div>
 
-      <h1 class="post-article-title"><%= post.title %></h1>
-      <div class="post-article-content"><%= post.content %></div>
+      <h1 class="post-article-title" itemprop="headline"><%= post.title %></h1>
+      <div class="post-article-content" itemprop="text"><%= post.content %></div>
 
       <div class="post-article-footer">
         <div class="vote-group" data-id="<%= post.id %>" data-type="post">
-          <button class="vote-btn upvote <%= userVote === 1 ? 'voted' : '' %>" data-vote="1">▲</button>
+          <button class="vote-btn upvote <%= userVote === 1 ? 'voted' : '' %>" data-vote="1" aria-label="Upvote">▲</button>
           <span class="vote-total"><%= post.vote_count || 0 %></span>
-          <button class="vote-btn downvote <%= userVote === -1 ? 'voted' : '' %>" data-vote="-1">▼</button>
+          <button class="vote-btn downvote <%= userVote === -1 ? 'voted' : '' %>" data-vote="-1" aria-label="Downvote">▼</button>
         </div>
         <div class="post-stats">
-          <span><i data-feather="eye"></i> <%= post.views %> views</span>
-          <span><i data-feather="message-circle"></i> <%= comments.length %> replies</span>
+          <span><i class="fa-regular fa-eye fa-sm"></i> <%= post.views %> views</span>
+          <span><i class="fa-regular fa-comment fa-sm"></i> <%= comments.length %> <%= post.type === 'question' ? 'answers' : 'replies' %></span>
         </div>
         <% if (currentUser && (currentUser.id === post.user_id || ['admin','moderator'].includes(currentUser.role))) { %>
           <form action="/discussions/<%= post.id %>/delete" method="POST" class="inline-form"
                 onsubmit="return confirm('Delete this post?')">
-            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+            <button type="submit" class="btn btn-danger btn-sm">
+              <i class="fa-solid fa-trash fa-sm"></i> Delete
+            </button>
           </form>
         <% } %>
       </div>
     </article>
 
     <!-- Comments / Answers -->
-    <div id="comments">
-      <h2 class="section-title"><%= comments.length %> <%= post.type === 'question' ? 'Answers' : 'Comments' %></h2>
+    <section id="comments" aria-label="<%= post.type === 'question' ? 'Answers' : 'Comments' %>">
+      <h2 class="section-title">
+        <%= comments.length %> <%= post.type === 'question' ? 'Answer' + (comments.length !== 1 ? 's' : '') : 'Comment' + (comments.length !== 1 ? 's' : '') %>
+      </h2>
 
       <% comments.forEach(comment => { %>
-        <div class="comment-card <%= comment.is_accepted ? 'comment-accepted' : '' %>">
+        <div class="comment-card <%= comment.is_accepted ? 'comment-accepted' : '' %>"
+             itemscope itemtype="https://schema.org/Comment">
           <% if (comment.is_accepted) { %><div class="accepted-badge">✅ Accepted Answer</div><% } %>
           <div class="comment-header">
             <% if (comment.author_avatar) { %>
-              <img src="<%= comment.author_avatar %>" alt="" class="avatar-sm" />
+              <img src="<%= comment.author_avatar %>" alt="<%= comment.author_name %>" class="avatar-sm" loading="lazy" />
             <% } else { %>
-              <div class="avatar-placeholder-sm"><%= (comment.author_name || 'U').charAt(0) %></div>
+              <div class="avatar-placeholder-sm" aria-hidden="true"><%= (comment.author_name || 'U').charAt(0) %></div>
             <% } %>
-            <div>
-              <strong><%= comment.author_name %></strong>
-              <span class="text-muted"><%= comment.timeAgo %></span>
+            <div itemprop="author" itemscope itemtype="https://schema.org/Person">
+              <strong itemprop="name"><%= comment.author_name %></strong>
+              <span class="text-muted" style="display:block;font-size:.78rem">
+                <time datetime="<%= comment.created_at %>"><%= comment.timeAgo %></time>
+              </span>
             </div>
           </div>
-          <div class="comment-content"><%= comment.content %></div>
+          <div class="comment-content" itemprop="text"><%= comment.content %></div>
           <div class="comment-footer">
-            <div class="vote-group vote-group-sm" data-id="<%= comment.id %>" data-type="comment">
-              <button class="vote-btn upvote" data-vote="1">▲ <%= comment.vote_count || 0 %></button>
+            <div class="vote-group" data-id="<%= comment.id %>" data-type="comment">
+              <button class="vote-btn upvote" data-vote="1" aria-label="Upvote answer">
+                ▲ <span class="vote-total"><%= comment.vote_count || 0 %></span>
+              </button>
             </div>
           </div>
         </div>
       <% }) %>
-    </div>
+    </section>
 
     <!-- Add Comment -->
     <% if (post.status !== 'closed') { %>
       <div class="card comment-form-card">
-        <h3><%= post.type === 'question' ? 'Write an Answer' : 'Leave a Comment' %></h3>
+        <h3><i class="fa-solid fa-<%= post.type === 'question' ? 'reply' : 'comment' %> fa-sm"></i>
+          <%= post.type === 'question' ? 'Write an Answer' : 'Leave a Comment' %>
+        </h3>
         <% if (currentUser) { %>
           <form action="/discussions/<%= post.slug %>/comment" method="POST">
             <div class="form-group">
-              <textarea name="content" rows="5"
+              <label for="commentContent" class="sr-only">Your <%= post.type === 'question' ? 'answer' : 'comment' %></label>
+              <textarea id="commentContent" name="content" rows="5"
                 placeholder="<%= post.type === 'question' ? 'Write your answer here...' : 'Share your thoughts...' %>"
                 required></textarea>
             </div>
             <button type="submit" class="btn btn-primary">
+              <i class="fa-solid fa-paper-plane fa-sm"></i>
               <%= post.type === 'question' ? 'Submit Answer' : 'Post Comment' %>
             </button>
           </form>
         <% } else { %>
-          <p class="text-muted">
-            <a href="/auth/login">Sign in</a> or <a href="/auth/register">join Diskas</a> to participate.
+          <p class="text-muted" style="font-size:.92rem">
+            <a href="/auth/login">Sign in</a> or <a href="/auth/register">join Diskas</a> to participate in this discussion.
           </p>
         <% } %>
       </div>
     <% } else { %>
-      <div class="alert alert-info">This discussion is closed for new comments.</div>
+      <div class="alert-info" role="alert">
+        <i class="fa-solid fa-lock fa-sm"></i> This discussion is closed for new comments.
+      </div>
     <% } %>
   </div>
 
   <!-- Sidebar -->
   <aside class="post-sidebar">
     <div class="card">
-      <h4>About the Author</h4>
+      <h4 style="font-weight:700;margin-bottom:1rem">About the Author</h4>
       <div class="sidebar-author">
         <% if (post.author_avatar) { %>
-          <img src="<%= post.author_avatar %>" alt="" class="avatar-md" />
+          <img src="<%= post.author_avatar %>" alt="<%= post.author_name %>" class="avatar-md" loading="lazy" />
         <% } else { %>
-          <div class="avatar-placeholder-md"><%= (post.author_name || 'U').charAt(0) %></div>
+          <div class="avatar-placeholder-md" aria-hidden="true"><%= (post.author_name || 'U').charAt(0) %></div>
         <% } %>
         <strong><%= post.author_name %></strong>
-        <% if (post.author_bio) { %><p class="text-muted"><%= post.author_bio %></p><% } %>
+        <% if (post.author_bio) { %><p class="text-muted" style="font-size:.85rem"><%= post.author_bio %></p><% } %>
       </div>
     </div>
 
     <% if (related.length) { %>
-      <div class="card mt-3">
-        <h4>Related Discussions</h4>
+      <div class="card">
+        <h4 style="font-weight:700;margin-bottom:.75rem">
+          <i class="fa-solid fa-link fa-xs" style="color:#0EA5E9"></i> Related Discussions
+        </h4>
         <% related.forEach(r => { %>
           <a href="/discussions/<%= r.slug %>" class="related-item"><%= r.title %></a>
         <% }) %>
       </div>
     <% } %>
+
+    <div class="card">
+      <h4 style="font-weight:700;margin-bottom:.75rem">
+        <i class="fa-solid fa-pen fa-xs" style="color:#0EA5E9"></i> Participate
+      </h4>
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        <a href="/discussions/new" class="btn btn-primary btn-sm btn-full">
+          <i class="fa-solid fa-plus fa-xs"></i> New Discussion
+        </a>
+        <a href="/discussions?type=question" class="btn btn-outline btn-sm btn-full">
+          <i class="fa-solid fa-circle-question fa-xs"></i> Browse Q&amp;A
+        </a>
+      </div>
+    </div>
   </aside>
 </div>
-
-<script>
-document.querySelectorAll('.vote-group').forEach(group => {
-  group.querySelectorAll('.vote-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = group.dataset.id;
-      const type = group.dataset.type;
-      const vote = btn.dataset.vote;
-      const res = await fetch('/discussions/vote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, type, value: vote }),
-      });
-      if (res.status === 401) { window.location = '/auth/login'; return; }
-      const data = await res.json();
-      if (data.success) {
-        const totalEl = group.querySelector('.vote-total');
-        if (totalEl) totalEl.textContent = data.total;
-      }
-    });
-  });
-});
-</script>

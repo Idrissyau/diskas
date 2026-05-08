@@ -72,9 +72,38 @@ exports.show = async (req, res) => {
       [job.category_id, job.id]
     );
 
-    res.render('jobs/show', {
+    const jobObj = { ...job, timeAgo: timeAgo(job.created_at) };
+    const appUrl = process.env.APP_URL || 'https://diskas.idrisyau.com';
+    const snippet = (job.description || '').replace(/\s+/g, ' ').trim().substring(0, 160);
+
+    // Map job type → schema.org employmentType
+    const empTypeMap = { 'full-time': 'FULL_TIME', 'part-time': 'PART_TIME', contract: 'CONTRACTOR', remote: 'TELECOMMUTE', internship: 'INTERN' };
+    const schemaObj = {
+      '@context': 'https://schema.org',
+      '@type': 'JobPosting',
       title: job.title,
-      job: { ...job, timeAgo: timeAgo(job.created_at) },
+      description: (job.description || '').substring(0, 5000),
+      datePosted: new Date(job.created_at).toISOString().split('T')[0],
+      hiringOrganization: { '@type': 'Organization', name: job.company },
+      jobLocation: { '@type': 'Place', address: { '@type': 'PostalAddress', addressLocality: job.location } },
+      employmentType: empTypeMap[job.type] || 'FULL_TIME',
+      url: `${appUrl}/jobs/${job.slug}`,
+      identifier: { '@type': 'PropertyValue', name: job.company, value: job.id }
+    };
+    if (job.salary_min) {
+      schemaObj.baseSalary = { '@type': 'MonetaryAmount', currency: job.currency || 'USD', value: { '@type': 'QuantitativeValue', minValue: job.salary_min, maxValue: job.salary_max || job.salary_min, unitText: 'YEAR' } };
+    }
+    if (job.expires_at) {
+      schemaObj.validThrough = new Date(job.expires_at).toISOString().split('T')[0];
+    }
+
+    res.render('jobs/show', {
+      title: `${job.title} at ${job.company}`,
+      metaDesc: snippet || `${job.title} at ${job.company} — ${job.location}. Apply on Diskas.`,
+      canonicalPath: `/jobs/${job.slug}`,
+      ogType: 'article',
+      pageSchema: JSON.stringify(schemaObj),
+      job: jobObj,
       related,
     });
   } catch (err) {

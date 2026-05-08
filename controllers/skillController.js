@@ -75,9 +75,29 @@ exports.show = async (req, res) => {
       [skill.category_id, skill.id]
     );
 
+    const skillObj = { ...skill, timeAgo: timeAgo(skill.created_at) };
+    const appUrl = process.env.APP_URL || 'https://diskas.idrisyau.com';
+    const snippet = (skill.description || '').replace(/\s+/g, ' ').trim().substring(0, 160);
+
     res.render('skills/show', {
       title: skill.title,
-      skill: { ...skill, timeAgo: timeAgo(skill.created_at) },
+      metaDesc: snippet || `Learn ${skill.title} — ${skill.level} level skill by ${skill.author_name} on Diskas.`,
+      canonicalPath: `/skills/${skill.slug}`,
+      ogType: 'article',
+      ogImage: skill.thumbnail ? `${appUrl}${skill.thumbnail}` : null,
+      pageSchema: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Course',
+        name: skill.title,
+        description: (skill.description || '').substring(0, 500),
+        provider: { '@type': 'Person', name: skill.author_name },
+        educationalLevel: skill.level,
+        datePublished: new Date(skill.created_at).toISOString().split('T')[0],
+        url: `${appUrl}/skills/${skill.slug}`,
+        thumbnailUrl: skill.thumbnail ? `${appUrl}${skill.thumbnail}` : undefined,
+        interactionStatistic: { '@type': 'InteractionCounter', interactionType: 'https://schema.org/ViewAction', userInteractionCount: skill.views }
+      }),
+      skill: skillObj,
       related,
     });
   } catch (err) {

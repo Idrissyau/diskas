@@ -34,6 +34,12 @@ function setLocals(req, res, next) {
   res.locals.flashSuccess = req.flash('success');
   res.locals.flashError = req.flash('error');
   res.locals.flashInfo = req.flash('info');
+  res.locals.appUrl = process.env.APP_URL || 'https://diskas.idrisyau.com';
+  res.locals.canonicalPath = req.path;
+  // Default SEO values — controllers can override these
+  res.locals.metaDesc = 'Diskas — a free community to find jobs, learn new skills, ask questions, and connect with people from all backgrounds.';
+  res.locals.ogImage = null;
+  res.locals.pageSchema = null;
   next();
 }
 
