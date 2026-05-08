@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %> | Diskas</title>
+  <meta name="description" content="Diskas - Connect, Learn, and Grow together." />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/feather-icons/dist/feather.min.css" />
+</head>
+<body>
+
+<!-- ── NAVBAR ──────────────────────────────────────────────────────────────── -->
+<nav class="navbar">
+  <div class="container nav-inner">
+    <a href="/" class="nav-logo">
+      <span class="logo-icon">D</span>
+      <span class="logo-text">Diskas</span>
+    </a>
+
+    <div class="nav-links">
+      <a href="/discussions" class="nav-link">Discussions</a>
+      <a href="/jobs" class="nav-link">Jobs</a>
+      <a href="/skills" class="nav-link">Skills</a>
+    </div>
+
+    <form class="nav-search" action="/search" method="GET">
+      <input type="text" name="q" placeholder="Search..." value="<%= typeof query !== 'undefined' ? query : '' %>" />
+      <button type="submit"><i data-feather="search"></i></button>
+    </form>
+
+    <div class="nav-actions">
+      <% if (currentUser) { %>
+        <% if (['admin','moderator'].includes(currentUser.role)) { %>
+          <a href="/admin" class="btn btn-sm btn-outline">Admin</a>
+        <% } %>
+        <div class="dropdown">
+          <button class="avatar-btn">
+            <% if (currentUser.avatar) { %>
+              <img src="<%= currentUser.avatar %>" alt="<%= currentUser.name %>" class="avatar-sm" />
+            <% } else { %>
+              <div class="avatar-placeholder-sm"><%= currentUser.name.charAt(0).toUpperCase() %></div>
+            <% } %>
+            <span class="nav-username"><%= currentUser.name %></span>
+          </button>
+          <div class="dropdown-menu">
+            <a href="/profile" class="dropdown-item"><i data-feather="user"></i> Profile</a>
+            <a href="/discussions/new" class="dropdown-item"><i data-feather="edit-3"></i> New Post</a>
+            <a href="/jobs/new" class="dropdown-item"><i data-feather="briefcase"></i> Post Job</a>
+            <a href="/skills/new" class="dropdown-item"><i data-feather="book-open"></i> Share Skill</a>
+            <div class="dropdown-divider"></div>
+            <a href="/auth/logout" class="dropdown-item text-danger"><i data-feather="log-out"></i> Logout</a>
+          </div>
+        </div>
+      <% } else { %>
+        <a href="/auth/login" class="btn btn-outline btn-sm">Sign In</a>
+        <a href="/auth/register" class="btn btn-primary btn-sm">Join Free</a>
+      <% } %>
+    </div>
+
+    <button class="mobile-menu-btn" id="mobileMenuBtn">
+      <i data-feather="menu"></i>
+    </button>
+  </div>
+
+  <!-- Mobile menu -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="/discussions">Discussions</a>
+    <a href="/jobs">Jobs</a>
+    <a href="/skills">Skills</a>
+    <% if (currentUser) { %>
+      <a href="/profile">Profile</a>
+      <% if (['admin','moderator'].includes(currentUser.role)) { %><a href="/admin">Admin</a><% } %>
+      <a href="/auth/logout">Logout</a>
+    <% } else { %>
+      <a href="/auth/login">Sign In</a>
+      <a href="/auth/register">Join Free</a>
+    <% } %>
+  </div>
+</nav>
+
+<!-- ── FLASH MESSAGES ──────────────────────────────────────────────────────── -->
+<% if (flashSuccess && flashSuccess.length) { %>
+  <div class="flash flash-success"><i data-feather="check-circle"></i> <%= flashSuccess[0] %></div>
+<% } %>
+<% if (flashError && flashError.length) { %>
+  <div class="flash flash-error"><i data-feather="alert-circle"></i> <%= flashError[0] %></div>
+<% } %>
+<% if (flashInfo && flashInfo.length) { %>
+  <div class="flash flash-info"><i data-feather="info"></i> <%= flashInfo[0] %></div>
+<% } %>
+
+<!-- ── MAIN CONTENT ────────────────────────────────────────────────────────── -->
+<main>
+  <%- body %>
+</main>
+
+<!-- ── FOOTER ─────────────────────────────────────────────────────────────── -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <span class="logo-icon">D</span>
+      <span class="logo-text">Diskas</span>
+      <p>Connect people of different backgrounds.<br>Find opportunities, learn skills, ask questions.</p>
+    </div>
+    <div class="footer-links">
+      <div>
+        <h4>Community</h4>
+        <a href="/discussions">Discussions</a>
+        <a href="/discussions?type=question">Q&amp;A</a>
+        <a href="/discussions/new">Start Discussion</a>
+      </div>
+      <div>
+        <h4>Opportunities</h4>
+        <a href="/jobs">Job Board</a>
+        <a href="/jobs/new">Post a Job</a>
+        <a href="/skills">Skills</a>
+        <a href="/skills/new">Share a Skill</a>
+      </div>
+      <div>
+        <h4>Account</h4>
+        <a href="/auth/register">Register</a>
+        <a href="/auth/login">Sign In</a>
+        <a href="/profile">Profile</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; <%= new Date().getFullYear() %> Diskas. All rights reserved.</p>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/feather-icons"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

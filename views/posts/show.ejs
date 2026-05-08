@@ -1,0 +1,149 @@
+<div class="container post-layout">
+  <div class="post-main">
+    <!-- Post -->
+    <article class="card post-article">
+      <div class="post-article-header">
+        <div class="post-author">
+          <% if (post.author_avatar) { %>
+            <img src="<%= post.author_avatar %>" alt="<%= post.author_name %>" class="avatar-md" />
+          <% } else { %>
+            <div class="avatar-placeholder-md"><%= (post.author_name || 'U').charAt(0) %></div>
+          <% } %>
+          <div>
+            <strong><%= post.author_name %></strong>
+            <span class="text-muted"><%= post.timeAgo %></span>
+          </div>
+        </div>
+        <div class="post-badges">
+          <% if (post.category_name) { %>
+            <span class="badge" style="background:<%= post.category_color %>22;color:<%= post.category_color %>"><%= post.category_name %></span>
+          <% } %>
+          <% if (post.type === 'question') { %><span class="badge badge-question">Question</span><% } %>
+          <% if (post.status === 'closed') { %><span class="badge badge-closed">Closed</span><% } %>
+        </div>
+      </div>
+
+      <h1 class="post-article-title"><%= post.title %></h1>
+      <div class="post-article-content"><%= post.content %></div>
+
+      <div class="post-article-footer">
+        <div class="vote-group" data-id="<%= post.id %>" data-type="post">
+          <button class="vote-btn upvote <%= userVote === 1 ? 'voted' : '' %>" data-vote="1">▲</button>
+          <span class="vote-total"><%= post.vote_count || 0 %></span>
+          <button class="vote-btn downvote <%= userVote === -1 ? 'voted' : '' %>" data-vote="-1">▼</button>
+        </div>
+        <div class="post-stats">
+          <span><i data-feather="eye"></i> <%= post.views %> views</span>
+          <span><i data-feather="message-circle"></i> <%= comments.length %> replies</span>
+        </div>
+        <% if (currentUser && (currentUser.id === post.user_id || ['admin','moderator'].includes(currentUser.role))) { %>
+          <form action="/discussions/<%= post.id %>/delete" method="POST" class="inline-form"
+                onsubmit="return confirm('Delete this post?')">
+            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+          </form>
+        <% } %>
+      </div>
+    </article>
+
+    <!-- Comments / Answers -->
+    <div id="comments">
+      <h2 class="section-title"><%= comments.length %> <%= post.type === 'question' ? 'Answers' : 'Comments' %></h2>
+
+      <% comments.forEach(comment => { %>
+        <div class="comment-card <%= comment.is_accepted ? 'comment-accepted' : '' %>">
+          <% if (comment.is_accepted) { %><div class="accepted-badge">✅ Accepted Answer</div><% } %>
+          <div class="comment-header">
+            <% if (comment.author_avatar) { %>
+              <img src="<%= comment.author_avatar %>" alt="" class="avatar-sm" />
+            <% } else { %>
+              <div class="avatar-placeholder-sm"><%= (comment.author_name || 'U').charAt(0) %></div>
+            <% } %>
+            <div>
+              <strong><%= comment.author_name %></strong>
+              <span class="text-muted"><%= comment.timeAgo %></span>
+            </div>
+          </div>
+          <div class="comment-content"><%= comment.content %></div>
+          <div class="comment-footer">
+            <div class="vote-group vote-group-sm" data-id="<%= comment.id %>" data-type="comment">
+              <button class="vote-btn upvote" data-vote="1">▲ <%= comment.vote_count || 0 %></button>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+
+    <!-- Add Comment -->
+    <% if (post.status !== 'closed') { %>
+      <div class="card comment-form-card">
+        <h3><%= post.type === 'question' ? 'Write an Answer' : 'Leave a Comment' %></h3>
+        <% if (currentUser) { %>
+          <form action="/discussions/<%= post.slug %>/comment" method="POST">
+            <div class="form-group">
+              <textarea name="content" rows="5"
+                placeholder="<%= post.type === 'question' ? 'Write your answer here...' : 'Share your thoughts...' %>"
+                required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">
+              <%= post.type === 'question' ? 'Submit Answer' : 'Post Comment' %>
+            </button>
+          </form>
+        <% } else { %>
+          <p class="text-muted">
+            <a href="/auth/login">Sign in</a> or <a href="/auth/register">join Diskas</a> to participate.
+          </p>
+        <% } %>
+      </div>
+    <% } else { %>
+      <div class="alert alert-info">This discussion is closed for new comments.</div>
+    <% } %>
+  </div>
+
+  <!-- Sidebar -->
+  <aside class="post-sidebar">
+    <div class="card">
+      <h4>About the Author</h4>
+      <div class="sidebar-author">
+        <% if (post.author_avatar) { %>
+          <img src="<%= post.author_avatar %>" alt="" class="avatar-md" />
+        <% } else { %>
+          <div class="avatar-placeholder-md"><%= (post.author_name || 'U').charAt(0) %></div>
+        <% } %>
+        <strong><%= post.author_name %></strong>
+        <% if (post.author_bio) { %><p class="text-muted"><%= post.author_bio %></p><% } %>
+      </div>
+    </div>
+
+    <% if (related.length) { %>
+      <div class="card mt-3">
+        <h4>Related Discussions</h4>
+        <% related.forEach(r => { %>
+          <a href="/discussions/<%= r.slug %>" class="related-item"><%= r.title %></a>
+        <% }) %>
+      </div>
+    <% } %>
+  </aside>
+</div>
+
+<script>
+document.querySelectorAll('.vote-group').forEach(group => {
+  group.querySelectorAll('.vote-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = group.dataset.id;
+      const type = group.dataset.type;
+      const vote = btn.dataset.vote;
+      const res = await fetch('/discussions/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, type, value: vote }),
+      });
+      if (res.status === 401) { window.location = '/auth/login'; return; }
+      const data = await res.json();
+      if (data.success) {
+        const totalEl = group.querySelector('.vote-total');
+        if (totalEl) totalEl.textContent = data.total;
+      }
+    });
+  });
+});
+</script>

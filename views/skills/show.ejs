@@ -1,0 +1,77 @@
+<div class="container post-layout">
+  <div class="post-main">
+    <article class="card skill-detail">
+      <% if (skill.thumbnail) { %>
+        <img src="<%= skill.thumbnail %>" alt="<%= skill.title %>" class="skill-detail-thumb" />
+      <% } %>
+      <div class="skill-detail-header">
+        <div class="post-badges">
+          <span class="badge badge-level-<%= skill.level %>"><%= skill.level %></span>
+          <% if (skill.category_name) { %>
+            <span class="badge" style="color:<%= skill.category_color %>"><%= skill.category_name %></span>
+          <% } %>
+        </div>
+        <h1><%= skill.title %></h1>
+        <div class="skill-author-row">
+          <% if (skill.author_avatar) { %>
+            <img src="<%= skill.author_avatar %>" alt="" class="avatar-sm" />
+          <% } else { %>
+            <div class="avatar-placeholder-sm"><%= (skill.author_name||'U').charAt(0) %></div>
+          <% } %>
+          <span>by <strong><%= skill.author_name %></strong></span>
+          <span class="text-muted"><%= skill.timeAgo %></span>
+          <span><i data-feather="eye"></i> <%= skill.views %> views</span>
+        </div>
+      </div>
+
+      <% if (skill.video_url) { %>
+        <div class="video-embed">
+          <iframe src="<%= skill.video_url.replace('watch?v=','embed/') %>" frameborder="0" allowfullscreen></iframe>
+        </div>
+      <% } %>
+
+      <div class="content-section">
+        <h2>About this Skill</h2>
+        <div class="prose"><%= skill.description %></div>
+      </div>
+
+      <% if (skill.resources) { %>
+        <div class="content-section">
+          <h2>Resources</h2>
+          <div class="prose"><%= skill.resources %></div>
+        </div>
+      <% } %>
+
+      <% if (skill.tags) { %>
+        <div class="skill-tags">
+          <% skill.tags.split(',').map(t => t.trim()).filter(Boolean).forEach(tag => { %>
+            <span class="tag"># <%= tag %></span>
+          <% }) %>
+        </div>
+      <% } %>
+    </article>
+  </div>
+
+  <aside class="post-sidebar">
+    <div class="card">
+      <h4>Instructor</h4>
+      <div class="sidebar-author">
+        <% if (skill.author_avatar) { %>
+          <img src="<%= skill.author_avatar %>" alt="" class="avatar-md" />
+        <% } else { %>
+          <div class="avatar-placeholder-md"><%= (skill.author_name||'U').charAt(0) %></div>
+        <% } %>
+        <strong><%= skill.author_name %></strong>
+        <% if (skill.author_bio) { %><p class="text-muted"><%= skill.author_bio %></p><% } %>
+      </div>
+    </div>
+    <% if (related.length) { %>
+      <div class="card mt-3">
+        <h4>Related Skills</h4>
+        <% related.forEach(r => { %>
+          <a href="/skills/<%= r.slug %>" class="related-item"><%= r.title %></a>
+        <% }) %>
+      </div>
+    <% } %>
+  </aside>
+</div>

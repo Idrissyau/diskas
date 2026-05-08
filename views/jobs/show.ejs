@@ -1,0 +1,87 @@
+<div class="container post-layout">
+  <div class="post-main">
+    <article class="card job-detail">
+      <div class="job-detail-header">
+        <div class="job-company-info">
+          <% if (job.company_logo) { %>
+            <img src="<%= job.company_logo %>" alt="" class="company-logo-lg" />
+          <% } else { %>
+            <div class="company-logo-placeholder-lg"><%= job.company.charAt(0) %></div>
+          <% } %>
+          <div>
+            <h1><%= job.title %></h1>
+            <p class="job-company"><%= job.company %></p>
+          </div>
+        </div>
+        <% if (job.apply_url) { %>
+          <a href="<%= job.apply_url %>" target="_blank" rel="noopener" class="btn btn-primary btn-lg">Apply Now</a>
+        <% } else if (job.apply_email) { %>
+          <a href="mailto:<%= job.apply_email %>" class="btn btn-primary btn-lg">Apply via Email</a>
+        <% } %>
+      </div>
+
+      <div class="job-meta-grid">
+        <div class="job-meta-item"><i data-feather="map-pin"></i><span><%= job.location %></span></div>
+        <div class="job-meta-item"><i data-feather="clock"></i><span><%= job.type %></span></div>
+        <% if (job.salary_min) { %>
+          <div class="job-meta-item"><i data-feather="dollar-sign"></i><span><%= job.salary_min.toLocaleString() %> – <%= (job.salary_max||0).toLocaleString() %> <%= job.currency %></span></div>
+        <% } %>
+        <% if (job.category_name) { %>
+          <div class="job-meta-item"><i data-feather="tag"></i><span><%= job.category_name %></span></div>
+        <% } %>
+        <div class="job-meta-item"><i data-feather="eye"></i><span><%= job.views %> views</span></div>
+        <div class="job-meta-item"><i data-feather="calendar"></i><span>Posted <%= job.timeAgo %></span></div>
+      </div>
+
+      <div class="content-section">
+        <h2>Job Description</h2>
+        <div class="prose"><%= job.description %></div>
+      </div>
+      <% if (job.requirements) { %>
+        <div class="content-section">
+          <h2>Requirements</h2>
+          <div class="prose"><%= job.requirements %></div>
+        </div>
+      <% } %>
+      <% if (job.benefits) { %>
+        <div class="content-section">
+          <h2>Benefits</h2>
+          <div class="prose"><%= job.benefits %></div>
+        </div>
+      <% } %>
+
+      <div class="job-apply-box">
+        <h3>Interested in this role?</h3>
+        <% if (job.apply_url) { %>
+          <a href="<%= job.apply_url %>" target="_blank" rel="noopener" class="btn btn-primary btn-lg">Apply on Company Website</a>
+        <% } else if (job.apply_email) { %>
+          <a href="mailto:<%= job.apply_email %>" class="btn btn-primary btn-lg">Send Application to <%= job.apply_email %></a>
+        <% } else { %>
+          <p class="text-muted">Contact the company directly for application details.</p>
+        <% } %>
+      </div>
+    </article>
+  </div>
+
+  <aside class="post-sidebar">
+    <div class="card">
+      <h4>Job Summary</h4>
+      <ul class="summary-list">
+        <li><strong>Type:</strong> <%= job.type %></li>
+        <li><strong>Location:</strong> <%= job.location %></li>
+        <% if (job.salary_min) { %>
+          <li><strong>Salary:</strong> <%= job.salary_min.toLocaleString() %>–<%= (job.salary_max||0).toLocaleString() %> <%= job.currency %></li>
+        <% } %>
+        <% if (job.expires_at) { %><li><strong>Deadline:</strong> <%= new Date(job.expires_at).toLocaleDateString() %></li><% } %>
+      </ul>
+    </div>
+    <% if (related.length) { %>
+      <div class="card mt-3">
+        <h4>Similar Jobs</h4>
+        <% related.forEach(r => { %>
+          <a href="/jobs/<%= r.slug %>" class="related-item"><%= r.title %><br><small><%= r.company %></small></a>
+        <% }) %>
+      </div>
+    <% } %>
+  </aside>
+</div>

@@ -1,0 +1,79 @@
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-row">
+      <div>
+        <h1>Learn New Skills</h1>
+        <p>Community-shared guides, tutorials, and resources</p>
+      </div>
+      <% if (currentUser) { %>
+        <a href="/skills/new" class="btn btn-primary"><i data-feather="plus"></i> Share a Skill</a>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<div class="container main-layout">
+  <aside class="sidebar">
+    <div class="card">
+      <h4>Level</h4>
+      <nav class="filter-nav">
+        <a href="/skills" class="filter-item <%= !filters.level ? 'active' : '' %>">All Levels</a>
+        <a href="/skills?level=beginner" class="filter-item <%= filters.level === 'beginner' ? 'active' : '' %>">Beginner</a>
+        <a href="/skills?level=intermediate" class="filter-item <%= filters.level === 'intermediate' ? 'active' : '' %>">Intermediate</a>
+        <a href="/skills?level=advanced" class="filter-item <%= filters.level === 'advanced' ? 'active' : '' %>">Advanced</a>
+      </nav>
+    </div>
+    <div class="card mt-3">
+      <h4>Categories</h4>
+      <nav class="filter-nav">
+        <a href="/skills" class="filter-item <%= !filters.category ? 'active' : '' %>">All</a>
+        <% categories.forEach(cat => { %>
+          <a href="/skills?category=<%= cat.slug %>"
+             class="filter-item <%= filters.category === cat.slug ? 'active' : '' %>"><%= cat.name %></a>
+        <% }) %>
+      </nav>
+    </div>
+  </aside>
+
+  <div class="content-area">
+    <% if (skills.length === 0) { %>
+      <div class="empty-state card">
+        <i data-feather="book-open"></i>
+        <h3>No skills found</h3>
+        <p>Be the first to <a href="/skills/new">share a skill</a>!</p>
+      </div>
+    <% } else { %>
+      <div class="skills-grid">
+        <% skills.forEach(skill => { %>
+          <a href="/skills/<%= skill.slug %>" class="skill-card">
+            <% if (skill.thumbnail) { %>
+              <img src="<%= skill.thumbnail %>" alt="<%= skill.title %>" class="skill-thumb" />
+            <% } else { %>
+              <div class="skill-thumb-placeholder"><i data-feather="book"></i></div>
+            <% } %>
+            <div class="skill-card-body">
+              <span class="badge badge-level-<%= skill.level %>"><%= skill.level %></span>
+              <% if (skill.category_name) { %>
+                <span class="badge" style="color:<%= skill.category_color %>"><%= skill.category_name %></span>
+              <% } %>
+              <h3><%= skill.title %></h3>
+              <p class="skill-author">by <%= skill.author_name %></p>
+              <p class="skill-desc"><%= skill.description.substring(0, 80) %>...</p>
+              <div class="skill-meta">
+                <span><i data-feather="eye"></i> <%= skill.views %></span>
+              </div>
+            </div>
+          </a>
+        <% }) %>
+      </div>
+
+      <% if (pagination.totalPages > 1) { %>
+        <div class="pagination">
+          <% if (pagination.hasPrev) { %><a href="?page=<%= pagination.page - 1 %>" class="page-btn">‹ Prev</a><% } %>
+          <span class="page-info">Page <%= pagination.page %> of <%= pagination.totalPages %></span>
+          <% if (pagination.hasNext) { %><a href="?page=<%= pagination.page + 1 %>" class="page-btn">Next ›</a><% } %>
+        </div>
+      <% } %>
+    <% } %>
+  </div>
+</div>

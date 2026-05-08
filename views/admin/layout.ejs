@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %> | Diskas Admin</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/admin.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body class="admin-body">
+
+<div class="admin-wrapper">
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="admin-brand">
+      <a href="/admin"><span class="logo-icon">D</span><span class="logo-text">Admin</span></a>
+    </div>
+    <nav class="admin-nav">
+      <a href="/admin" class="admin-nav-item <%= title === 'Admin Dashboard' ? 'active' : '' %>">
+        📊 Dashboard
+      </a>
+      <a href="/admin/users" class="admin-nav-item <%= title === 'Manage Users' ? 'active' : '' %>">
+        👥 Users
+      </a>
+      <a href="/admin/posts" class="admin-nav-item <%= title === 'Manage Posts' ? 'active' : '' %>">
+        💬 Posts
+      </a>
+      <a href="/admin/jobs" class="admin-nav-item <%= title === 'Manage Jobs' ? 'active' : '' %>">
+        💼 Jobs
+      </a>
+      <a href="/admin/skills" class="admin-nav-item <%= title === 'Manage Skills' ? 'active' : '' %>">
+        📚 Skills
+      </a>
+      <a href="/admin/reports" class="admin-nav-item <%= title === 'Reports' ? 'active' : '' %>">
+        🚩 Reports
+      </a>
+      <a href="/admin/categories" class="admin-nav-item <%= title === 'Categories' ? 'active' : '' %>">
+        🏷️ Categories
+      </a>
+      <% if (currentUser.role === 'admin') { %>
+        <a href="/admin/settings" class="admin-nav-item <%= title === 'Site Settings' ? 'active' : '' %>">
+          ⚙️ Settings
+        </a>
+      <% } %>
+      <div class="admin-nav-divider"></div>
+      <a href="/" class="admin-nav-item">← Back to Site</a>
+      <a href="/auth/logout" class="admin-nav-item text-danger">🚪 Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <div class="admin-main">
+    <header class="admin-header">
+      <h1 class="admin-page-title"><%= title %></h1>
+      <div class="admin-header-right">
+        <span class="admin-user">
+          <% if (currentUser.avatar) { %>
+            <img src="<%= currentUser.avatar %>" alt="" class="avatar-sm" />
+          <% } else { %>
+            <div class="avatar-placeholder-sm"><%= currentUser.name.charAt(0) %></div>
+          <% } %>
+          <%= currentUser.name %>
+          <span class="badge badge-<%= currentUser.role %>"><%= currentUser.role %></span>
+        </span>
+      </div>
+    </header>
+
+    <% if (flashSuccess && flashSuccess.length) { %>
+      <div class="flash flash-success">✅ <%= flashSuccess[0] %></div>
+    <% } %>
+    <% if (flashError && flashError.length) { %>
+      <div class="flash flash-error">❌ <%= flashError[0] %></div>
+    <% } %>
+    <% if (flashInfo && flashInfo.length) { %>
+      <div class="flash flash-info">ℹ️ <%= flashInfo[0] %></div>
+    <% } %>
+
+    <div class="admin-content">
+      <%- body %>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/feather-icons"></script>
+<script>feather.replace();</script>
+</body>
+</html>

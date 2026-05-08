@@ -1,0 +1,91 @@
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-row">
+      <div>
+        <h1>Job Board</h1>
+        <p>Discover your next career opportunity</p>
+      </div>
+      <% if (currentUser) { %>
+        <a href="/jobs/new" class="btn btn-primary"><i data-feather="plus"></i> Post a Job</a>
+      <% } %>
+    </div>
+    <form class="search-bar-full" action="/jobs" method="GET">
+      <input type="text" name="q" placeholder="Search jobs, companies..." value="<%= filters.q || '' %>" />
+      <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+  </div>
+</div>
+
+<div class="container main-layout">
+  <aside class="sidebar">
+    <div class="card">
+      <h4>Job Type</h4>
+      <nav class="filter-nav">
+        <% ['full-time','part-time','contract','remote','internship'].forEach(t => { %>
+          <a href="/jobs?type=<%= t %>&category=<%= filters.category || '' %>"
+             class="filter-item <%= filters.type === t ? 'active' : '' %>"><%= t %></a>
+        <% }) %>
+      </nav>
+    </div>
+    <div class="card mt-3">
+      <h4>Categories</h4>
+      <nav class="filter-nav">
+        <a href="/jobs" class="filter-item <%= !filters.category ? 'active' : '' %>">All</a>
+        <% categories.forEach(cat => { %>
+          <a href="/jobs?category=<%= cat.slug %>"
+             class="filter-item <%= filters.category === cat.slug ? 'active' : '' %>"><%= cat.name %></a>
+        <% }) %>
+      </nav>
+    </div>
+  </aside>
+
+  <div class="content-area">
+    <% if (jobs.length === 0) { %>
+      <div class="empty-state card">
+        <i data-feather="briefcase"></i>
+        <h3>No jobs found</h3>
+        <p>Try different filters or <a href="/jobs/new">post the first job</a>.</p>
+      </div>
+    <% } else { %>
+      <div class="jobs-list">
+        <% jobs.forEach(job => { %>
+          <a href="/jobs/<%= job.slug %>" class="job-list-card <%= job.featured ? 'job-featured' : '' %>">
+            <div class="job-list-logo">
+              <% if (job.company_logo) { %>
+                <img src="<%= job.company_logo %>" alt="" class="company-logo" />
+              <% } else { %>
+                <div class="company-logo-placeholder"><%= job.company.charAt(0) %></div>
+              <% } %>
+            </div>
+            <div class="job-list-body">
+              <div class="job-list-top">
+                <h3><%= job.title %></h3>
+                <% if (job.featured) { %><span class="badge badge-featured">Featured</span><% } %>
+              </div>
+              <p class="job-company"><%= job.company %></p>
+              <div class="job-tags">
+                <span class="tag"><i data-feather="map-pin"></i> <%= job.location %></span>
+                <span class="tag tag-type"><%= job.type %></span>
+                <% if (job.salary_min) { %>
+                  <span class="tag"><i data-feather="dollar-sign"></i> <%= job.salary_min.toLocaleString() %>–<%= (job.salary_max||0).toLocaleString() %></span>
+                <% } %>
+                <% if (job.category_name) { %>
+                  <span class="tag" style="color:<%= job.category_color %>"><%= job.category_name %></span>
+                <% } %>
+              </div>
+            </div>
+            <div class="job-list-time"><%= job.timeAgo %></div>
+          </a>
+        <% }) %>
+      </div>
+
+      <% if (pagination.totalPages > 1) { %>
+        <div class="pagination">
+          <% if (pagination.hasPrev) { %><a href="?page=<%= pagination.page - 1 %>" class="page-btn">‹ Prev</a><% } %>
+          <span class="page-info">Page <%= pagination.page %> of <%= pagination.totalPages %></span>
+          <% if (pagination.hasNext) { %><a href="?page=<%= pagination.page + 1 %>" class="page-btn">Next ›</a><% } %>
+        </div>
+      <% } %>
+    <% } %>
+  </div>
+</div>

@@ -1,0 +1,47 @@
+<div class="admin-card">
+  <form action="/admin/settings" method="POST">
+    <div class="settings-grid">
+      <div class="form-group">
+        <label>Site Name</label>
+        <input type="text" name="site_name" value="<%= settings.site_name || 'Diskas' %>" />
+      </div>
+      <div class="form-group">
+        <label>Site Tagline</label>
+        <input type="text" name="site_tagline" value="<%= settings.site_tagline || '' %>" />
+      </div>
+      <div class="form-group">
+        <label>Maintenance Mode</label>
+        <select name="maintenance_mode" class="form-select">
+          <option value="0" <%= settings.maintenance_mode === '0' ? 'selected' : '' %>>Off</option>
+          <option value="1" <%= settings.maintenance_mode === '1' ? 'selected' : '' %>>On</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Allow Registration</label>
+        <select name="allow_registration" class="form-select">
+          <option value="1" <%= settings.allow_registration === '1' ? 'selected' : '' %>>Yes</option>
+          <option value="0" <%= settings.allow_registration === '0' ? 'selected' : '' %>>No</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Job Moderation (require approval)</label>
+        <select name="job_moderation" class="form-select">
+          <option value="1" <%= settings.job_moderation === '1' ? 'selected' : '' %>>Enabled</option>
+          <option value="0" <%= settings.job_moderation === '0' ? 'selected' : '' %>>Disabled</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Skill Moderation (require approval)</label>
+        <select name="skill_moderation" class="form-select">
+          <option value="1" <%= settings.skill_moderation === '1' ? 'selected' : '' %>>Enabled</option>
+          <option value="0" <%= settings.skill_moderation === '0' ? 'selected' : '' %>>Disabled</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Posts Per Page</label>
+        <input type="number" name="posts_per_page" value="<%= settings.posts_per_page || 15 %>" min="5" max="50" />
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Save Settings</button>
+  </form>
+</div>

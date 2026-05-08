@@ -1,0 +1,99 @@
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-row">
+      <div>
+        <h1>Discussions</h1>
+        <p>Join conversations with the Diskas community</p>
+      </div>
+      <% if (currentUser) { %>
+        <a href="/discussions/new" class="btn btn-primary"><i data-feather="plus"></i> New Discussion</a>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<div class="container main-layout">
+  <aside class="sidebar">
+    <div class="card">
+      <h4>Filter by Type</h4>
+      <nav class="filter-nav">
+        <a href="/discussions" class="filter-item <%= currentType === 'all' ? 'active' : '' %>">All</a>
+        <a href="/discussions?type=discussion" class="filter-item <%= currentType === 'discussion' ? 'active' : '' %>">Discussions</a>
+        <a href="/discussions?type=question" class="filter-item <%= currentType === 'question' ? 'active' : '' %>">Q&amp;A</a>
+        <a href="/discussions?type=announcement" class="filter-item <%= currentType === 'announcement' ? 'active' : '' %>">Announcements</a>
+      </nav>
+    </div>
+    <div class="card mt-3">
+      <h4>Categories</h4>
+      <nav class="filter-nav">
+        <a href="/discussions" class="filter-item <%= !currentCategory ? 'active' : '' %>">All Categories</a>
+        <% categories.forEach(cat => { %>
+          <a href="/discussions?category=<%= cat.slug %>"
+             class="filter-item <%= currentCategory === cat.slug ? 'active' : '' %>">
+            <span class="cat-dot" style="background:<%= cat.color %>"></span>
+            <%= cat.name %>
+          </a>
+        <% }) %>
+      </nav>
+    </div>
+  </aside>
+
+  <div class="content-area">
+    <% if (posts.length === 0) { %>
+      <div class="empty-state card">
+        <i data-feather="message-circle"></i>
+        <h3>No discussions found</h3>
+        <p>Be the first to start a discussion!</p>
+        <% if (currentUser) { %><a href="/discussions/new" class="btn btn-primary">New Discussion</a><% } %>
+      </div>
+    <% } else { %>
+      <div class="posts-list">
+        <% posts.forEach(post => { %>
+          <div class="post-card">
+            <div class="post-votes">
+              <span class="vote-count"><%= post.vote_count || 0 %></span>
+              <span class="vote-label">votes</span>
+            </div>
+            <div class="post-meta-left">
+              <% if (post.author_avatar) { %>
+                <img src="<%= post.author_avatar %>" alt="" class="avatar-sm" />
+              <% } else { %>
+                <div class="avatar-placeholder-sm"><%= (post.author_name || 'U').charAt(0) %></div>
+              <% } %>
+            </div>
+            <div class="post-body">
+              <div class="post-badges">
+                <% if (post.status === 'pinned') { %><span class="badge badge-pinned">📌 Pinned</span><% } %>
+                <% if (post.type === 'question') { %><span class="badge badge-question"><% if (post.is_answered) { %>✅ Answered<% } else { %>❓ Question<% } %></span><% } %>
+                <% if (post.type === 'announcement') { %><span class="badge badge-announcement">📢 Announcement</span><% } %>
+                <% if (post.category_name) { %>
+                  <span class="badge" style="background:<%= post.category_color %>22;color:<%= post.category_color %>"><%= post.category_name %></span>
+                <% } %>
+              </div>
+              <a href="/discussions/<%= post.slug %>" class="post-title"><%= post.title %></a>
+              <div class="post-info">
+                <span><i data-feather="user"></i> <%= post.author_name %></span>
+                <span><i data-feather="clock"></i> <%= post.timeAgo %></span>
+                <span><i data-feather="eye"></i> <%= post.views %></span>
+                <span><i data-feather="message-circle"></i> <%= post.reply_count || 0 %> replies</span>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+
+      <!-- Pagination -->
+      <% if (pagination.totalPages > 1) { %>
+        <div class="pagination">
+          <% if (pagination.hasPrev) { %>
+            <a href="?page=<%= pagination.page - 1 %>" class="page-btn">‹ Prev</a>
+          <% } %>
+          <span class="page-info">Page <%= pagination.page %> of <%= pagination.totalPages %></span>
+          <% if (pagination.hasNext) { %>
+            <a href="?page=<%= pagination.page + 1 %>" class="page-btn">Next ›</a>
+          <% } %>
+        </div>
+      <% } %>
+    <% } %>
+  </div>
+</div>

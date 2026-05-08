@@ -1,0 +1,72 @@
+<div class="admin-filters">
+  <form action="/admin/users" method="GET" class="filter-form">
+    <input type="text" name="q" placeholder="Search name or email..." value="<%= filters.q || '' %>" />
+    <select name="role" class="form-select">
+      <option value="">All Roles</option>
+      <option value="user" <%= filters.role === 'user' ? 'selected' : '' %>>User</option>
+      <option value="moderator" <%= filters.role === 'moderator' ? 'selected' : '' %>>Moderator</option>
+      <option value="admin" <%= filters.role === 'admin' ? 'selected' : '' %>>Admin</option>
+    </select>
+    <select name="status" class="form-select">
+      <option value="">All Status</option>
+      <option value="active" <%= filters.status === 'active' ? 'selected' : '' %>>Active</option>
+      <option value="suspended" <%= filters.status === 'suspended' ? 'selected' : '' %>>Suspended</option>
+      <option value="banned" <%= filters.status === 'banned' ? 'selected' : '' %>>Banned</option>
+    </select>
+    <button class="btn btn-primary">Filter</button>
+    <a href="/admin/users" class="btn btn-outline">Reset</a>
+  </form>
+</div>
+
+<div class="admin-card">
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% users.forEach(user => { %>
+        <tr>
+          <td>
+            <div class="table-user">
+              <% if (user.avatar) { %>
+                <img src="<%= user.avatar %>" alt="" class="avatar-xs" />
+              <% } else { %>
+                <div class="avatar-placeholder-xs"><%= user.name.charAt(0) %></div>
+              <% } %>
+              <strong><%= user.name %></strong>
+            </div>
+          </td>
+          <td><%= user.email %></td>
+          <td><span class="badge badge-<%= user.role %>"><%= user.role %></span></td>
+          <td><span class="badge badge-status-<%= user.status %>"><%= user.status %></span></td>
+          <td class="text-muted"><%= new Date(user.created_at).toLocaleDateString() %></td>
+          <td>
+            <form action="/admin/users/<%= user.id %>" method="POST" class="inline-form">
+              <select name="role" class="form-select form-select-xs">
+                <option value="user" <%= user.role === 'user' ? 'selected' : '' %>>User</option>
+                <option value="moderator" <%= user.role === 'moderator' ? 'selected' : '' %>>Mod</option>
+                <option value="admin" <%= user.role === 'admin' ? 'selected' : '' %>>Admin</option>
+              </select>
+              <select name="status" class="form-select form-select-xs">
+                <option value="active" <%= user.status === 'active' ? 'selected' : '' %>>Active</option>
+                <option value="suspended" <%= user.status === 'suspended' ? 'selected' : '' %>>Suspended</option>
+                <option value="banned" <%= user.status === 'banned' ? 'selected' : '' %>>Banned</option>
+              </select>
+              <button class="btn btn-sm btn-primary">Save</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+
+  <% if (pagination.totalPages > 1) { %>
+    <div class="pagination">
+      <% if (pagination.hasPrev) { %><a href="?page=<%= pagination.page - 1 %>" class="page-btn">‹ Prev</a><% } %>
+      <span class="page-info">Page <%= pagination.page %> of <%= pagination.totalPages %></span>
+      <% if (pagination.hasNext) { %><a href="?page=<%= pagination.page + 1 %>" class="page-btn">Next ›</a><% } %>
+    </div>
+  <% } %>
+</div>

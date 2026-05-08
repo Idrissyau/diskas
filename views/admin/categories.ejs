@@ -1,0 +1,59 @@
+<div class="admin-grid-2">
+  <div class="admin-card">
+    <h3>Add Category</h3>
+    <form action="/admin/categories" method="POST">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" name="name" required />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" name="description" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Color</label>
+          <input type="color" name="color" value="#6366f1" />
+        </div>
+        <div class="form-group">
+          <label>Icon (feather name)</label>
+          <input type="text" name="icon" placeholder="e.g. folder, briefcase" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Type</label>
+        <select name="type" class="form-select">
+          <option value="discussion">Discussion</option>
+          <option value="job">Job</option>
+          <option value="skill">Skill</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Create Category</button>
+    </form>
+  </div>
+
+  <div class="admin-card">
+    <h3>All Categories (<%= categories.length %>)</h3>
+    <table class="admin-table">
+      <thead><tr><th>Name</th><th>Type</th><th>Slug</th><th>Action</th></tr></thead>
+      <tbody>
+        <% categories.forEach(cat => { %>
+          <tr>
+            <td>
+              <span class="cat-dot" style="background:<%= cat.color %>"></span>
+              <%= cat.name %>
+            </td>
+            <td><span class="badge"><%= cat.type %></span></td>
+            <td class="text-muted"><%= cat.slug %></td>
+            <td>
+              <form action="/admin/categories/<%= cat.id %>/delete" method="POST" class="inline-form"
+                    onsubmit="return confirm('Delete this category?')">
+                <button class="btn btn-sm btn-danger">Delete</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>

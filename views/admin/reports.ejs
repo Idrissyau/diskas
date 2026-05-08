@@ -1,0 +1,31 @@
+<% if (reports.length === 0) { %>
+  <div class="admin-card">
+    <div class="empty-state"><p>No pending reports. 🎉</p></div>
+  </div>
+<% } else { %>
+  <div class="admin-card">
+    <table class="admin-table">
+      <thead><tr><th>Reporter</th><th>Target Type</th><th>Target ID</th><th>Reason</th><th>Date</th><th>Actions</th></tr></thead>
+      <tbody>
+        <% reports.forEach(r => { %>
+          <tr>
+            <td><%= r.reporter_name %></td>
+            <td><span class="badge"><%= r.target_type %></span></td>
+            <td>#<%= r.target_id %></td>
+            <td><%= r.reason %><% if (r.details) { %><br><small class="text-muted"><%= r.details %></small><% } %></td>
+            <td class="text-muted"><%= new Date(r.created_at).toLocaleDateString() %></td>
+            <td>
+              <form action="/admin/reports/<%= r.id %>" method="POST" class="inline-form">
+                <select name="status" class="form-select form-select-xs">
+                  <option value="resolved">Resolve</option>
+                  <option value="dismissed">Dismiss</option>
+                </select>
+                <button class="btn btn-sm btn-primary">Save</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+<% } %>

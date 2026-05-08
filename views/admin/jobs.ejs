@@ -1,0 +1,44 @@
+<div class="admin-filters">
+  <form action="/admin/jobs" method="GET" class="filter-form">
+    <select name="status" class="form-select">
+      <option value="pending" <%= currentStatus === 'pending' ? 'selected' : '' %>>Pending Review</option>
+      <option value="active" <%= currentStatus === 'active' ? 'selected' : '' %>>Active</option>
+      <option value="closed" <%= currentStatus === 'closed' ? 'selected' : '' %>>Closed</option>
+      <option value="draft" <%= currentStatus === 'draft' ? 'selected' : '' %>>Rejected/Draft</option>
+    </select>
+    <button class="btn btn-primary">Filter</button>
+  </form>
+</div>
+
+<div class="admin-card">
+  <table class="admin-table">
+    <thead><tr><th>Job</th><th>Company</th><th>Type</th><th>Posted by</th><th>Views</th><th>Date</th><th>Actions</th></tr></thead>
+    <tbody>
+      <% jobs.forEach(job => { %>
+        <tr>
+          <td><a href="/jobs/<%= job.slug %>"><%= job.title.substring(0,40) %></a></td>
+          <td><%= job.company %></td>
+          <td><span class="tag"><%= job.type %></span></td>
+          <td><%= job.poster_name %></td>
+          <td><%= job.views %></td>
+          <td class="text-muted"><%= job.timeAgo %></td>
+          <td>
+            <form action="/admin/jobs/<%= job.id %>" method="POST" class="inline-form">
+              <select name="status" class="form-select form-select-xs">
+                <option value="active" <%= job.status === 'active' ? 'selected' : '' %>>Approve</option>
+                <option value="pending" <%= job.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                <option value="closed" <%= job.status === 'closed' ? 'selected' : '' %>>Close</option>
+                <option value="draft" <%= job.status === 'draft' ? 'selected' : '' %>>Reject</option>
+              </select>
+              <select name="featured" class="form-select form-select-xs">
+                <option value="0" <%= !job.featured ? 'selected' : '' %>>Normal</option>
+                <option value="1" <%= job.featured ? 'selected' : '' %>>Featured</option>
+              </select>
+              <button class="btn btn-sm btn-primary">Save</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
