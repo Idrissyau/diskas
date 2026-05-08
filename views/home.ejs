@@ -83,30 +83,41 @@
   </div>
 </section>
 
-<!-- ══ COMMUNITY STATS BAR ════════════════════════════════════════════════ -->
-<div class="stats-bar">
-  <div class="container stats-bar-inner">
-    <div class="stats-bar-item">
-      <strong><%= (stats.total_users || 0).toLocaleString() %></strong>
-      <span>Members</span>
+<!-- ══ TRENDING DISCUSSIONS ════════════════════════════════════════════════ -->
+<section class="trending-section" aria-label="Trending discussions">
+  <div class="container">
+    <div class="trending-header">
+      <h2><i class="fa-solid fa-fire-flame-curved"></i> Trending Discussions</h2>
+      <a href="/discussions" class="trending-view-all">View All <i class="fa-solid fa-arrow-right fa-xs"></i></a>
     </div>
-    <div class="stats-bar-divider"></div>
-    <div class="stats-bar-item">
-      <strong><%= (stats.total_posts || 0).toLocaleString() %></strong>
-      <span>Discussions</span>
-    </div>
-    <div class="stats-bar-divider"></div>
-    <div class="stats-bar-item">
-      <strong><%= (stats.total_jobs || 0).toLocaleString() %></strong>
-      <span>Active Jobs</span>
-    </div>
-    <div class="stats-bar-divider"></div>
-    <div class="stats-bar-item">
-      <strong><%= (stats.total_skills || 0).toLocaleString() %></strong>
-      <span>Skills Shared</span>
-    </div>
+    <% if (trendingPosts && trendingPosts.length) { %>
+      <ol class="trending-list">
+        <% trendingPosts.forEach((post, i) => { %>
+          <li class="trending-item">
+            <span class="trending-rank"><%= i + 1 %></span>
+            <div class="trending-votes" aria-label="<%= post.vote_count || 0 %> votes">
+              <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
+              <span><%= post.vote_count || 0 %></span>
+            </div>
+            <div class="trending-body">
+              <% if (post.category_name) { %>
+                <span class="badge trending-cat" style="background:<%= post.category_color %>22;color:<%= post.category_color %>"><%= post.category_name %></span>
+              <% } %>
+              <% if (post.type === 'question') { %><span class="badge badge-question trending-type-badge">Q&amp;A</span><% } %>
+              <a href="/discussions/<%= post.slug %>" class="trending-title"><%= post.title %></a>
+            </div>
+            <div class="trending-meta">
+              <span class="trending-author"><i class="fa-solid fa-user fa-xs" aria-hidden="true"></i> <%= post.author_name %></span>
+              <span class="trending-replies"><i class="fa-regular fa-comment fa-xs" aria-hidden="true"></i> <%= post.reply_count || 0 %></span>
+            </div>
+          </li>
+        <% }) %>
+      </ol>
+    <% } else { %>
+      <p class="trending-empty">No discussions yet. <a href="/discussions/new">Be the first to start one!</a></p>
+    <% } %>
   </div>
-</div>
+</section>
 
 <!-- ══ HOW IT WORKS ═══════════════════════════════════════════════════════ -->
 <section class="section how-it-works bg-light" aria-label="How Diskas works">

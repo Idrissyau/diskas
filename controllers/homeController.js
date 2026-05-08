@@ -3,7 +3,7 @@ const { timeAgo } = require('../helpers/utils');
 
 exports.index = async (req, res) => {
   try {
-    const [latestPosts, latestJobs, latestSkills, stats] = await Promise.all([
+    const [latestPosts, latestJobs, latestSkills, stats, trendingPosts] = await Promise.all([
       query(`
         SELECT p.*, u.name AS author_name, u.avatar AS author_avatar, c.name AS category_name
         FROM posts p
@@ -35,6 +35,17 @@ exports.index = async (req, res) => {
           (SELECT COUNT(*) FROM posts WHERE status != 'deleted') AS total_posts,
           (SELECT COUNT(*) FROM jobs WHERE status = 'active') AS total_jobs,
           (SELECT COUNT(*) FROM skills WHERE status = 'active') AS total_skills
+      `),
+      query(`
+        SELECT p.id, p.slug, p.title, p.type, p.vote_count, p.reply_count, p.views,
+               u.name AS author_name,
+               c.name AS category_name, c.color AS category_color
+        FROM posts p
+        LEFT JOIN users u ON p.user_id = u.id
+        LEFT JOIN categories c ON p.category_id = c.id
+        WHERE p.status IN ('active','pinned')
+        ORDER BY p.vote_count DESC, p.views DESC, p.created_at DESC
+        LIMIT 5
       `),
     ]);
 
@@ -70,10 +81,11 @@ exports.index = async (req, res) => {
       jobs: jobsWithTime,
       skills: latestSkills,
       stats,
+      trendingPosts,
     });
   } catch (err) {
     console.error(err);
-    res.render('home', { title: 'Home', posts: [], jobs: [], skills: [], stats: {} });
+    res.render('home', { title: 'Home', posts: [], jobs: [], skills: [], stats: {}, trendingPosts: [] });
   }
 };
 
