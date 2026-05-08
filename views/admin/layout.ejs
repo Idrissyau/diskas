@@ -282,9 +282,85 @@
     ::-webkit-scrollbar { width: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+
+    /* ── HAMBURGER ── */
+    .hamburger {
+      display: none; background: none; border: none;
+      color: #0F172A; font-size: 1.2rem; cursor: pointer;
+      width: 38px; height: 38px; border-radius: 8px;
+      align-items: center; justify-content: center;
+      border: 1.5px solid #E2E8F0;
+    }
+
+    /* ── OVERLAY ── */
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.5); z-index: 90;
+      backdrop-filter: blur(2px);
+    }
+    .sidebar-overlay.show { display: block; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1024px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .grid-3 { grid-template-columns: 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .settings-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      /* Sidebar slides in/out */
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform .25s ease;
+        z-index: 100;
+      }
+      .sidebar.open { transform: translateX(0); }
+
+      /* Main takes full width */
+      .main { margin-left: 0; }
+
+      /* Topbar adjustments */
+      .topbar { padding: 0 1rem; }
+      .topbar-breadcrumb { display: none; }
+      .topbar-user span { display: none; }
+      .hamburger { display: inline-flex; }
+
+      /* Content padding */
+      .content { padding: 1.25rem 1rem; }
+
+      /* Stats 1 column on mobile */
+      .stats-row { grid-template-columns: 1fr 1fr; gap: .75rem; margin-bottom: 1.25rem; }
+      .stat-card { padding: 1rem; }
+      .stat-card-value { font-size: 1.6rem; }
+      .stat-card-icon { width: 42px; height: 42px; font-size: 1.1rem; }
+
+      /* Tables scroll horizontally */
+      .panel { overflow-x: auto; }
+      .data-table { min-width: 600px; }
+
+      /* Filter bar wraps */
+      .filter-bar form { flex-wrap: wrap; }
+      .filter-bar .form-control { width: 100% !important; max-width: 100% !important; }
+
+      /* Inline forms stack */
+      .inline-form { flex-wrap: wrap; }
+
+      /* Panel header */
+      .panel-header { flex-wrap: wrap; gap: .5rem; }
+    }
+
+    @media (max-width: 480px) {
+      .stats-row { grid-template-columns: 1fr; }
+      .topbar-right .topbar-btn:not(:last-child) { display: none; }
+      .stat-card { flex-direction: row; }
+    }
   </style>
 </head>
 <body>
+
+<!-- Overlay for mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <!-- ── SIDEBAR ────────────────────────────────────────────────────────────── -->
 <aside class="sidebar">
@@ -368,11 +444,16 @@
 
   <!-- Topbar -->
   <div class="topbar">
-    <div class="topbar-left">
-      <div class="topbar-title"><%= title %></div>
-      <div class="topbar-breadcrumb">
-        <i class="fa-solid fa-house" style="font-size:.65rem"></i>
-        Admin &rsaquo; <span><%= title %></span>
+    <div class="topbar-left" style="display:flex;align-items:center;gap:.75rem">
+      <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div>
+        <div class="topbar-title"><%= title %></div>
+        <div class="topbar-breadcrumb">
+          <i class="fa-solid fa-house" style="font-size:.65rem"></i>
+          Admin &rsaquo; <span><%= title %></span>
+        </div>
       </div>
     </div>
     <div class="topbar-right">
@@ -413,6 +494,39 @@
   // Auto-hide flash
   document.querySelectorAll('.flash').forEach(f => {
     setTimeout(() => { f.style.transition = 'opacity .5s'; f.style.opacity = '0'; setTimeout(() => f.remove(), 500); }, 4000);
+  });
+
+  // Mobile sidebar toggle
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const hamburger = document.getElementById('hamburgerBtn');
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    overlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  hamburger.addEventListener('click', () => {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+  overlay.addEventListener('click', closeSidebar);
+
+  // Close sidebar when a nav link is clicked on mobile
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      if (window.innerWidth <= 768) closeSidebar();
+    });
+  });
+
+  // Handle resize — reset sidebar on desktop
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) closeSidebar();
   });
 </script>
 </body>
