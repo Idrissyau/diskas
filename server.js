@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
 const flash = require('connect-flash');
 const cookieParser = require('cookie-parser');
 const methodOverride = require('method-override');
@@ -9,7 +10,7 @@ const path = require('path');
 const fs = require('fs');
 const ejs = require('ejs');
 
-const { testConnection } = require('./config/database');
+const { testConnection, pool } = require('./config/database');
 const { setLocals } = require('./middleware/auth');
 
 const app = express();
@@ -28,10 +29,12 @@ app.use(methodOverride('_method'));
 app.use(fileUpload({ limits: { fileSize: 5 * 1024 * 1024 }, useTempFiles: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+const sessionStore = new MySQLStore({}, pool);
 app.use(session({
   secret: process.env.SESSION_SECRET || 'diskas-secret',
   resave: false,
   saveUninitialized: false,
+  store: sessionStore,
   cookie: { secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 },
 }));
 
