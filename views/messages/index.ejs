@@ -1,0 +1,47 @@
+<div class="page-header">
+  <div class="container">
+    <div class="page-header-row">
+      <div>
+        <h1><i class="fa-solid fa-comments"></i> Messages</h1>
+        <p>Your private conversations</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container" style="padding:2rem 1.25rem;max-width:720px">
+  <% if (conversations.length === 0) { %>
+    <div class="empty-state card">
+      <i class="fa-solid fa-comment-slash"></i>
+      <h3>No conversations yet</h3>
+      <p>Visit a user's profile and click <strong>Message</strong> to start chatting.</p>
+      <a href="/discussions" class="btn btn-primary" style="margin-top:1rem">
+        <i class="fa-solid fa-users"></i> Browse Community
+      </a>
+    </div>
+  <% } else { %>
+    <div class="conv-list">
+      <% conversations.forEach(conv => { %>
+        <a href="/messages/<%= conv.id %>" class="conv-item <%= conv.unread > 0 ? 'conv-unread' : '' %>">
+          <div class="conv-avatar">
+            <% if (conv.other_avatar) { %>
+              <img src="<%= conv.other_avatar %>" alt="<%= conv.other_name %>" class="avatar-md" />
+            <% } else { %>
+              <div class="avatar-placeholder-md"><%= conv.other_name.charAt(0).toUpperCase() %></div>
+            <% } %>
+            <% if (conv.unread > 0) { %>
+              <span class="conv-badge"><%= conv.unread %></span>
+            <% } %>
+          </div>
+          <div class="conv-body">
+            <div class="conv-top">
+              <span class="conv-name"><%= conv.other_name %></span>
+              <span class="conv-time"><%= conv.timeAgo %></span>
+            </div>
+            <p class="conv-preview"><%= conv.last_msg ? conv.last_msg.substring(0, 80) + (conv.last_msg.length > 80 ? '…' : '') : 'No messages yet' %></p>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+</div>

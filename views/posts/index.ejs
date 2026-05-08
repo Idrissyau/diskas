@@ -85,7 +85,8 @@
               <a href="/discussions/<%= post.slug %>" class="post-title" itemprop="headline"><%= post.title %></a>
               <div class="post-info">
                 <span itemprop="author" itemscope itemtype="https://schema.org/Person">
-                  <i class="fa-solid fa-user fa-xs"></i> <span itemprop="name"><%= post.author_name %></span>
+                  <i class="fa-solid fa-user fa-xs"></i>
+                  <a href="/users/<%= post.user_id %>" itemprop="name" style="color:inherit"><%= post.author_name %></a>
                 </span>
                 <span><i class="fa-regular fa-clock fa-xs"></i>
                   <time itemprop="datePublished" datetime="<%= post.created_at %>"><%= post.timeAgo %></time>

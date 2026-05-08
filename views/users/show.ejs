@@ -1,0 +1,121 @@
+<div class="page-header">
+  <div class="container">
+    <div class="user-profile-hero">
+      <div class="user-profile-avatar">
+        <% if (profile.avatar) { %>
+          <img src="<%= profile.avatar %>" alt="<%= profile.name %>" class="avatar-lg" />
+        <% } else { %>
+          <div class="avatar-placeholder-lg"><%= profile.name.charAt(0).toUpperCase() %></div>
+        <% } %>
+      </div>
+      <div class="user-profile-info">
+        <div class="user-profile-top">
+          <div>
+            <h1><%= profile.name %></h1>
+            <span class="badge badge-<%= profile.role %>"><%= profile.role %></span>
+          </div>
+          <div class="user-profile-actions">
+            <% if (canFollow) { %>
+              <button id="followBtn"
+                class="btn <%= isFollowing ? 'btn-outline follow-active' : 'btn-primary' %> btn-sm"
+                data-user-id="<%= profile.id %>"
+                data-following="<%= isFollowing %>">
+                <i class="fa-solid <%= isFollowing ? 'fa-user-check' : 'fa-user-plus' %>"></i>
+                <span><%= isFollowing ? 'Following' : 'Follow' %></span>
+              </button>
+            <% } %>
+            <% if (canMessage) { %>
+              <% if (existingConvId) { %>
+                <a href="/messages/<%= existingConvId %>" class="btn btn-outline btn-sm">
+                  <i class="fa-solid fa-comment"></i> Message
+                </a>
+              <% } else { %>
+                <form action="/messages" method="POST" style="display:inline">
+                  <input type="hidden" name="user_id" value="<%= profile.id %>" />
+                  <button type="submit" class="btn btn-outline btn-sm">
+                    <i class="fa-solid fa-comment"></i> Message
+                  </button>
+                </form>
+              <% } %>
+            <% } %>
+          </div>
+        </div>
+        <% if (profile.bio) { %><p class="user-bio"><%= profile.bio %></p><% } %>
+        <div class="user-meta-row">
+          <% if (profile.location) { %>
+            <span><i class="fa-solid fa-location-dot fa-xs"></i> <%= profile.location %></span>
+          <% } %>
+          <% if (profile.website) { %>
+            <a href="<%= profile.website %>" target="_blank" rel="noopener noreferrer">
+              <i class="fa-solid fa-link fa-xs"></i> Website
+            </a>
+          <% } %>
+          <span><i class="fa-regular fa-calendar fa-xs"></i> Joined <%= profile.memberSince %></span>
+        </div>
+        <div class="user-stats-row">
+          <a href="/users/<%= profile.id %>/followers" class="user-stat">
+            <strong><%= followerCount %></strong> <span>Followers</span>
+          </a>
+          <a href="/users/<%= profile.id %>/following" class="user-stat">
+            <strong><%= followingCount %></strong> <span>Following</span>
+          </a>
+          <div class="user-stat">
+            <strong><%= posts.length %></strong> <span>Posts</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container" style="padding:2rem 1.25rem">
+  <% if (posts.length === 0) { %>
+    <div class="empty-state card">
+      <i class="fa-solid fa-comments"></i>
+      <h3>No posts yet</h3>
+      <p><%= profile.name %> hasn't posted anything yet.</p>
+    </div>
+  <% } else { %>
+    <div class="section-header-row" style="margin-bottom:1rem">
+      <h2 style="font-size:1.15rem;font-weight:700">Recent Discussions</h2>
+    </div>
+    <div class="posts-list">
+      <% posts.forEach(post => { %>
+        <article class="post-card">
+          <div class="post-body">
+            <a href="/discussions/<%= post.slug %>" class="post-title"><%= post.title %></a>
+            <div class="post-info">
+              <span><i class="fa-solid fa-arrow-up fa-xs"></i> <%= post.vote_count || 0 %></span>
+              <span><i class="fa-regular fa-comment fa-xs"></i> <%= post.reply_count || 0 %></span>
+              <span><i class="fa-regular fa-eye fa-xs"></i> <%= post.views || 0 %></span>
+              <span><i class="fa-regular fa-clock fa-xs"></i> <%= post.timeAgo %></span>
+            </div>
+          </div>
+        </article>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
+
+<script>
+const followBtn = document.getElementById('followBtn');
+if (followBtn) {
+  followBtn.addEventListener('click', async () => {
+    const userId = followBtn.dataset.userId;
+    try {
+      const res  = await fetch(`/users/${userId}/follow`, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      const data = await res.json();
+      if (typeof data.following !== 'undefined') {
+        followBtn.dataset.following = data.following;
+        if (data.following) {
+          followBtn.className = 'btn btn-outline follow-active btn-sm';
+          followBtn.innerHTML = '<i class="fa-solid fa-user-check"></i> <span>Following</span>';
+        } else {
+          followBtn.className = 'btn btn-primary btn-sm';
+          followBtn.innerHTML = '<i class="fa-solid fa-user-plus"></i> <span>Follow</span>';
+        }
+      }
+    } catch (e) { console.error(e); }
+  });
+}
+</script>

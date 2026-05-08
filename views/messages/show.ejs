@@ -1,0 +1,169 @@
+<div class="chat-page">
+
+  <!-- Header -->
+  <div class="chat-header">
+    <a href="/messages" class="chat-back"><i class="fa-solid fa-arrow-left"></i></a>
+    <% if (other) { %>
+      <% if (other.avatar) { %>
+        <img src="<%= other.avatar %>" alt="<%= other.name %>" class="avatar-sm" />
+      <% } else { %>
+        <div class="avatar-placeholder-sm"><%= other.name.charAt(0).toUpperCase() %></div>
+      <% } %>
+      <div class="chat-header-info">
+        <a href="/users/<%= other.id %>" class="chat-header-name"><%= other.name %></a>
+        <span class="chat-online-dot" id="onlineStatus"></span>
+      </div>
+    <% } %>
+    <% if (other) { %>
+      <a href="/users/<%= other.id %>" class="btn btn-outline btn-sm" style="margin-left:auto">
+        <i class="fa-solid fa-user"></i> Profile
+      </a>
+    <% } %>
+  </div>
+
+  <!-- Messages -->
+  <div class="chat-messages" id="chatMessages">
+    <% if (messages.length === 0) { %>
+      <div class="chat-empty">
+        <i class="fa-solid fa-comment-dots"></i>
+        <p>Say hello to <strong><%= other?.name %></strong>!</p>
+      </div>
+    <% } %>
+    <% messages.forEach(msg => { %>
+      <div class="message-row <%= msg.isMine ? 'message-mine' : 'message-theirs' %>" data-id="<%= msg.id %>">
+        <% if (!msg.isMine && other?.avatar) { %>
+          <img src="<%= other.avatar %>" alt="<%= other.name %>" class="avatar-xs msg-avatar" />
+        <% } else if (!msg.isMine) { %>
+          <div class="avatar-placeholder-xs msg-avatar"><%= (other?.name || 'U').charAt(0).toUpperCase() %></div>
+        <% } %>
+        <div class="message-bubble">
+          <div class="message-content"><%- msg.content.replace(/\n/g,'<br>') %></div>
+          <div class="message-time"><%= msg.timeAgo %></div>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+
+  <!-- Input -->
+  <div class="chat-input-bar">
+    <form id="messageForm" class="chat-input-form" autocomplete="off">
+      <textarea
+        id="messageInput"
+        class="chat-textarea"
+        placeholder="Type a message…"
+        rows="1"
+        maxlength="2000"
+        required
+      ></textarea>
+      <button type="submit" class="chat-send-btn" aria-label="Send">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+(function () {
+  const CONV_ID       = <%= conversation.id %>;
+  const CURRENT_UID   = <%= currentUserId %>;
+  const otherName     = '<%= (other?.name || "User").replace(/'/g, "\\'") %>';
+  const otherAvatar   = '<%= other?.avatar || "" %>';
+  const otherInitial  = '<%= (other?.name || "U").charAt(0).toUpperCase() %>';
+
+  const container  = document.getElementById('chatMessages');
+  const form       = document.getElementById('messageForm');
+  const input      = document.getElementById('messageInput');
+
+  // Track last message id for polling
+  let lastId = 0;
+  const rows = container.querySelectorAll('.message-row[data-id]');
+  if (rows.length) lastId = parseInt(rows[rows.length - 1].dataset.id);
+
+  /* ── Helpers ── */
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function scrollBottom() {
+    container.scrollTop = container.scrollHeight;
+  }
+  scrollBottom();
+
+  function buildBubble(msg) {
+    const isMine = msg.isMine || msg.sender_id === CURRENT_UID;
+    const wrap   = document.createElement('div');
+    wrap.className = `message-row ${isMine ? 'message-mine' : 'message-theirs'}`;
+    wrap.dataset.id = msg.id;
+
+    let avatarHtml = '';
+    if (!isMine) {
+      avatarHtml = otherAvatar
+        ? `<img src="${escHtml(otherAvatar)}" alt="${escHtml(otherName)}" class="avatar-xs msg-avatar">`
+        : `<div class="avatar-placeholder-xs msg-avatar">${escHtml(otherInitial)}</div>`;
+    }
+
+    wrap.innerHTML = `
+      ${avatarHtml}
+      <div class="message-bubble">
+        <div class="message-content">${escHtml(msg.content).replace(/\n/g,'<br>')}</div>
+        <div class="message-time">${escHtml(msg.timeAgo || 'just now')}</div>
+      </div>`;
+
+    // Remove chat-empty placeholder if present
+    const empty = container.querySelector('.chat-empty');
+    if (empty) empty.remove();
+
+    container.appendChild(wrap);
+  }
+
+  /* ── Send message ── */
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+
+    try {
+      const res  = await fetch(`/messages/${CONV_ID}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        body: JSON.stringify({ content: text }),
+      });
+      const data = await res.json();
+      if (data.success && data.message) {
+        buildBubble({ ...data.message, isMine: true });
+        lastId = data.message.id;
+        scrollBottom();
+      }
+    } catch (err) { console.error(err); }
+  });
+
+  /* ── Auto-resize textarea ── */
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+  });
+  /* ── Send on Enter (Shift+Enter for newline) ── */
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+  });
+
+  /* ── Poll for new messages every 3s ── */
+  async function poll() {
+    try {
+      const res  = await fetch(`/messages/${CONV_ID}/poll?after=${lastId}`);
+      const data = await res.json();
+      if (data.messages && data.messages.length) {
+        data.messages.forEach(msg => buildBubble(msg));
+        lastId = data.messages[data.messages.length - 1].id;
+        scrollBottom();
+      }
+    } catch (e) { /* silent */ }
+  }
+  const pollTimer = setInterval(poll, 3000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) clearInterval(pollTimer);
+  });
+})();
+</script>

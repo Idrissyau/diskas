@@ -1,0 +1,50 @@
+<div class="page-header">
+  <div class="container">
+    <div style="display:flex;align-items:center;gap:1rem">
+      <a href="/users/<%= profile.id %>" style="color:rgba(255,255,255,.7);font-size:.9rem">
+        <i class="fa-solid fa-arrow-left"></i> Back to profile
+      </a>
+    </div>
+    <h1 style="margin-top:.75rem"><%= title %></h1>
+    <div style="display:flex;gap:1.25rem;margin-top:.5rem">
+      <a href="/users/<%= profile.id %>/followers"
+         style="color:<%= type==='followers'?'#fff':'rgba(255,255,255,.55)' %>;font-weight:<%= type==='followers'?'700':'400' %>;font-size:.9rem">
+        Followers
+      </a>
+      <a href="/users/<%= profile.id %>/following"
+         style="color:<%= type==='following'?'#fff':'rgba(255,255,255,.55)' %>;font-weight:<%= type==='following'?'700':'400' %>;font-size:.9rem">
+        Following
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="container" style="padding:2rem 1.25rem;max-width:640px">
+  <% if (list.length === 0) { %>
+    <div class="empty-state card">
+      <i class="fa-solid fa-users"></i>
+      <h3>Nobody here yet</h3>
+      <p><%= type === 'followers' ? 'No followers yet.' : 'Not following anyone yet.' %></p>
+    </div>
+  <% } else { %>
+    <div style="display:flex;flex-direction:column;gap:.65rem">
+      <% list.forEach(u => { %>
+        <a href="/users/<%= u.id %>" class="card" style="display:flex;align-items:center;gap:1rem;padding:1rem 1.25rem;text-decoration:none;transition:border-color .15s"
+           onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor=''">
+          <% if (u.avatar) { %>
+            <img src="<%= u.avatar %>" alt="<%= u.name %>" class="avatar-md" />
+          <% } else { %>
+            <div class="avatar-placeholder-md"><%= u.name.charAt(0).toUpperCase() %></div>
+          <% } %>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;color:#0F172A"><%= u.name %></div>
+            <% if (u.bio) { %>
+              <div style="font-size:.82rem;color:#64748B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><%= u.bio %></div>
+            <% } %>
+          </div>
+          <span class="badge badge-<%= u.role %>"><%= u.role %></span>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+</div>

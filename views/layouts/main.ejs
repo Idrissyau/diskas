@@ -73,6 +73,11 @@
         <% if (['admin','moderator'].includes(currentUser.role)) { %>
           <a href="/admin" class="btn btn-sm btn-outline">Admin</a>
         <% } %>
+        <!-- Messages icon with unread badge -->
+        <a href="/messages" class="nav-icon-btn" aria-label="Messages" id="navMsgBtn">
+          <i class="fa-solid fa-comment-dots"></i>
+          <span class="nav-badge" id="navUnreadBadge" style="display:none"></span>
+        </a>
         <div class="dropdown">
           <button class="avatar-btn" aria-haspopup="true" aria-expanded="false">
             <% if (currentUser.avatar) { %>
@@ -84,7 +89,9 @@
             <i class="fa-solid fa-chevron-down" style="font-size:.65rem;color:#94A3B8"></i>
           </button>
           <div class="dropdown-menu">
-            <a href="/profile"        class="dropdown-item"><i class="fa-solid fa-user"></i> Profile</a>
+            <a href="/profile"         class="dropdown-item"><i class="fa-solid fa-user"></i> My Profile</a>
+            <a href="/messages"        class="dropdown-item"><i class="fa-solid fa-comment-dots"></i> Messages</a>
+            <div class="dropdown-divider"></div>
             <a href="/discussions/new" class="dropdown-item"><i class="fa-solid fa-pen"></i> New Post</a>
             <a href="/jobs/new"        class="dropdown-item"><i class="fa-solid fa-briefcase"></i> Post Job</a>
             <a href="/skills/new"      class="dropdown-item"><i class="fa-solid fa-book-open"></i> Share Skill</a>
@@ -113,7 +120,8 @@
     <a href="/jobs">Jobs</a>
     <a href="/skills">Skills</a>
     <% if (currentUser) { %>
-      <a href="/profile">Profile</a>
+      <a href="/profile">My Profile</a>
+      <a href="/messages">Messages</a>
       <a href="/discussions/new">New Discussion</a>
       <a href="/jobs/new">Post a Job</a>
       <% if (['admin','moderator'].includes(currentUser.role)) { %><a href="/admin">Admin Panel</a><% } %>
@@ -203,6 +211,19 @@
   document.querySelectorAll('.flash').forEach(f => {
     setTimeout(() => { f.style.transition='opacity .5s'; f.style.opacity='0'; setTimeout(()=>f.remove(),500); }, 5000);
   });
+  // Unread message badge
+  (async function pollUnread() {
+    const badge = document.getElementById('navUnreadBadge');
+    if (!badge) return;
+    try {
+      const r = await fetch('/messages/unread');
+      const d = await r.json();
+      if (d.count > 0) { badge.textContent = d.count > 9 ? '9+' : d.count; badge.style.display = 'flex'; }
+      else { badge.style.display = 'none'; }
+    } catch(e) {}
+    setTimeout(pollUnread, 30000);
+  })();
+
   // Dropdown close on outside click
   document.addEventListener('click', e => {
     document.querySelectorAll('.dropdown.open').forEach(d => {

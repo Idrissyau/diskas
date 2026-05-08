@@ -125,12 +125,14 @@ const homeController = require('./controllers/homeController');
 app.get('/', homeController.index);
 app.get('/search', homeController.search);
 
-app.use('/auth', require('./routes/auth'));
-app.use('/profile', require('./routes/profile'));
+app.use('/auth',        require('./routes/auth'));
+app.use('/profile',     require('./routes/profile'));
 app.use('/discussions', require('./routes/posts'));
-app.use('/jobs', require('./routes/jobs'));
-app.use('/skills', require('./routes/skills'));
-app.use('/admin', require('./routes/admin'));
+app.use('/jobs',        require('./routes/jobs'));
+app.use('/skills',      require('./routes/skills'));
+app.use('/admin',       require('./routes/admin'));
+app.use('/users',       require('./routes/users'));
+app.use('/messages',    require('./routes/messages'));
 
 // Vote endpoint at root level
 const postCtrl = require('./controllers/postController');
@@ -174,8 +176,52 @@ app.use((err, req, res, next) => {
   res.status(500).send('Internal Server Error');
 });
 
+// ── DB Migrations ──────────────────────────────────────────────────────────
+async function runMigrations() {
+  try {
+    const migrations = [
+      `CREATE TABLE IF NOT EXISTS follows (
+        id           INT AUTO_INCREMENT PRIMARY KEY,
+        follower_id  INT NOT NULL,
+        following_id INT NOT NULL,
+        created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (follower_id)  REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_follow (follower_id, following_id)
+      )`,
+      `CREATE TABLE IF NOT EXISTS conversations (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS conversation_participants (
+        conversation_id INT NOT NULL,
+        user_id         INT NOT NULL,
+        last_read_at    TIMESTAMP NULL DEFAULT NULL,
+        PRIMARY KEY (conversation_id, user_id),
+        FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id)         REFERENCES users(id)         ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS messages (
+        id              INT AUTO_INCREMENT PRIMARY KEY,
+        conversation_id INT  NOT NULL,
+        sender_id       INT  NOT NULL,
+        content         TEXT NOT NULL,
+        created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+        FOREIGN KEY (sender_id)       REFERENCES users(id)         ON DELETE CASCADE
+      )`,
+    ];
+    for (const sql of migrations) await pool.execute(sql);
+    console.log('✅ Migrations complete');
+  } catch (err) {
+    console.error('Migration error:', err.message);
+  }
+}
+
 // ── Start ──────────────────────────────────────────────────────────────────
 testConnection().then(() => {
+  runMigrations();
   seedAdmin();
   app.listen(PORT, () => {
     console.log(`\n🚀 Diskas running at http://localhost:${PORT}`);
