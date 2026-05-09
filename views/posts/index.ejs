@@ -65,11 +65,13 @@
               <span class="vote-label">votes</span>
             </div>
             <div class="post-meta-left">
-              <% if (post.author_avatar) { %>
-                <img src="<%= post.author_avatar %>" alt="<%= post.author_name %>" class="avatar-sm" loading="lazy" />
-              <% } else { %>
-                <div class="avatar-placeholder-sm" aria-hidden="true"><%= (post.author_name || 'U').charAt(0) %></div>
-              <% } %>
+              <a href="/users/<%= post.user_id %>" class="author-avatar-link" title="View <%= post.author_name %>'s profile">
+                <% if (post.author_avatar) { %>
+                  <img src="<%= post.author_avatar %>" alt="<%= post.author_name %>" class="avatar-sm" loading="lazy" />
+                <% } else { %>
+                  <div class="avatar-placeholder-sm" aria-hidden="true"><%= (post.author_name || 'U').charAt(0) %></div>
+                <% } %>
+              </a>
             </div>
             <div class="post-body">
               <div class="post-badges">

@@ -13,12 +13,14 @@
         </div>
         <h1 itemprop="name"><%= skill.title %></h1>
         <div class="skill-author-row">
-          <% if (skill.author_avatar) { %>
-            <img src="<%= skill.author_avatar %>" alt="<%= skill.author_name %>" class="avatar-sm" loading="lazy" />
-          <% } else { %>
-            <div class="avatar-placeholder-sm" aria-hidden="true"><%= (skill.author_name||'U').charAt(0) %></div>
-          <% } %>
-          <span>by <strong itemprop="author"><%= skill.author_name %></strong></span>
+          <a href="/users/<%= skill.user_id %>" class="author-avatar-link">
+            <% if (skill.author_avatar) { %>
+              <img src="<%= skill.author_avatar %>" alt="<%= skill.author_name %>" class="avatar-sm" loading="lazy" />
+            <% } else { %>
+              <div class="avatar-placeholder-sm" aria-hidden="true"><%= (skill.author_name||'U').charAt(0) %></div>
+            <% } %>
+          </a>
+          <span>by <a href="/users/<%= skill.user_id %>" itemprop="author" class="author-name-link"><strong><%= skill.author_name %></strong></a></span>
           <span class="text-muted">
             <time itemprop="datePublished" datetime="<%= skill.created_at %>"><%= skill.timeAgo %></time>
           </span>
@@ -67,13 +69,28 @@
         <i class="fa-solid fa-chalkboard-user fa-sm" style="color:#0EA5E9"></i> Instructor
       </h4>
       <div class="sidebar-author">
-        <% if (skill.author_avatar) { %>
-          <img src="<%= skill.author_avatar %>" alt="<%= skill.author_name %>" class="avatar-md" loading="lazy" />
-        <% } else { %>
-          <div class="avatar-placeholder-md" aria-hidden="true"><%= (skill.author_name||'U').charAt(0) %></div>
-        <% } %>
-        <strong><%= skill.author_name %></strong>
-        <% if (skill.author_bio) { %><p class="text-muted" style="font-size:.85rem"><%= skill.author_bio %></p><% } %>
+        <a href="/users/<%= skill.user_id %>" class="author-avatar-link">
+          <% if (skill.author_avatar) { %>
+            <img src="<%= skill.author_avatar %>" alt="<%= skill.author_name %>" class="avatar-md" loading="lazy" />
+          <% } else { %>
+            <div class="avatar-placeholder-md" aria-hidden="true"><%= (skill.author_name||'U').charAt(0) %></div>
+          <% } %>
+        </a>
+        <a href="/users/<%= skill.user_id %>" class="author-name-link"><strong><%= skill.author_name %></strong></a>
+        <% if (skill.author_bio) { %><p class="text-muted" style="font-size:.85rem;margin:.4rem 0"><%= skill.author_bio %></p><% } %>
+        <div class="sidebar-author-actions">
+          <a href="/users/<%= skill.user_id %>" class="btn btn-outline btn-sm">
+            <i class="fa-solid fa-user fa-xs"></i> View Profile
+          </a>
+          <% if (currentUser && currentUser.id !== skill.user_id) { %>
+            <form action="/messages" method="POST" style="display:inline">
+              <input type="hidden" name="user_id" value="<%= skill.user_id %>" />
+              <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-comment fa-xs"></i> Message
+              </button>
+            </form>
+          <% } %>
+        </div>
       </div>
     </div>
 

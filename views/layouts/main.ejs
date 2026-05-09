@@ -51,12 +51,15 @@
 <!-- ── NAVBAR ──────────────────────────────────────────────────────────────── -->
 <nav class="navbar" role="navigation" aria-label="Main navigation">
   <div class="container nav-inner">
-    <a href="/" class="nav-logo" aria-label="Diskas home">
+    <a href="<%= currentUser ? '/home' : '/' %>" class="nav-logo" aria-label="Diskas home">
       <span class="logo-icon" aria-hidden="true">D</span>
       <span class="logo-text">Diskas</span>
     </a>
 
     <div class="nav-links">
+      <% if (currentUser) { %>
+        <a href="/home"        class="nav-link">Home</a>
+      <% } %>
       <a href="/discussions" class="nav-link">Discussions</a>
       <a href="/jobs"        class="nav-link">Jobs</a>
       <a href="/skills"      class="nav-link">Skills</a>
@@ -116,6 +119,7 @@
       <input type="search" name="q" placeholder="Search Diskas..." />
       <button type="submit" class="btn btn-primary btn-sm">Search</button>
     </form>
+    <% if (currentUser) { %><a href="/home">Home</a><% } %>
     <a href="/discussions">Discussions</a>
     <a href="/jobs">Jobs</a>
     <a href="/skills">Skills</a>
@@ -153,7 +157,7 @@
 <footer class="footer" role="contentinfo">
   <div class="container footer-inner">
     <div class="footer-brand">
-      <a href="/" class="footer-logo-link" aria-label="Diskas home">
+      <a href="<%= currentUser ? '/home' : '/' %>" class="footer-logo-link" aria-label="Diskas home">
         <span class="logo-icon">D</span>
         <span class="logo-text">Diskas</span>
       </a>

@@ -8,7 +8,7 @@ exports.show = async (req, res) => {
     const me = req.session.user;
 
     const user = await queryOne(
-      `SELECT id, name, avatar, bio, location, website, role, created_at
+      `SELECT id, name, username, avatar, cover_image, bio, location, website, role, created_at
        FROM users WHERE id = ? AND status = 'active'`,
       [targetId]
     );

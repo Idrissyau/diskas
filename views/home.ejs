@@ -115,7 +115,7 @@
               <a href="/discussions/<%= post.slug %>" class="trending-title"><%= post.title %></a>
             </div>
             <div class="trending-meta">
-              <span class="trending-author"><i class="fa-solid fa-user fa-xs" aria-hidden="true"></i> <%= post.author_name %></span>
+              <a href="/users/<%= post.user_id %>" class="trending-author" title="View profile"><i class="fa-solid fa-user fa-xs" aria-hidden="true"></i> <%= post.author_name %></a>
               <span class="trending-replies"><i class="fa-regular fa-comment fa-xs" aria-hidden="true"></i> <%= post.reply_count || 0 %></span>
             </div>
           </li>
@@ -231,11 +231,13 @@
         <% posts.forEach(post => { %>
           <article class="post-card" itemscope itemtype="https://schema.org/DiscussionForumPosting">
             <div class="post-meta-left">
-              <% if (post.author_avatar) { %>
-                <img src="<%= post.author_avatar %>" alt="<%= post.author_name %>" class="avatar-sm" loading="lazy" />
-              <% } else { %>
-                <div class="avatar-placeholder-sm" aria-hidden="true"><%= (post.author_name || 'U').charAt(0).toUpperCase() %></div>
-              <% } %>
+              <a href="/users/<%= post.user_id %>" class="author-avatar-link" title="<%= post.author_name %>">
+                <% if (post.author_avatar) { %>
+                  <img src="<%= post.author_avatar %>" alt="<%= post.author_name %>" class="avatar-sm" loading="lazy" />
+                <% } else { %>
+                  <div class="avatar-placeholder-sm" aria-hidden="true"><%= (post.author_name || 'U').charAt(0).toUpperCase() %></div>
+                <% } %>
+              </a>
             </div>
             <div class="post-body">
               <div class="post-badges">
@@ -247,7 +249,10 @@
               </div>
               <a href="/discussions/<%= post.slug %>" class="post-title" itemprop="headline"><%= post.title %></a>
               <div class="post-info">
-                <span itemprop="author" itemscope itemtype="https://schema.org/Person"><i class="fa-solid fa-user fa-xs"></i> <span itemprop="name"><%= post.author_name %></span></span>
+                <span itemprop="author" itemscope itemtype="https://schema.org/Person">
+                  <i class="fa-solid fa-user fa-xs"></i>
+                  <a href="/users/<%= post.user_id %>" itemprop="name" class="author-name-link"><%= post.author_name %></a>
+                </span>
                 <span><i class="fa-regular fa-clock fa-xs"></i> <time itemprop="datePublished" datetime="<%= post.created_at %>"><%= post.timeAgo %></time></span>
                 <span><i class="fa-regular fa-eye fa-xs"></i> <%= post.views %></span>
                 <span><i class="fa-regular fa-comment fa-xs"></i> <%= post.reply_count || 0 %></span>
@@ -326,20 +331,22 @@
     <% } else { %>
       <div class="skills-grid">
         <% skills.forEach(skill => { %>
-          <a href="/skills/<%= skill.slug %>" class="skill-card" itemscope itemtype="https://schema.org/Course">
-            <% if (skill.thumbnail) { %>
-              <img src="<%= skill.thumbnail %>" alt="<%= skill.title %>" class="skill-thumb" loading="lazy" itemprop="image" />
-            <% } else { %>
-              <div class="skill-thumb-placeholder" aria-hidden="true">
-                <i class="fa-solid fa-book fa-2x"></i>
-              </div>
-            <% } %>
+          <article class="skill-card" itemscope itemtype="https://schema.org/Course">
+            <a href="/skills/<%= skill.slug %>" class="skill-card-img-link" tabindex="-1" aria-hidden="true">
+              <% if (skill.thumbnail) { %>
+                <img src="<%= skill.thumbnail %>" alt="<%= skill.title %>" class="skill-thumb" loading="lazy" itemprop="image" />
+              <% } else { %>
+                <div class="skill-thumb-placeholder" aria-hidden="true">
+                  <i class="fa-solid fa-book fa-2x"></i>
+                </div>
+              <% } %>
+            </a>
             <div class="skill-card-body">
               <span class="badge badge-level-<%= skill.level %>"><%= skill.level %></span>
-              <h3 itemprop="name"><%= skill.title %></h3>
-              <p class="skill-author">by <span itemprop="author"><%= skill.author_name %></span></p>
+              <h3 itemprop="name"><a href="/skills/<%= skill.slug %>" class="skill-title-link"><%= skill.title %></a></h3>
+              <p class="skill-author">by <a href="/users/<%= skill.user_id %>" class="author-name-link" itemprop="author"><%= skill.author_name %></a></p>
             </div>
-          </a>
+          </article>
         <% }) %>
       </div>
     <% } %>

@@ -1,94 +1,233 @@
-<div class="page-header">
-  <div class="container">
-    <div class="profile-header">
-      <% if (user.avatar) { %>
-        <img src="<%= user.avatar %>" alt="<%= user.name %>" class="avatar-lg" />
-      <% } else { %>
-        <div class="avatar-placeholder-lg"><%= user.name.charAt(0).toUpperCase() %></div>
+<%
+  const handle = user.username ? '@' + user.username : null;
+%>
+
+<!-- ── Cover Banner ──────────────────────────────────────────────────────── -->
+<form id="coverForm" action="/profile/cover" method="POST" enctype="multipart/form-data" style="display:none">
+  <input type="file" id="coverInput" name="cover_image" accept="image/*"
+         onchange="document.getElementById('coverForm').submit()" />
+</form>
+
+<div class="tw-cover" style="position:relative">
+  <% if (user.cover_image) { %>
+    <img src="<%= user.cover_image %>" alt="Cover" class="tw-cover-img" />
+  <% } %>
+  <label class="tw-cover-edit-btn" for="coverInput" title="Change cover photo">
+    <i class="fa-solid fa-camera"></i>
+  </label>
+</div>
+
+<!-- ── Profile body ──────────────────────────────────────────────────────── -->
+<div class="tw-profile-wrap">
+
+  <!-- Avatar + Edit button row -->
+  <div class="tw-top-row">
+    <!-- Avatar with upload shortcut -->
+    <form action="/profile/avatar" method="POST" enctype="multipart/form-data" id="avatarForm">
+      <label class="tw-avatar-wrap" style="cursor:pointer" title="Change avatar">
+        <% if (user.avatar) { %>
+          <img src="<%= user.avatar %>" alt="<%= user.name %>" class="tw-avatar" />
+        <% } else { %>
+          <div class="tw-avatar tw-avatar-placeholder"><%= user.name.charAt(0).toUpperCase() %></div>
+        <% } %>
+        <span class="tw-avatar-cam"><i class="fa-solid fa-camera fa-xs"></i></span>
+        <input type="file" name="avatar" accept="image/*" style="display:none"
+               onchange="document.getElementById('avatarForm').submit()" />
+      </label>
+    </form>
+
+    <div class="tw-actions">
+      <button type="button" onclick="openEditModal()" class="btn btn-outline btn-sm">
+        <i class="fa-solid fa-pen fa-xs"></i> Edit Profile
+      </button>
+    </div>
+  </div>
+
+  <!-- Name / handle / badge -->
+  <div class="tw-name-row">
+    <h1 class="tw-name">
+      <%= user.name %>
+      <% if (['admin','moderator'].includes(user.role)) { %>
+        <i class="fa-solid fa-circle-check tw-verified" title="<%= user.role %>"></i>
       <% } %>
-      <div>
-        <h1><%= user.name %></h1>
-        <p class="text-muted"><%= user.email %></p>
-        <% if (user.bio) { %><p><%= user.bio %></p><% } %>
-        <div class="profile-meta">
-          <% if (user.location) { %><span><i data-feather="map-pin"></i> <%= user.location %></span><% } %>
-          <% if (user.website) { %><a href="<%= user.website %>" target="_blank" rel="noopener"><i data-feather="link"></i> Website</a><% } %>
-          <span class="badge badge-<%= user.role %>"><%= user.role %></span>
+    </h1>
+    <% if (handle) { %><p class="tw-handle"><%= handle %></p><% } %>
+    <p class="tw-handle" style="color:#94A3B8;font-size:.82rem;margin-top:.15rem"><%= user.email %></p>
+  </div>
+
+  <!-- Bio -->
+  <% if (user.bio) { %><p class="tw-bio"><%= user.bio %></p><% } %>
+
+  <!-- Meta row -->
+  <div class="tw-meta-row">
+    <% if (user.location) { %>
+      <span><i class="fa-solid fa-location-dot fa-xs"></i> <%= user.location %></span>
+    <% } %>
+    <% if (user.website) { %>
+      <a href="<%= user.website %>" target="_blank" rel="noopener noreferrer">
+        <i class="fa-solid fa-link fa-xs"></i>
+        <%= user.website.replace(/^https?:\/\/(www\.)?/,'').replace(/\/$/, '') %>
+      </a>
+    <% } %>
+    <% if (user.created_at) { %>
+      <span>
+        <i class="fa-regular fa-calendar fa-xs"></i>
+        Joined <%= new Date(user.created_at).toLocaleString('en-US',{month:'long',year:'numeric'}) %>
+      </span>
+    <% } %>
+    <span class="badge badge-<%= user.role %>"><%= user.role %></span>
+  </div>
+
+  <!-- Stats row -->
+  <div class="tw-stats-row">
+    <a href="/users/<%= user.id %>/following" class="tw-stat">
+      <strong><%= followingCount %></strong> Following
+    </a>
+    <a href="/users/<%= user.id %>/followers" class="tw-stat">
+      <strong><%= followerCount %></strong> Followers
+    </a>
+    <span class="tw-stat">
+      <strong><%= posts.length %></strong> Posts
+    </span>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tw-tabs">
+    <span class="tw-tab active">My Posts</span>
+    <button class="tw-tab" type="button" onclick="openPwdModal()">Security</button>
+  </div>
+
+  <!-- Posts feed -->
+  <div class="tw-feed">
+    <% if (posts.length === 0) { %>
+      <div class="tw-empty">
+        <i class="fa-solid fa-feather-pointed"></i>
+        <p>You haven't posted anything yet.</p>
+        <a href="/discussions/new" class="btn btn-primary btn-sm" style="margin-top:.75rem">
+          <i class="fa-solid fa-plus fa-xs"></i> Start a Discussion
+        </a>
+      </div>
+    <% } else { %>
+      <% posts.forEach(post => { %>
+        <article class="tw-post-item">
+          <div class="tw-post-avatar">
+            <% if (user.avatar) { %>
+              <img src="<%= user.avatar %>" alt="<%= user.name %>" class="avatar-sm" />
+            <% } else { %>
+              <div class="avatar-placeholder-sm"><%= user.name.charAt(0).toUpperCase() %></div>
+            <% } %>
+          </div>
+          <div class="tw-post-body">
+            <div class="tw-post-header">
+              <span class="tw-post-author"><%= user.name %></span>
+              <% if (handle) { %><span class="tw-post-handle"><%= handle %></span><% } %>
+            </div>
+            <a href="/discussions/<%= post.slug %>" class="tw-post-title"><%= post.title %></a>
+            <div class="tw-post-stats">
+              <span class="badge badge-<%= post.status %>"><%= post.status %></span>
+              <span><i class="fa-regular fa-eye fa-xs"></i> <%= post.views || 0 %></span>
+            </div>
+          </div>
+        </article>
+      <% }) %>
+    <% } %>
+  </div>
+
+</div><!-- /tw-profile-wrap -->
+
+
+<!-- ── Edit Profile Modal ─────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box" style="max-width:540px">
+    <div class="modal-head">
+      <h2 class="modal-title">Edit Profile</h2>
+      <button type="button" class="modal-close" onclick="closeModal('editModal')">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <form action="/profile" method="POST">
+      <div class="form-group">
+        <label>Full Name <span style="color:var(--danger)">*</span></label>
+        <input type="text" name="name" value="<%= user.name %>" required />
+      </div>
+      <div class="form-group">
+        <label>
+          Username
+          <span style="color:#94A3B8;font-size:.8rem;font-weight:400">
+            (3–30 chars · letters, numbers, underscores)
+          </span>
+        </label>
+        <div style="position:relative">
+          <span style="position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:#94A3B8;font-weight:600;pointer-events:none">@</span>
+          <input type="text" name="username"
+                 value="<%= user.username || '' %>"
+                 placeholder="yourhandle"
+                 pattern="[a-zA-Z0-9_]{3,30}"
+                 style="padding-left:1.9rem" />
         </div>
       </div>
-    </div>
+      <div class="form-group">
+        <label>Bio</label>
+        <textarea name="bio" rows="3" placeholder="Tell the community about yourself…"><%= user.bio || '' %></textarea>
+      </div>
+      <div class="form-group">
+        <label>Location</label>
+        <input type="text" name="location" value="<%= user.location || '' %>" placeholder="City, Country" />
+      </div>
+      <div class="form-group">
+        <label>Website</label>
+        <input type="url" name="website" value="<%= user.website || '' %>" placeholder="https://yoursite.com" />
+      </div>
+      <div class="modal-footer-btns">
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('editModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+      </div>
+    </form>
   </div>
 </div>
 
-<div class="container profile-layout">
-  <div class="profile-sidebar">
-    <!-- Edit Profile -->
-    <div class="card">
-      <h3>Edit Profile</h3>
-      <form action="/profile" method="POST" enctype="multipart/form-data">
-        <div class="form-group">
-          <label>Avatar</label>
-          <input type="file" name="avatar" accept="image/*" />
-        </div>
-        <div class="form-group">
-          <label>Full Name</label>
-          <input type="text" name="name" value="<%= user.name %>" required />
-        </div>
-        <div class="form-group">
-          <label>Bio</label>
-          <textarea name="bio" rows="3" placeholder="Tell us about yourself..."><%= user.bio || '' %></textarea>
-        </div>
-        <div class="form-group">
-          <label>Location</label>
-          <input type="text" name="location" value="<%= user.location || '' %>" placeholder="City, Country" />
-        </div>
-        <div class="form-group">
-          <label>Website</label>
-          <input type="url" name="website" value="<%= user.website || '' %>" placeholder="https://..." />
-        </div>
-        <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
-      </form>
+<!-- ── Change Password Modal ──────────────────────────────────────────────── -->
+<div class="modal-overlay" id="pwdModal">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-head">
+      <h2 class="modal-title">Change Password</h2>
+      <button type="button" class="modal-close" onclick="closeModal('pwdModal')">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
     </div>
-
-    <!-- Change Password -->
-    <div class="card mt-4">
-      <h3>Change Password</h3>
-      <form action="/profile/password" method="POST">
-        <div class="form-group">
-          <label>Current Password</label>
-          <input type="password" name="current_password" required />
-        </div>
-        <div class="form-group">
-          <label>New Password</label>
-          <input type="password" name="new_password" required minlength="6" />
-        </div>
-        <div class="form-group">
-          <label>Confirm New Password</label>
-          <input type="password" name="confirm_new_password" required />
-        </div>
-        <button type="submit" class="btn btn-outline btn-full">Update Password</button>
-      </form>
-    </div>
-  </div>
-
-  <div class="profile-main">
-    <div class="card">
-      <h3>My Recent Discussions</h3>
-      <% if (posts.length === 0) { %>
-        <div class="empty-state"><i data-feather="message-circle"></i><p>You haven't posted anything yet.</p></div>
-      <% } else { %>
-        <div class="posts-list">
-          <% posts.forEach(post => { %>
-            <div class="post-card post-card-compact">
-              <a href="/discussions/<%= post.slug %>" class="post-title"><%= post.title %></a>
-              <div class="post-info">
-                <span class="badge badge-<%= post.status %>"><%= post.status %></span>
-                <span><i data-feather="eye"></i> <%= post.views %></span>
-              </div>
-            </div>
-          <% }) %>
-        </div>
-      <% } %>
-    </div>
+    <form action="/profile/password" method="POST">
+      <div class="form-group">
+        <label>Current Password</label>
+        <input type="password" name="current_password" required autocomplete="current-password" />
+      </div>
+      <div class="form-group">
+        <label>New Password</label>
+        <input type="password" name="new_password" required minlength="6" autocomplete="new-password" />
+      </div>
+      <div class="form-group">
+        <label>Confirm New Password</label>
+        <input type="password" name="confirm_new_password" required autocomplete="new-password" />
+      </div>
+      <div class="modal-footer-btns">
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeModal('pwdModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Update Password</button>
+      </div>
+    </form>
   </div>
 </div>
+
+<script>
+function openEditModal() { document.getElementById('editModal').classList.add('open'); }
+function openPwdModal()  { document.getElementById('pwdModal').classList.add('open'); }
+function closeModal(id)  { document.getElementById(id).classList.remove('open'); }
+
+// Close on backdrop click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+
+// Auto-open the correct modal based on ?modal= query param (set by redirect after error)
+const urlModal = new URLSearchParams(window.location.search).get('modal');
+if (urlModal === 'edit')     openEditModal();
+if (urlModal === 'password') openPwdModal();
+</script>

@@ -152,8 +152,8 @@
   /* ── Poll for new messages every 3s ── */
   async function poll() {
     try {
-      const res  = await fetch(`/messages/${CONV_ID}/poll?after=${lastId}`);
-      const data = await res.json();
+      const r    = await fetch(`/messages/${CONV_ID}/poll?after=${lastId}`);
+      const data = await r.json();
       if (data.messages && data.messages.length) {
         data.messages.forEach(msg => buildBubble(msg));
         lastId = data.messages[data.messages.length - 1].id;
@@ -161,9 +161,18 @@
       }
     } catch (e) { /* silent */ }
   }
-  const pollTimer = setInterval(poll, 3000);
+
+  let pollTimer = setInterval(poll, 3000);
+
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) clearInterval(pollTimer);
+    if (document.hidden) {
+      clearInterval(pollTimer);
+    } else {
+      poll();                              // catch up immediately
+      pollTimer = setInterval(poll, 3000);
+    }
   });
+
+  window.addEventListener('beforeunload', () => clearInterval(pollTimer));
 })();
 </script>

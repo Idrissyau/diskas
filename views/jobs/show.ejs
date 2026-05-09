@@ -98,6 +98,38 @@
   </div>
 
   <aside class="post-sidebar">
+    <!-- Posted by card -->
+    <% if (job.poster_name) { %>
+    <div class="card">
+      <h4 style="font-weight:700;margin-bottom:1rem">
+        <i class="fa-solid fa-circle-user fa-sm" style="color:#0EA5E9"></i> Posted by
+      </h4>
+      <div class="sidebar-author">
+        <a href="/users/<%= job.user_id %>" class="author-avatar-link">
+          <% if (job.poster_avatar) { %>
+            <img src="<%= job.poster_avatar %>" alt="<%= job.poster_name %>" class="avatar-md" loading="lazy" />
+          <% } else { %>
+            <div class="avatar-placeholder-md" aria-hidden="true"><%= job.poster_name.charAt(0) %></div>
+          <% } %>
+        </a>
+        <a href="/users/<%= job.user_id %>" class="author-name-link"><strong><%= job.poster_name %></strong></a>
+        <div class="sidebar-author-actions">
+          <a href="/users/<%= job.user_id %>" class="btn btn-outline btn-sm">
+            <i class="fa-solid fa-user fa-xs"></i> View Profile
+          </a>
+          <% if (currentUser && currentUser.id !== job.user_id) { %>
+            <form action="/messages" method="POST" style="display:inline">
+              <input type="hidden" name="user_id" value="<%= job.user_id %>" />
+              <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-comment fa-xs"></i> Message
+              </button>
+            </form>
+          <% } %>
+        </div>
+      </div>
+    </div>
+    <% } %>
+
     <div class="card">
       <h4 style="font-weight:700;margin-bottom:1rem">
         <i class="fa-solid fa-list-check fa-sm" style="color:#0EA5E9"></i> Job Summary

@@ -3,13 +3,15 @@
     <article class="card post-article" itemscope itemtype="https://schema.org/DiscussionForumPosting">
       <div class="post-article-header">
         <div class="post-author" itemprop="author" itemscope itemtype="https://schema.org/Person">
-          <% if (post.author_avatar) { %>
-            <img src="<%= post.author_avatar %>" alt="<%= post.author_name %>" class="avatar-md" loading="lazy" />
-          <% } else { %>
-            <div class="avatar-placeholder-md" aria-hidden="true"><%= (post.author_name || 'U').charAt(0) %></div>
-          <% } %>
+          <a href="/users/<%= post.user_id %>" class="author-avatar-link">
+            <% if (post.author_avatar) { %>
+              <img src="<%= post.author_avatar %>" alt="<%= post.author_name %>" class="avatar-md" loading="lazy" />
+            <% } else { %>
+              <div class="avatar-placeholder-md" aria-hidden="true"><%= (post.author_name || 'U').charAt(0) %></div>
+            <% } %>
+          </a>
           <div>
-            <strong itemprop="name"><%= post.author_name %></strong>
+            <a href="/users/<%= post.user_id %>" itemprop="name" class="author-name-link"><strong><%= post.author_name %></strong></a>
             <span class="text-muted" style="display:block;font-size:.8rem">
               <time itemprop="datePublished" datetime="<%= post.created_at %>"><%= post.timeAgo %></time>
             </span>
@@ -59,13 +61,15 @@
              itemscope itemtype="https://schema.org/Comment">
           <% if (comment.is_accepted) { %><div class="accepted-badge">✅ Accepted Answer</div><% } %>
           <div class="comment-header">
-            <% if (comment.author_avatar) { %>
-              <img src="<%= comment.author_avatar %>" alt="<%= comment.author_name %>" class="avatar-sm" loading="lazy" />
-            <% } else { %>
-              <div class="avatar-placeholder-sm" aria-hidden="true"><%= (comment.author_name || 'U').charAt(0) %></div>
-            <% } %>
+            <a href="/users/<%= comment.user_id %>" class="author-avatar-link">
+              <% if (comment.author_avatar) { %>
+                <img src="<%= comment.author_avatar %>" alt="<%= comment.author_name %>" class="avatar-sm" loading="lazy" />
+              <% } else { %>
+                <div class="avatar-placeholder-sm" aria-hidden="true"><%= (comment.author_name || 'U').charAt(0) %></div>
+              <% } %>
+            </a>
             <div itemprop="author" itemscope itemtype="https://schema.org/Person">
-              <strong itemprop="name"><%= comment.author_name %></strong>
+              <a href="/users/<%= comment.user_id %>" itemprop="name" class="author-name-link"><strong><%= comment.author_name %></strong></a>
               <span class="text-muted" style="display:block;font-size:.78rem">
                 <time datetime="<%= comment.created_at %>"><%= comment.timeAgo %></time>
               </span>
@@ -120,13 +124,28 @@
     <div class="card">
       <h4 style="font-weight:700;margin-bottom:1rem">About the Author</h4>
       <div class="sidebar-author">
-        <% if (post.author_avatar) { %>
-          <img src="<%= post.author_avatar %>" alt="<%= post.author_name %>" class="avatar-md" loading="lazy" />
-        <% } else { %>
-          <div class="avatar-placeholder-md" aria-hidden="true"><%= (post.author_name || 'U').charAt(0) %></div>
-        <% } %>
-        <strong><%= post.author_name %></strong>
-        <% if (post.author_bio) { %><p class="text-muted" style="font-size:.85rem"><%= post.author_bio %></p><% } %>
+        <a href="/users/<%= post.user_id %>" class="author-avatar-link">
+          <% if (post.author_avatar) { %>
+            <img src="<%= post.author_avatar %>" alt="<%= post.author_name %>" class="avatar-md" loading="lazy" />
+          <% } else { %>
+            <div class="avatar-placeholder-md" aria-hidden="true"><%= (post.author_name || 'U').charAt(0) %></div>
+          <% } %>
+        </a>
+        <a href="/users/<%= post.user_id %>" class="author-name-link"><strong><%= post.author_name %></strong></a>
+        <% if (post.author_bio) { %><p class="text-muted" style="font-size:.85rem;margin:.4rem 0"><%= post.author_bio %></p><% } %>
+        <div class="sidebar-author-actions">
+          <a href="/users/<%= post.user_id %>" class="btn btn-outline btn-sm">
+            <i class="fa-solid fa-user fa-xs"></i> View Profile
+          </a>
+          <% if (currentUser && currentUser.id !== post.user_id) { %>
+            <form action="/messages" method="POST" style="display:inline">
+              <input type="hidden" name="user_id" value="<%= post.user_id %>" />
+              <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-comment fa-xs"></i> Message
+              </button>
+            </form>
+          <% } %>
+        </div>
       </div>
     </div>
 

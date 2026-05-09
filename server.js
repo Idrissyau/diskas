@@ -17,7 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ── Upload directories ─────────────────────────────────────────────────────
-['public/uploads/avatars', 'public/uploads/logos', 'public/uploads/skills'].forEach(dir => {
+['public/uploads/avatars', 'public/uploads/logos', 'public/uploads/skills', 'public/uploads/covers'].forEach(dir => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
@@ -122,7 +122,16 @@ app.get('/sitemap.xml', async (req, res) => {
 
 // ── Routes ─────────────────────────────────────────────────────────────────
 const homeController = require('./controllers/homeController');
-app.get('/', homeController.index);
+
+// Root: logged-in users go to /home, guests see the landing page
+app.get('/', (req, res, next) => {
+  if (req.session.user) return res.redirect('/home');
+  homeController.index(req, res, next);
+});
+
+// /home: feed for logged-in users, guests redirected to /
+app.get('/home', homeController.feed);
+
 app.get('/search', homeController.search);
 
 app.use('/auth',        require('./routes/auth'));
@@ -213,6 +222,16 @@ async function runMigrations() {
       )`,
     ];
     for (const sql of migrations) await pool.execute(sql);
+
+    // Column additions (safe — silently skip if already present)
+    const columnMigrations = [
+      `ALTER TABLE users ADD COLUMN username VARCHAR(50) UNIQUE NULL AFTER name`,
+      `ALTER TABLE users ADD COLUMN cover_image VARCHAR(255) NULL AFTER avatar`,
+    ];
+    for (const sql of columnMigrations) {
+      try { await pool.execute(sql); } catch (e) { /* column already exists */ }
+    }
+
     console.log('✅ Migrations complete');
   } catch (err) {
     console.error('Migration error:', err.message);

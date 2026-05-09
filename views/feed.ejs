@@ -1,0 +1,321 @@
+<%
+  const tab = typeof activeTab !== 'undefined' ? activeTab : 'all';
+%>
+
+<!-- ══ FEED PAGE ════════════════════════════════════════════════════════════ -->
+<div class="med-layout">
+
+  <!-- ── MAIN COLUMN ──────────────────────────────────────────────────────── -->
+  <div class="med-main">
+
+    <!-- Tab bar -->
+    <div class="med-tabs">
+      <a href="/home"                    class="med-tab <%= tab === 'all'          ? 'active' : '' %>">For You</a>
+      <a href="/home?tab=discussions"    class="med-tab <%= tab === 'discussions'  ? 'active' : '' %>">Discussions</a>
+      <a href="/home?tab=jobs"           class="med-tab <%= tab === 'jobs'         ? 'active' : '' %>">Jobs</a>
+      <a href="/home?tab=skills"         class="med-tab <%= tab === 'skills'       ? 'active' : '' %>">Skills</a>
+    </div>
+
+    <!-- ── DISCUSSIONS ──────────────────────────────────────────────────── -->
+    <% if ((tab === 'all' || tab === 'discussions') && posts && posts.length) { %>
+      <% if (tab === 'all') { %>
+        <div class="med-section-label">
+          <i class="fa-solid fa-comments fa-xs"></i> Latest Discussions
+        </div>
+      <% } %>
+      <% posts.forEach((post, idx) => { %>
+        <article class="med-article">
+          <!-- Author row -->
+          <div class="med-author-row">
+            <a href="/users/<%= post.user_id %>" class="med-author-avatar-link">
+              <% if (post.author_avatar) { %>
+                <img src="<%= post.author_avatar %>" alt="<%= post.author_name %>" class="med-avatar" />
+              <% } else { %>
+                <div class="med-avatar med-avatar-placeholder"><%= (post.author_name || 'U').charAt(0).toUpperCase() %></div>
+              <% } %>
+            </a>
+            <span class="med-author-info">
+              <a href="/users/<%= post.user_id %>" class="med-author-name"><%= post.author_name %></a>
+              <% if (post.category_name) { %>
+                <span class="med-dot">·</span>
+                <span class="med-pub" style="color:<%= post.category_color %>"><%= post.category_name %></span>
+              <% } %>
+              <span class="med-dot">·</span>
+              <span class="med-date"><%= post.timeAgo %></span>
+            </span>
+          </div>
+
+          <!-- Body row: text + optional image -->
+          <div class="med-body">
+            <div class="med-text">
+              <div class="med-badges">
+                <% if (post.status === 'pinned') { %><span class="badge badge-pinned">📌 Pinned</span><% } %>
+                <% if (post.type === 'question') { %>
+                  <span class="badge badge-question"><%= post.is_answered ? '✅ Answered' : '❓ Q&A' %></span>
+                <% } %>
+                <% if (post.type === 'announcement') { %><span class="badge badge-announcement">📢 Announcement</span><% } %>
+              </div>
+              <a href="/discussions/<%= post.slug %>" class="med-title"><%= post.title %></a>
+              <% if (post.excerpt) { %>
+                <p class="med-excerpt"><%= post.excerpt %></p>
+              <% } %>
+            </div>
+            <% if (post.thumbnail) { %>
+              <a href="/discussions/<%= post.slug %>" class="med-thumb-link">
+                <img src="<%= post.thumbnail %>" alt="<%= post.title %>" class="med-thumb" loading="lazy" />
+              </a>
+            <% } %>
+          </div>
+
+          <!-- Meta bar -->
+          <div class="med-meta">
+            <span class="med-meta-tag"><i class="fa-solid fa-arrow-up fa-xs"></i> <%= post.vote_count || 0 %></span>
+            <span class="med-meta-tag"><i class="fa-regular fa-comment fa-xs"></i> <%= post.reply_count || 0 %></span>
+            <span class="med-meta-tag"><i class="fa-regular fa-eye fa-xs"></i> <%= post.views || 0 %></span>
+          </div>
+        </article>
+        <% if (tab === 'all' && idx === 2 && jobs && jobs.length) { %>
+          <!-- Mid-feed: inject Jobs section -->
+          <div class="med-section-label" style="margin-top:2rem">
+            <i class="fa-solid fa-briefcase fa-xs"></i> Latest Jobs
+          </div>
+          <div class="med-jobs-row">
+            <% jobs.slice(0, 3).forEach(job => { %>
+              <a href="/jobs/<%= job.slug %>" class="med-job-pill">
+                <div class="med-job-logo-wrap">
+                  <% if (job.company_logo) { %>
+                    <img src="<%= job.company_logo %>" alt="<%= job.company %>" class="med-job-logo" />
+                  <% } else { %>
+                    <div class="med-job-logo-ph"><%= job.company.charAt(0).toUpperCase() %></div>
+                  <% } %>
+                </div>
+                <div class="med-job-info">
+                  <strong class="med-job-title"><%= job.title %></strong>
+                  <span class="med-job-co"><%= job.company %></span>
+                  <span class="med-job-tags">
+                    <span class="tag tag-type" style="font-size:.7rem;padding:.1rem .45rem"><%= job.type %></span>
+                    <span style="font-size:.75rem;color:#94A3B8"><i class="fa-solid fa-location-dot fa-xs"></i> <%= job.location %></span>
+                  </span>
+                </div>
+              </a>
+            <% }) %>
+          </div>
+          <% if (jobs.length > 3) { %>
+            <a href="/jobs" class="med-see-more">See all jobs <i class="fa-solid fa-arrow-right fa-xs"></i></a>
+          <% } %>
+          <div class="med-section-label" style="margin-top:2rem">
+            <i class="fa-solid fa-comments fa-xs"></i> More Discussions
+          </div>
+        <% } %>
+      <% }) %>
+      <% if (tab === 'discussions' || tab === 'all') { %>
+        <a href="/discussions" class="med-all-link">Browse all discussions <i class="fa-solid fa-arrow-right fa-xs"></i></a>
+      <% } %>
+    <% } %>
+
+    <!-- ── JOBS (tab=jobs only) ──────────────────────────────────────────── -->
+    <% if (tab === 'jobs') { %>
+      <% if (!jobs || jobs.length === 0) { %>
+        <div class="med-empty">
+          <i class="fa-solid fa-briefcase"></i>
+          <p>No jobs posted yet. <a href="/jobs/new">Post the first one!</a></p>
+        </div>
+      <% } else { %>
+        <% jobs.forEach(job => { %>
+          <article class="med-article">
+            <div class="med-author-row">
+              <div class="med-job-logo-wrap">
+                <% if (job.company_logo) { %>
+                  <img src="<%= job.company_logo %>" alt="<%= job.company %>" class="med-job-logo" style="width:36px;height:36px;border-radius:8px" />
+                <% } else { %>
+                  <div class="med-job-logo-ph"><%= job.company.charAt(0).toUpperCase() %></div>
+                <% } %>
+              </div>
+              <span class="med-author-info">
+                <span class="med-author-name"><%= job.company %></span>
+                <% if (job.category_name) { %><span class="med-dot">·</span><span class="med-pub" style="color:<%= job.category_color %>"><%= job.category_name %></span><% } %>
+                <span class="med-dot">·</span>
+                <span class="med-date"><%= job.timeAgo %></span>
+              </span>
+            </div>
+            <div class="med-body">
+              <div class="med-text">
+                <a href="/jobs/<%= job.slug %>" class="med-title"><%= job.title %></a>
+                <div class="job-tags" style="margin-top:.4rem">
+                  <span class="tag tag-type"><%= job.type %></span>
+                  <span class="tag"><i class="fa-solid fa-location-dot fa-xs"></i> <%= job.location %></span>
+                  <% if (job.salary_min) { %><span class="tag"><i class="fa-solid fa-dollar-sign fa-xs"></i> <%= job.salary_min.toLocaleString() %>–<%= (job.salary_max||0).toLocaleString() %></span><% } %>
+                  <% if (job.featured) { %><span class="badge badge-featured">⭐ Featured</span><% } %>
+                </div>
+              </div>
+            </div>
+            <div class="med-meta">
+              <a href="/users/<%= job.user_id %>" class="med-meta-tag author-name-link" style="color:#64748B">
+                <i class="fa-solid fa-user fa-xs"></i> <%= job.poster_name || 'Posted' %>
+              </a>
+            </div>
+          </article>
+        <% }) %>
+        <a href="/jobs" class="med-all-link">Browse all jobs <i class="fa-solid fa-arrow-right fa-xs"></i></a>
+      <% } %>
+    <% } %>
+
+    <!-- ── SKILLS (tab=skills only) ──────────────────────────────────────── -->
+    <% if (tab === 'skills') { %>
+      <% if (!skills || skills.length === 0) { %>
+        <div class="med-empty">
+          <i class="fa-solid fa-book-open"></i>
+          <p>No skills shared yet. <a href="/skills/new">Share the first one!</a></p>
+        </div>
+      <% } else { %>
+        <% skills.forEach(skill => { %>
+          <article class="med-article">
+            <div class="med-author-row">
+              <a href="/users/<%= skill.user_id %>" class="med-author-avatar-link">
+                <div class="med-avatar med-avatar-placeholder"><%= (skill.author_name || 'U').charAt(0).toUpperCase() %></div>
+              </a>
+              <span class="med-author-info">
+                <a href="/users/<%= skill.user_id %>" class="med-author-name"><%= skill.author_name %></a>
+                <span class="med-dot">·</span>
+                <span class="med-pub"><span class="badge badge-level-<%= skill.level %>" style="font-size:.7rem"><%= skill.level %></span></span>
+                <span class="med-dot">·</span>
+                <span class="med-date"><%= skill.timeAgo %></span>
+              </span>
+            </div>
+            <div class="med-body">
+              <div class="med-text">
+                <a href="/skills/<%= skill.slug %>" class="med-title"><%= skill.title %></a>
+                <% if (skill.description) { %>
+                  <p class="med-excerpt"><%= skill.description.substring(0, 120) %><%= skill.description.length > 120 ? '…' : '' %></p>
+                <% } %>
+              </div>
+              <% if (skill.thumbnail) { %>
+                <a href="/skills/<%= skill.slug %>" class="med-thumb-link">
+                  <img src="<%= skill.thumbnail %>" alt="<%= skill.title %>" class="med-thumb" loading="lazy" />
+                </a>
+              <% } else { %>
+                <a href="/skills/<%= skill.slug %>" class="med-thumb-link med-thumb-placeholder">
+                  <i class="fa-solid fa-book fa-lg" style="color:#CBD5E1"></i>
+                </a>
+              <% } %>
+            </div>
+            <div class="med-meta">
+              <span class="med-meta-tag"><i class="fa-regular fa-eye fa-xs"></i> <%= skill.views || 0 %> views</span>
+            </div>
+          </article>
+        <% }) %>
+        <a href="/skills" class="med-all-link">Browse all skills <i class="fa-solid fa-arrow-right fa-xs"></i></a>
+      <% } %>
+    <% } %>
+
+    <!-- ── ALL tab: Skills section at the bottom ─────────────────────────── -->
+    <% if (tab === 'all' && skills && skills.length) { %>
+      <div class="med-section-label" style="margin-top:2rem">
+        <i class="fa-solid fa-book-open fa-xs"></i> Skills to Learn
+      </div>
+      <div class="med-skills-row">
+        <% skills.slice(0, 4).forEach(skill => { %>
+          <a href="/skills/<%= skill.slug %>" class="med-skill-card">
+            <div class="med-skill-thumb">
+              <% if (skill.thumbnail) { %>
+                <img src="<%= skill.thumbnail %>" alt="<%= skill.title %>" loading="lazy" />
+              <% } else { %>
+                <i class="fa-solid fa-book fa-lg" style="color:#CBD5E1"></i>
+              <% } %>
+            </div>
+            <div class="med-skill-body">
+              <span class="badge badge-level-<%= skill.level %>" style="font-size:.68rem"><%= skill.level %></span>
+              <strong class="med-skill-title"><%= skill.title %></strong>
+              <span class="med-skill-author">by <%= skill.author_name %></span>
+            </div>
+          </a>
+        <% }) %>
+      </div>
+      <a href="/skills" class="med-all-link">Browse all skills <i class="fa-solid fa-arrow-right fa-xs"></i></a>
+    <% } %>
+
+    <!-- Empty state for "all" tab -->
+    <% if (tab === 'all' && (!posts || posts.length === 0) && (!jobs || jobs.length === 0) && (!skills || skills.length === 0)) { %>
+      <div class="med-empty">
+        <i class="fa-solid fa-wind"></i>
+        <p>Nothing here yet. Be the first to <a href="/discussions/new">start a discussion</a>!</p>
+      </div>
+    <% } %>
+
+  </div><!-- /med-main -->
+
+  <!-- ── RIGHT SIDEBAR ──────────────────────────────────────────────────── -->
+  <aside class="med-sidebar">
+
+    <!-- Trending / Staff Picks equivalent -->
+    <% if (trendingPosts && trendingPosts.length) { %>
+    <div class="med-sb-block">
+      <h3 class="med-sb-heading">Trending on Diskas</h3>
+      <ol class="med-picks">
+        <% trendingPosts.slice(0, 5).forEach((post, i) => { %>
+          <li class="med-pick-item">
+            <span class="med-pick-num">0<%= i + 1 %></span>
+            <div class="med-pick-body">
+              <div class="med-pick-author">
+                <a href="/users/<%= post.user_id %>" class="med-pick-author-link"><%= post.author_name %></a>
+                <% if (post.category_name) { %>
+                  <span class="med-dot">·</span>
+                  <span style="color:<%= post.category_color %>;font-size:.75rem"><%= post.category_name %></span>
+                <% } %>
+              </div>
+              <a href="/discussions/<%= post.slug %>" class="med-pick-title"><%= post.title %></a>
+              <div class="med-pick-meta">
+                <span><i class="fa-solid fa-arrow-up fa-xs"></i> <%= post.vote_count || 0 %></span>
+                <span><i class="fa-regular fa-comment fa-xs"></i> <%= post.reply_count || 0 %></span>
+              </div>
+            </div>
+          </li>
+        <% }) %>
+      </ol>
+      <a href="/discussions" class="med-sb-link">See the full list <i class="fa-solid fa-arrow-right fa-xs"></i></a>
+    </div>
+    <% } %>
+
+    <!-- Recommended Topics / Categories -->
+    <% if (popularCategories && popularCategories.length) { %>
+    <div class="med-sb-block">
+      <h3 class="med-sb-heading">Recommended Topics</h3>
+      <div class="med-topic-pills">
+        <% popularCategories.forEach(cat => { %>
+          <a href="/discussions?category=<%= cat.slug %>" class="med-topic-pill">
+            <%= cat.name %>
+          </a>
+        <% }) %>
+        <a href="/discussions" class="med-topic-pill med-topic-more">See more topics</a>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- Quick compose + links -->
+    <div class="med-sb-block">
+      <h3 class="med-sb-heading">Write on Diskas</h3>
+      <p class="med-sb-sub">Share a discussion, post a job, or teach a skill.</p>
+      <div class="med-write-btns">
+        <a href="/discussions/new" class="btn btn-primary btn-sm btn-full">
+          <i class="fa-solid fa-pen fa-xs"></i> New Discussion
+        </a>
+        <a href="/jobs/new" class="btn btn-outline btn-sm btn-full" style="margin-top:.5rem">
+          <i class="fa-solid fa-briefcase fa-xs"></i> Post a Job
+        </a>
+        <a href="/skills/new" class="btn btn-outline btn-sm btn-full" style="margin-top:.5rem">
+          <i class="fa-solid fa-book-open fa-xs"></i> Share a Skill
+        </a>
+      </div>
+    </div>
+
+    <!-- My profile quick-link -->
+    <div class="med-sb-links">
+      <a href="/profile"><i class="fa-solid fa-user fa-xs"></i> My Profile</a>
+      <a href="/messages"><i class="fa-solid fa-envelope fa-xs"></i> Messages</a>
+      <a href="/search"><i class="fa-solid fa-magnifying-glass fa-xs"></i> Search</a>
+      <a href="/auth/logout" style="color:#EF4444"><i class="fa-solid fa-right-from-bracket fa-xs"></i> Sign Out</a>
+    </div>
+
+  </aside>
+
+</div><!-- /med-layout -->

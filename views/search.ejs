@@ -49,7 +49,10 @@
             <div class="post-card post-card-compact">
               <a href="/discussions/<%= p.slug %>" class="post-title"><%= p.title %></a>
               <div class="post-info">
-                <span><i class="fa-solid fa-user fa-xs"></i> <%= p.author_name %></span>
+                <span>
+                  <i class="fa-solid fa-user fa-xs"></i>
+                  <a href="/users/<%= p.user_id %>" class="author-name-link"><%= p.author_name %></a>
+                </span>
                 <% if (p.type === 'question') { %><span class="badge badge-question">Q&amp;A</span><% } %>
               </div>
             </div>
@@ -96,16 +99,18 @@
         </div>
         <div class="skills-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
           <% results.skills.forEach(s => { %>
-            <a href="/skills/<%= s.slug %>" class="skill-card">
-              <div class="skill-thumb-placeholder" style="height:90px" aria-hidden="true">
-                <i class="fa-solid fa-book fa-lg"></i>
-              </div>
+            <article class="skill-card">
+              <a href="/skills/<%= s.slug %>" class="skill-card-img-link" tabindex="-1" aria-hidden="true">
+                <div class="skill-thumb-placeholder" style="height:90px" aria-hidden="true">
+                  <i class="fa-solid fa-book fa-lg"></i>
+                </div>
+              </a>
               <div class="skill-card-body">
                 <span class="badge badge-level-<%= s.level %>"><%= s.level %></span>
-                <h3><%= s.title %></h3>
-                <p class="skill-author">by <%= s.author_name %></p>
+                <h3><a href="/skills/<%= s.slug %>" class="skill-title-link"><%= s.title %></a></h3>
+                <p class="skill-author">by <a href="/users/<%= s.user_id %>" class="author-name-link"><%= s.author_name %></a></p>
               </div>
-            </a>
+            </article>
           <% }) %>
         </div>
       </div>
