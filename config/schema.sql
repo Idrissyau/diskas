@@ -6,9 +6,11 @@ USE diskas_db;
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
+  username VARCHAR(50) UNIQUE NULL,
   email VARCHAR(150) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
   avatar VARCHAR(255) DEFAULT NULL,
+  cover_image VARCHAR(255) DEFAULT NULL,
   bio TEXT DEFAULT NULL,
   location VARCHAR(100) DEFAULT NULL,
   website VARCHAR(255) DEFAULT NULL,
@@ -41,7 +43,9 @@ CREATE TABLE IF NOT EXISTS posts (
   content LONGTEXT NOT NULL,
   type ENUM('discussion','question','announcement') DEFAULT 'discussion',
   status ENUM('active','pinned','closed','deleted') DEFAULT 'active',
-  views INT DEFAULT 0,
+  views INT NOT NULL DEFAULT 0,
+  vote_count INT NOT NULL DEFAULT 0,
+  reply_count INT NOT NULL DEFAULT 0,
   is_answered TINYINT(1) DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -191,6 +195,43 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 
 -- ───────────────────────────────────────────
+-- Follow system
+CREATE TABLE IF NOT EXISTS follows (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  follower_id INT NOT NULL,
+  following_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (follower_id)  REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_follow (follower_id, following_id)
+);
+
+-- Messaging
+CREATE TABLE IF NOT EXISTS conversations (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS conversation_participants (
+  conversation_id INT NOT NULL,
+  user_id INT NOT NULL,
+  last_read_at TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (conversation_id, user_id),
+  FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  conversation_id INT NOT NULL,
+  sender_id INT NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Seed: default categories
 -- ───────────────────────────────────────────
 INSERT IGNORE INTO categories (name, slug, description, color, icon, type) VALUES

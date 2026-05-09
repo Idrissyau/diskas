@@ -225,8 +225,10 @@ async function runMigrations() {
 
     // Column additions (safe — silently skip if already present)
     const columnMigrations = [
-      `ALTER TABLE users ADD COLUMN username VARCHAR(50) UNIQUE NULL AFTER name`,
-      `ALTER TABLE users ADD COLUMN cover_image VARCHAR(255) NULL AFTER avatar`,
+      `ALTER TABLE users  ADD COLUMN username    VARCHAR(50)  UNIQUE NULL AFTER name`,
+      `ALTER TABLE users  ADD COLUMN cover_image VARCHAR(255) NULL AFTER avatar`,
+      `ALTER TABLE posts  ADD COLUMN vote_count  INT NOT NULL DEFAULT 0`,
+      `ALTER TABLE posts  ADD COLUMN reply_count INT NOT NULL DEFAULT 0`,
     ];
     for (const sql of columnMigrations) {
       try { await pool.execute(sql); } catch (e) { /* column already exists */ }
