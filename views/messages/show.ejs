@@ -255,7 +255,9 @@
   let replyingToName    = '';
 
   let lastId = 0;
+  const renderedIds = new Set(); // guard against poll returning a msg we just sent
   const rows = area.querySelectorAll('.msg-bubble-row[data-id]');
+  rows.forEach(r => { const id = parseInt(r.dataset.id); if (id) renderedIds.add(id); });
   if (rows.length) lastId = parseInt(rows[rows.length - 1].dataset.id);
 
   function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -367,6 +369,7 @@
         ${deleteBtn}
       </div>`;
 
+    renderedIds.add(parseInt(msg.id));
     area.appendChild(row);
     scrollBottom(true);
   }
@@ -539,7 +542,9 @@
       const r = await fetch(`/messages/${CONV_ID}/poll?after=${lastId}`);
       const data = await r.json();
       if (data.messages && data.messages.length) {
-        data.messages.forEach(m => buildBubble(m));
+        data.messages
+          .filter(m => !renderedIds.has(parseInt(m.id)))
+          .forEach(m => buildBubble(m));
         lastId = data.messages[data.messages.length - 1].id;
       }
     } catch(e) {}
