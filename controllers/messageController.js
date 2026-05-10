@@ -1,6 +1,16 @@
 const { query, queryOne, insert } = require('../helpers/db');
 const { pool } = require('../config/database');
 const { timeAgo } = require('../helpers/utils');
+const fs   = require('fs');
+const path = require('path');
+
+// Ensure upload dir exists
+const MSG_UPLOAD_DIR = 'public/uploads/messages';
+if (!fs.existsSync(MSG_UPLOAD_DIR)) fs.mkdirSync(MSG_UPLOAD_DIR, { recursive: true });
+
+const IMAGE_EXTS = new Set(['jpg','jpeg','png','gif','webp','svg']);
+const VIDEO_EXTS = new Set(['mp4','webm','mov','ogg']);
+const MAX_SIZE   = 20 * 1024 * 1024; // 20 MB
 
 /* ── Conversation list ────────────────────────────────────────────────────── */
 exports.index = async (req, res) => {
@@ -88,6 +98,7 @@ exports.show = async (req, res) => {
 
     const messages = await query(
       `SELECT m.id, m.content, m.created_at, m.sender_id,
+              m.file_url, m.file_type, m.file_name,
               u.name AS sender_name, u.avatar AS sender_avatar
        FROM messages m
        JOIN users u ON m.sender_id = u.id
@@ -157,14 +168,12 @@ exports.create = async (req, res) => {
   }
 };
 
-/* ── Send a message ───────────────────────────────────────────────────────── */
+/* ── Send a message (text + optional file) ────────────────────────────────── */
 exports.send = async (req, res) => {
   try {
-    const uid    = req.session.user.id;
-    const convId = parseInt(req.params.id);
+    const uid     = req.session.user.id;
+    const convId  = parseInt(req.params.id);
     const content = (req.body.content || '').trim();
-
-    if (!content) return res.status(400).json({ error: 'Empty message' });
 
     const part = await queryOne(
       'SELECT * FROM conversation_participants WHERE conversation_id = ? AND user_id = ?',
@@ -172,11 +181,40 @@ exports.send = async (req, res) => {
     );
     if (!part) return res.status(403).json({ error: 'Not a participant' });
 
-    const msgId = await insert('messages', { conversation_id: convId, sender_id: uid, content });
+    // ── Handle optional file upload ───────────────────────────────────────
+    let file_url  = null;
+    let file_type = null;
+    let file_name = null;
+
+    if (req.files && req.files.file) {
+      const f   = req.files.file;
+      const ext = f.name.split('.').pop().toLowerCase();
+
+      if (f.size > MAX_SIZE) return res.status(400).json({ error: 'File too large (max 20 MB).' });
+
+      const fname = `msg_${uid}_${Date.now()}.${ext}`;
+      await f.mv(path.join(MSG_UPLOAD_DIR, fname));
+      file_url  = `/uploads/messages/${fname}`;
+      file_name = f.name;
+      file_type = IMAGE_EXTS.has(ext) ? 'image'
+                : VIDEO_EXTS.has(ext) ? 'video'
+                : 'file';
+    }
+
+    // Must have content OR a file
+    if (!content && !file_url) return res.status(400).json({ error: 'Nothing to send.' });
+
+    const msgData = { conversation_id: convId, sender_id: uid, content: content || '' };
+    if (file_url)  msgData.file_url  = file_url;
+    if (file_type) msgData.file_type = file_type;
+    if (file_name) msgData.file_name = file_name;
+
+    const msgId = await insert('messages', msgData);
     await query('UPDATE conversations SET updated_at = NOW() WHERE id = ?', [convId]);
 
     const message = await queryOne(
       `SELECT m.id, m.content, m.created_at, m.sender_id,
+              m.file_url, m.file_type, m.file_name,
               u.name AS sender_name, u.avatar AS sender_avatar
        FROM messages m JOIN users u ON m.sender_id = u.id
        WHERE m.id = ?`,
@@ -210,6 +248,7 @@ exports.poll = async (req, res) => {
 
     const messages = await query(
       `SELECT m.id, m.content, m.created_at, m.sender_id,
+              m.file_url, m.file_type, m.file_name,
               u.name AS sender_name, u.avatar AS sender_avatar
        FROM messages m JOIN users u ON m.sender_id = u.id
        WHERE m.conversation_id = ? AND m.id > ?

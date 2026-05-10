@@ -17,7 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ── Upload directories ─────────────────────────────────────────────────────
-['public/uploads/avatars', 'public/uploads/logos', 'public/uploads/skills', 'public/uploads/covers', 'public/uploads/communities'].forEach(dir => {
+['public/uploads/avatars', 'public/uploads/logos', 'public/uploads/skills', 'public/uploads/covers', 'public/uploads/communities', 'public/uploads/messages'].forEach(dir => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
@@ -272,10 +272,13 @@ async function runMigrations() {
 
     // Column additions (safe — silently skip if already present)
     const columnMigrations = [
-      `ALTER TABLE users  ADD COLUMN username    VARCHAR(50)  UNIQUE NULL AFTER name`,
-      `ALTER TABLE users  ADD COLUMN cover_image VARCHAR(255) NULL AFTER avatar`,
-      `ALTER TABLE posts  ADD COLUMN vote_count  INT NOT NULL DEFAULT 0`,
-      `ALTER TABLE posts  ADD COLUMN reply_count INT NOT NULL DEFAULT 0`,
+      `ALTER TABLE users    ADD COLUMN username    VARCHAR(50)  UNIQUE NULL AFTER name`,
+      `ALTER TABLE users    ADD COLUMN cover_image VARCHAR(255) NULL AFTER avatar`,
+      `ALTER TABLE posts    ADD COLUMN vote_count  INT NOT NULL DEFAULT 0`,
+      `ALTER TABLE posts    ADD COLUMN reply_count INT NOT NULL DEFAULT 0`,
+      `ALTER TABLE messages ADD COLUMN file_url   VARCHAR(500) DEFAULT NULL`,
+      `ALTER TABLE messages ADD COLUMN file_type  VARCHAR(50)  DEFAULT NULL`,
+      `ALTER TABLE messages ADD COLUMN file_name  VARCHAR(255) DEFAULT NULL`,
     ];
     for (const sql of columnMigrations) {
       try { await pool.execute(sql); } catch (e) { /* column already exists */ }

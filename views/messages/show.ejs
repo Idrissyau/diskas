@@ -6,7 +6,6 @@
       <a href="/messages" class="msg-back-mobile"><i class="fa-solid fa-arrow-left"></i></a>
       <h1 class="msg-sidebar-title">Messages</h1>
     </div>
-
     <div class="msg-conv-list">
       <% if (conversations.length === 0) { %>
         <div class="msg-empty-sidebar">
@@ -31,7 +30,11 @@
               <span class="msg-conv-time"><%= conv.timeAgo %></span>
             </div>
             <p class="msg-conv-preview <%= conv.unread > 0 && conv.id !== activeConvId ? 'msg-conv-preview--bold' : '' %>">
-              <%= conv.last_msg ? conv.last_msg.substring(0,55) + (conv.last_msg.length > 55 ? '…' : '') : 'Start the conversation' %>
+              <% if (conv.last_msg) { %>
+                <%= conv.last_msg.substring(0,55) + (conv.last_msg.length > 55 ? '…' : '') %>
+              <% } else { %>
+                <i class="fa-solid fa-paperclip" style="font-size:.75rem"></i> Attachment
+              <% } %>
             </p>
           </div>
         </a>
@@ -42,23 +45,17 @@
   <!-- Chat Panel -->
   <main class="msg-chat-panel" id="chatPanel">
 
-    <!-- Chat Header -->
+    <!-- Header -->
     <div class="msg-chat-header">
-      <a href="/messages" class="msg-back-btn" aria-label="Back to messages">
-        <i class="fa-solid fa-arrow-left"></i>
-      </a>
+      <a href="/messages" class="msg-back-btn"><i class="fa-solid fa-arrow-left"></i></a>
       <% if (other) { %>
         <a href="/users/<%= other.id %>" class="msg-chat-header-avatar">
-          <% if (other.avatar) { %>
-            <img src="<%= other.avatar %>" alt="<%= other.name %>" />
-          <% } else { %>
-            <div class="msg-chat-initial"><%= (other.name || 'U').charAt(0).toUpperCase() %></div>
-          <% } %>
-          <span class="msg-online-indicator" id="onlineIndicator"></span>
+          <% if (other.avatar) { %><img src="<%= other.avatar %>" alt="<%= other.name %>" />
+          <% } else { %><div class="msg-chat-initial"><%= (other.name||'U').charAt(0).toUpperCase() %></div><% } %>
         </a>
         <div class="msg-chat-header-info">
           <a href="/users/<%= other.id %>" class="msg-chat-other-name"><%= other.name %></a>
-          <span class="msg-chat-status" id="chatStatus">Active</span>
+          <span class="msg-chat-status">Active</span>
         </div>
         <div class="msg-chat-header-actions">
           <a href="/users/<%= other.id %>" class="msg-header-btn" title="View profile">
@@ -68,15 +65,12 @@
       <% } %>
     </div>
 
-    <!-- Messages area -->
+    <!-- Messages -->
     <div class="msg-messages-area" id="chatMessages">
       <% if (messages.length === 0) { %>
         <div class="msg-chat-start" id="chatEmptyState">
-          <% if (other && other.avatar) { %>
-            <img src="<%= other.avatar %>" alt="" class="msg-chat-start-avatar" />
-          <% } else if (other) { %>
-            <div class="msg-chat-start-initial"><%= (other.name||'U').charAt(0) %></div>
-          <% } %>
+          <% if (other && other.avatar) { %><img src="<%= other.avatar %>" alt="" class="msg-chat-start-avatar" />
+          <% } else if (other) { %><div class="msg-chat-start-initial"><%= (other.name||'U').charAt(0) %></div><% } %>
           <p class="msg-chat-start-name"><%= other?.name %></p>
           <p class="msg-chat-start-hint">Say hello and start the conversation!</p>
         </div>
@@ -86,9 +80,9 @@
       <% messages.forEach(msg => { %>
         <%
           const msgDate = new Date(msg.created_at).toDateString();
-          const today   = new Date().toDateString();
-          const yesterday = new Date(Date.now() - 86400000).toDateString();
-          const dateLabel = msgDate === today ? 'Today' : msgDate === yesterday ? 'Yesterday' : new Date(msg.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+          const today = new Date().toDateString();
+          const yesterday = new Date(Date.now()-86400000).toDateString();
+          const dateLabel = msgDate===today?'Today':msgDate===yesterday?'Yesterday':new Date(msg.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
         %>
         <% if (msgDate !== lastDate) { %>
           <div class="msg-date-divider"><span><%= dateLabel %></span></div>
@@ -98,15 +92,31 @@
         <div class="msg-bubble-row <%= msg.isMine ? 'msg-bubble-row--mine' : 'msg-bubble-row--theirs' %>" data-id="<%= msg.id %>">
           <% if (!msg.isMine) { %>
             <div class="msg-bubble-avatar">
-              <% if (other && other.avatar) { %>
-                <img src="<%= other.avatar %>" alt="" />
-              <% } else { %>
-                <div class="msg-bubble-initial"><%= (other?.name||'U').charAt(0) %></div>
-              <% } %>
+              <% if (other && other.avatar) { %><img src="<%= other.avatar %>" alt="" />
+              <% } else { %><div class="msg-bubble-initial"><%= (other?.name||'U').charAt(0) %></div><% } %>
             </div>
           <% } %>
           <div class="msg-bubble-wrap">
-            <div class="msg-bubble"><%- msg.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') %></div>
+            <div class="msg-bubble">
+              <%- msg.content ? msg.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') : '' %>
+              <% if (msg.file_url) { %>
+                <% if (msg.file_type === 'image') { %>
+                  <a href="<%= msg.file_url %>" target="_blank" class="msg-media-img-wrap">
+                    <img src="<%= msg.file_url %>" alt="<%= msg.file_name %>" class="msg-media-img" loading="lazy" />
+                  </a>
+                <% } else if (msg.file_type === 'video') { %>
+                  <video class="msg-media-video" controls preload="metadata">
+                    <source src="<%= msg.file_url %>" />
+                    Your browser does not support video.
+                  </video>
+                <% } else { %>
+                  <a href="<%= msg.file_url %>" target="_blank" download="<%= msg.file_name %>" class="msg-file-chip">
+                    <i class="fa-solid fa-file-arrow-down"></i>
+                    <span><%= msg.file_name %></span>
+                  </a>
+                <% } %>
+              <% } %>
+            </div>
             <span class="msg-bubble-time"><%= msg.timeAgo %></span>
           </div>
         </div>
@@ -115,18 +125,32 @@
 
     <!-- Input bar -->
     <div class="msg-input-bar">
-      <form id="messageForm" class="msg-input-form" autocomplete="off">
-        <div class="msg-input-wrap">
-          <textarea
-            id="messageInput"
-            class="msg-textarea"
-            placeholder="Type a message…"
-            rows="1"
-            maxlength="2000"
-            required
-          ></textarea>
+      <!-- File preview -->
+      <div class="msg-file-preview" id="filePreview" style="display:none">
+        <div class="msg-file-preview-inner">
+          <img id="filePreviewImg" src="" alt="" style="display:none" />
+          <div id="filePreviewChip" class="msg-file-preview-chip" style="display:none">
+            <i class="fa-solid fa-file"></i>
+            <span id="filePreviewName"></span>
+          </div>
+          <button type="button" id="clearFile" class="msg-clear-file" title="Remove file">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
-        <button type="submit" class="msg-send-btn" aria-label="Send message">
+      </div>
+
+      <form id="messageForm" class="msg-input-form" autocomplete="off" enctype="multipart/form-data">
+        <!-- Attach button -->
+        <label class="msg-attach-label" title="Attach file">
+          <i class="fa-solid fa-paperclip"></i>
+          <input type="file" id="fileInput" name="file" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar" style="display:none" />
+        </label>
+
+        <div class="msg-input-wrap">
+          <textarea id="messageInput" class="msg-textarea" placeholder="Type a message…" rows="1" maxlength="2000"></textarea>
+        </div>
+
+        <button type="submit" class="msg-send-btn" id="sendBtn" aria-label="Send">
           <i class="fa-solid fa-paper-plane"></i>
         </button>
       </form>
@@ -137,31 +161,59 @@
 
 <script>
 (function () {
-  const CONV_ID     = <%= conversation.id %>;
-  const CURRENT_UID = <%= currentUserId %>;
-  const otherName   = '<%= (other?.name || "User").replace(/'/g, "\\'") %>';
-  const otherAvatar = '<%= other?.avatar || "" %>';
+  const CONV_ID      = <%= conversation.id %>;
+  const CURRENT_UID  = <%= currentUserId %>;
+  const otherName    = '<%= (other?.name || "User").replace(/'/g, "\\'") %>';
+  const otherAvatar  = '<%= other?.avatar || "" %>';
   const otherInitial = '<%= (other?.name || "U").charAt(0).toUpperCase() %>';
 
-  const area    = document.getElementById('chatMessages');
-  const form    = document.getElementById('messageForm');
-  const input   = document.getElementById('messageInput');
-  const empty   = document.getElementById('chatEmptyState');
+  const area      = document.getElementById('chatMessages');
+  const form      = document.getElementById('messageForm');
+  const input     = document.getElementById('messageInput');
+  const fileInput = document.getElementById('fileInput');
+  const preview   = document.getElementById('filePreview');
+  const prevImg   = document.getElementById('filePreviewImg');
+  const prevChip  = document.getElementById('filePreviewChip');
+  const prevName  = document.getElementById('filePreviewName');
+  const clearBtn  = document.getElementById('clearFile');
+  const sendBtn   = document.getElementById('sendBtn');
+  const emptyState = document.getElementById('chatEmptyState');
 
   let lastId = 0;
   const rows = area.querySelectorAll('.msg-bubble-row[data-id]');
   if (rows.length) lastId = parseInt(rows[rows.length - 1].dataset.id);
 
-  function esc(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-  function scrollBottom(smooth) {
-    area.scrollTo({ top: area.scrollHeight, behavior: smooth ? 'smooth' : 'instant' });
-  }
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function scrollBottom(smooth) { area.scrollTo({ top: area.scrollHeight, behavior: smooth ? 'smooth' : 'instant' }); }
   scrollBottom(false);
 
+  /* ── File picker ── */
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    preview.style.display = 'block';
+    if (file.type.startsWith('image/')) {
+      prevImg.src = URL.createObjectURL(file);
+      prevImg.style.display = 'block';
+      prevChip.style.display = 'none';
+    } else {
+      prevImg.style.display = 'none';
+      prevChip.style.display = 'flex';
+      prevName.textContent = file.name;
+    }
+  });
+
+  clearBtn.addEventListener('click', () => {
+    fileInput.value = '';
+    preview.style.display = 'none';
+    prevImg.src = '';
+    prevImg.style.display = 'none';
+    prevChip.style.display = 'none';
+  });
+
+  /* ── Build bubble HTML ── */
   function buildBubble(msg) {
-    if (empty) empty.remove();
+    if (emptyState) emptyState.remove();
     const isMine = msg.isMine || msg.sender_id === CURRENT_UID;
     const row = document.createElement('div');
     row.className = `msg-bubble-row ${isMine ? 'msg-bubble-row--mine' : 'msg-bubble-row--theirs'}`;
@@ -173,12 +225,32 @@
           : `<div class="msg-bubble-avatar"><div class="msg-bubble-initial">${esc(otherInitial)}</div></div>`)
       : '';
 
-    const content = esc(msg.content).replace(/\n/g,'<br>');
+    const textHtml = msg.content
+      ? `<span>${esc(msg.content).replace(/\n/g,'<br>')}</span>`
+      : '';
+
+    let mediaHtml = '';
+    if (msg.file_url) {
+      if (msg.file_type === 'image') {
+        mediaHtml = `<a href="${esc(msg.file_url)}" target="_blank" class="msg-media-img-wrap">
+          <img src="${esc(msg.file_url)}" alt="${esc(msg.file_name||'image')}" class="msg-media-img" loading="lazy" />
+        </a>`;
+      } else if (msg.file_type === 'video') {
+        mediaHtml = `<video class="msg-media-video" controls preload="metadata">
+          <source src="${esc(msg.file_url)}" />
+        </video>`;
+      } else {
+        mediaHtml = `<a href="${esc(msg.file_url)}" target="_blank" download="${esc(msg.file_name||'file')}" class="msg-file-chip">
+          <i class="fa-solid fa-file-arrow-down"></i>
+          <span>${esc(msg.file_name||'Download file')}</span>
+        </a>`;
+      }
+    }
 
     row.innerHTML = `
       ${avatarHtml}
       <div class="msg-bubble-wrap">
-        <div class="msg-bubble">${content}</div>
+        <div class="msg-bubble">${textHtml}${mediaHtml}</div>
         <span class="msg-bubble-time">${esc(msg.timeAgo || 'just now')}</span>
       </div>`;
 
@@ -186,40 +258,56 @@
     scrollBottom(true);
   }
 
-  /* Send */
+  /* ── Send ── */
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const text = input.value.trim();
-    if (!text) return;
-    input.value = '';
-    input.style.height = 'auto';
+    const file = fileInput.files[0];
+    if (!text && !file) return;
+
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
     try {
-      const res = await fetch(`/messages/${CONV_ID}`, {
+      const fd = new FormData();
+      if (text) fd.append('content', text);
+      if (file) fd.append('file', file);
+
+      const res  = await fetch(`/messages/${CONV_ID}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-        body: JSON.stringify({ content: text }),
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: fd,
       });
       const data = await res.json();
+
       if (data.success && data.message) {
         buildBubble({ ...data.message, isMine: true });
         lastId = data.message.id;
       }
     } catch (err) { console.error(err); }
+    finally {
+      input.value = '';
+      input.style.height = 'auto';
+      fileInput.value = '';
+      preview.style.display = 'none';
+      prevImg.src = '';
+      prevImg.style.display = 'none';
+      prevChip.style.display = 'none';
+      sendBtn.disabled = false;
+      sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+    }
   });
 
-  /* Auto-resize */
+  /* ── Auto-resize textarea ── */
   input.addEventListener('input', () => {
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 120) + 'px';
   });
-
-  /* Enter to send */
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
   });
 
-  /* Poll */
+  /* ── Poll ── */
   async function poll() {
     try {
       const r = await fetch(`/messages/${CONV_ID}/poll?after=${lastId}`);
@@ -233,12 +321,11 @@
 
   let timer = setInterval(poll, 3000);
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { clearInterval(timer); }
+    if (document.hidden) clearInterval(timer);
     else { poll(); timer = setInterval(poll, 3000); }
   });
   window.addEventListener('beforeunload', () => clearInterval(timer));
 
-  /* Focus input */
   input.focus();
 })();
 </script>
