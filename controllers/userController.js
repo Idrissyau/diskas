@@ -72,12 +72,23 @@ exports.show = async (req, res) => {
       existingConvId = conv?.id || null;
     }
 
+    // Communities owned by this user
+    const communities = await query(
+      `SELECT c.slug, c.name, c.avatar, c.cover_image, c.is_private,
+              (SELECT COUNT(*) FROM community_members cm WHERE cm.community_id = c.id) AS member_count
+       FROM communities c
+       WHERE c.owner_id = ? AND c.status = 'active'
+       ORDER BY c.created_at DESC`,
+      [targetId]
+    );
+
     res.render('users/show', {
       title: user.name,
       profile: { ...user, memberSince: timeAgo(user.created_at) },
       followerCount:  followersRow?.count || 0,
       followingCount: followingRow?.count  || 0,
       posts: posts.map(p => ({ ...p, timeAgo: timeAgo(p.created_at) })),
+      communities,
       isFollowing,
       canFollow:  me && me.id !== targetId,
       canMessage: me && me.id !== targetId,

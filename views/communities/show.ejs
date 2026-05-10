@@ -35,6 +35,11 @@
       </div>
 
       <div class="comm-banner-actions">
+        <!-- Share button — always visible -->
+        <button class="btn btn-outline comm-share-btn" onclick="openShareModal()" title="Share community">
+          <i class="fa-solid fa-share-nodes"></i> Share
+        </button>
+
         <% if (!currentUser) { %>
           <a href="/auth/login" class="btn btn-primary">Join Community</a>
         <% } else if (isOwner) { %>
@@ -43,13 +48,13 @@
           </a>
         <% } else if (membership) { %>
           <form action="/communities/<%= community.slug %>/leave" method="POST" onsubmit="return confirm('Leave this community?')">
-            <button class="btn btn-outline" style="color:var(--danger);border-color:var(--danger)">
+            <button class="btn btn-danger-outline">
               <i class="fa-solid fa-right-from-bracket"></i> Leave
             </button>
           </form>
         <% } else { %>
           <form action="/communities/<%= community.slug %>/join" method="POST">
-            <button class="btn btn-primary"><i class="fa-solid fa-plus"></i> Join Community</button>
+            <button class="btn btn-primary comm-join-btn"><i class="fa-solid fa-plus"></i> Join Community</button>
           </form>
         <% } %>
       </div>
@@ -193,11 +198,27 @@
           <form action="/communities/<%= community.slug %>/join" method="POST" style="margin-top:.75rem">
             <button class="btn btn-primary btn-sm" style="width:100%"><i class="fa-solid fa-plus"></i> Join Community</button>
           </form>
+          <form action="/communities/<%= community.slug %>/leave" method="POST" style="margin-top:.5rem;display:none" id="sidebarLeaveForm">
+            <button class="btn btn-sm" style="width:100%;color:var(--danger);border:1px solid var(--danger);background:transparent">
+              <i class="fa-solid fa-right-from-bracket"></i> Leave Community
+            </button>
+          </form>
         <% } else if (isOwner) { %>
           <a href="/communities/<%= community.slug %>/settings" class="btn btn-outline btn-sm" style="width:100%;margin-top:.75rem">
             <i class="fa-solid fa-gear"></i> Manage Community
           </a>
+        <% } else if (membership) { %>
+          <form action="/communities/<%= community.slug %>/leave" method="POST" style="margin-top:.75rem" onsubmit="return confirm('Leave this community?')">
+            <button class="btn btn-sm" style="width:100%;color:var(--danger);border:1px solid var(--danger);background:transparent">
+              <i class="fa-solid fa-right-from-bracket"></i> Leave Community
+            </button>
+          </form>
         <% } %>
+
+        <!-- Share -->
+        <button class="btn btn-outline btn-sm" style="width:100%;margin-top:.75rem" onclick="openShareModal()">
+          <i class="fa-solid fa-share-nodes"></i> Share Community
+        </button>
       </div>
 
       <!-- Members -->
@@ -232,7 +253,75 @@
   </div>
 </div>
 
+<!-- ── Share Modal ────────────────────────────────────────────────────── -->
+<div class="share-modal-overlay" id="shareOverlay" style="display:none" onclick="if(event.target===this)closeShareModal()">
+  <div class="share-modal-box">
+    <div class="share-modal-head">
+      <h3><i class="fa-solid fa-share-nodes"></i> Share Community</h3>
+      <button class="share-modal-close" onclick="closeShareModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <p class="share-modal-label">Community link</p>
+    <div class="share-copy-row">
+      <input type="text" id="shareLinkInput" class="share-link-input" readonly
+             value="<%= (typeof appUrl !== 'undefined' ? appUrl : '') %>/communities/<%= community.slug %>" />
+      <button class="btn btn-primary btn-sm" id="copyLinkBtn" onclick="copyLink()">
+        <i class="fa-solid fa-copy"></i> Copy
+      </button>
+    </div>
+
+    <p class="share-modal-label" style="margin-top:1.25rem">Share on</p>
+    <div class="share-socials">
+      <a class="share-social-btn share-twitter"
+         href="https://twitter.com/intent/tweet?text=<%= encodeURIComponent('Join ' + community.name + ' on Diskas!') %>&url=<%= encodeURIComponent((typeof appUrl !== 'undefined' ? appUrl : '') + '/communities/' + community.slug) %>"
+         target="_blank" rel="noopener">
+        <i class="fa-brands fa-x-twitter"></i> X / Twitter
+      </a>
+      <a class="share-social-btn share-whatsapp"
+         href="https://wa.me/?text=<%= encodeURIComponent('Join ' + community.name + ' on Diskas! ' + (typeof appUrl !== 'undefined' ? appUrl : '') + '/communities/' + community.slug) %>"
+         target="_blank" rel="noopener">
+        <i class="fa-brands fa-whatsapp"></i> WhatsApp
+      </a>
+      <a class="share-social-btn share-facebook"
+         href="https://www.facebook.com/sharer/sharer.php?u=<%= encodeURIComponent((typeof appUrl !== 'undefined' ? appUrl : '') + '/communities/' + community.slug) %>"
+         target="_blank" rel="noopener">
+        <i class="fa-brands fa-facebook-f"></i> Facebook
+      </a>
+      <a class="share-social-btn share-telegram"
+         href="https://t.me/share/url?url=<%= encodeURIComponent((typeof appUrl !== 'undefined' ? appUrl : '') + '/communities/' + community.slug) %>&text=<%= encodeURIComponent('Join ' + community.name + ' on Diskas!') %>"
+         target="_blank" rel="noopener">
+        <i class="fa-brands fa-telegram"></i> Telegram
+      </a>
+    </div>
+  </div>
+</div>
+
 <script>
+  /* ── Share modal ── */
+  function openShareModal() {
+    // Ensure the link is the real current URL if APP_URL placeholder is empty
+    const inp = document.getElementById('shareLinkInput');
+    if (!inp.value || !inp.value.startsWith('http')) {
+      inp.value = window.location.origin + '/communities/<%= community.slug %>';
+    }
+    document.getElementById('shareOverlay').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+  function closeShareModal() {
+    document.getElementById('shareOverlay').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+  function copyLink() {
+    const inp = document.getElementById('shareLinkInput');
+    inp.select(); inp.setSelectionRange(0, 9999);
+    navigator.clipboard.writeText(inp.value).then(() => {
+      const btn = document.getElementById('copyLinkBtn');
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+      setTimeout(() => { btn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy'; }, 2000);
+    });
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeShareModal(); });
+
   const trigger  = document.getElementById('composeTrigger');
   const form     = document.getElementById('composeForm');
   const cancelBtn = document.getElementById('cancelCompose');

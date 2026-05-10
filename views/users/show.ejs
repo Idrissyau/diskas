@@ -107,11 +107,16 @@
 
   <!-- Tab bar -->
   <div class="tw-tabs">
-    <span class="tw-tab active">Posts</span>
+    <span class="tw-tab active" data-tab="posts">Posts</span>
+    <% if (communities && communities.length > 0) { %>
+      <span class="tw-tab" data-tab="communities">
+        Communities <span class="tw-tab-badge"><%= communities.length %></span>
+      </span>
+    <% } %>
   </div>
 
   <!-- Posts feed -->
-  <div class="tw-feed">
+  <div class="tw-feed" id="tabPosts">
     <% if (posts.length === 0) { %>
       <div class="tw-empty">
         <i class="fa-solid fa-feather-pointed"></i>
@@ -146,9 +151,48 @@
     <% } %>
   </div>
 
+  <!-- Communities tab -->
+  <% if (communities && communities.length > 0) { %>
+  <div class="tw-feed" id="tabCommunities" style="display:none">
+    <div class="prof-comm-grid">
+      <% communities.forEach(comm => { %>
+        <div class="prof-comm-card">
+          <!-- Cover -->
+          <div class="prof-comm-cover">
+            <% if (comm.cover_image) { %>
+              <img src="<%= comm.cover_image %>" alt="" />
+            <% } else { %>
+              <div class="prof-comm-cover-default"></div>
+            <% } %>
+            <% if (comm.is_private) { %>
+              <span class="prof-comm-private"><i class="fa-solid fa-lock"></i> Private</span>
+            <% } %>
+          </div>
+          <!-- Body -->
+          <div class="prof-comm-body">
+            <div class="prof-comm-avatar-wrap">
+              <% if (comm.avatar) { %>
+                <img src="<%= comm.avatar %>" alt="<%= comm.name %>" class="prof-comm-avatar" />
+              <% } else { %>
+                <div class="prof-comm-avatar prof-comm-avatar-placeholder"><%= comm.name.charAt(0).toUpperCase() %></div>
+              <% } %>
+            </div>
+            <h3 class="prof-comm-name"><a href="/communities/<%= comm.slug %>"><%= comm.name %></a></h3>
+            <p class="prof-comm-members"><i class="fa-solid fa-users fa-xs"></i> <%= comm.member_count %> member<%= comm.member_count !== 1 ? 's' : '' %></p>
+            <a href="/communities/<%= comm.slug %>" class="btn btn-primary btn-sm prof-comm-join-btn">
+              View Community
+            </a>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+  <% } %>
+
 </div><!-- /tw-profile-wrap -->
 
 <script>
+/* ── Follow toggle ── */
 const followBtn = document.getElementById('followBtn');
 if (followBtn) {
   followBtn.addEventListener('click', async () => {
@@ -168,4 +212,16 @@ if (followBtn) {
     } catch (e) { console.error(e); }
   });
 }
+
+/* ── Tab switching ── */
+document.querySelectorAll('.tw-tab[data-tab]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tw-tab[data-tab]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const target = tab.dataset.tab;
+    document.getElementById('tabPosts').style.display       = target === 'posts'       ? '' : 'none';
+    const commTab = document.getElementById('tabCommunities');
+    if (commTab) commTab.style.display = target === 'communities' ? '' : 'none';
+  });
+});
 </script>
