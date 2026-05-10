@@ -1,0 +1,75 @@
+<div class="comm-hero">
+  <div class="container">
+    <div class="comm-hero-inner">
+      <div>
+        <h1 class="comm-hero-title">Find People</h1>
+        <p class="comm-hero-sub">Connect with professionals, learners, and creators on Diskas.</p>
+      </div>
+    </div>
+    <form action="/users" method="GET" class="comm-search-bar">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="search" name="q" placeholder="Search by name, username, or bio..." value="<%= searchQ %>" autocomplete="off" />
+      <button type="submit" class="btn btn-primary btn-sm">Search</button>
+    </form>
+  </div>
+</div>
+
+<div class="container" style="padding:2rem 1.25rem">
+  <% if (users.length === 0) { %>
+    <div class="comm-empty">
+      <div class="comm-empty-icon"><i class="fa-solid fa-users"></i></div>
+      <h3><%= searchQ ? 'No users match your search.' : 'No users found.' %></h3>
+    </div>
+  <% } else { %>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.25rem">
+      <% users.forEach(u => { %>
+        <div class="card" style="padding:1.5rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.6rem;transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.1)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+          <a href="/users/<%= u.id %>">
+            <% if (u.avatar) { %>
+              <img src="<%= u.avatar %>" alt="<%= u.name %>" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--border)" />
+            <% } else { %>
+              <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:800"><%= u.name.charAt(0).toUpperCase() %></div>
+            <% } %>
+          </a>
+          <div>
+            <a href="/users/<%= u.id %>" style="font-weight:700;font-size:.97rem;color:var(--navy);display:block"><%= u.name %></a>
+            <% if (u.username) { %><span style="font-size:.78rem;color:var(--text-muted)">@<%= u.username %></span><% } %>
+            <% if (u.role === 'admin') { %><span class="badge" style="background:#FEF3C7;color:#92400E;font-size:.7rem;margin-left:.35rem">Admin</span><% } %>
+          </div>
+          <% if (u.bio) { %>
+            <p style="font-size:.8rem;color:var(--text-muted);line-height:1.5;max-height:3em;overflow:hidden"><%= u.bio.length > 80 ? u.bio.substring(0,80)+'…' : u.bio %></p>
+          <% } %>
+          <div style="font-size:.78rem;color:var(--text-muted)">
+            <i class="fa-solid fa-users" style="margin-right:.25rem"></i><%= u.follower_count %> follower<%= u.follower_count !== 1 ? 's' : '' %>
+          </div>
+          <% if (!u.isMe && currentUser) { %>
+            <button class="btn btn-sm <%= u.isFollowing ? 'btn-outline' : 'btn-primary' %>"
+                    style="width:100%;margin-top:.25rem"
+                    onclick="toggleFollow(<%= u.id %>, this)">
+              <i class="fa-solid <%= u.isFollowing ? 'fa-user-check' : 'fa-user-plus' %>"></i>
+              <%= u.isFollowing ? 'Following' : 'Follow' %>
+            </button>
+          <% } else if (!currentUser) { %>
+            <a href="/auth/login" class="btn btn-sm btn-primary" style="width:100%;margin-top:.25rem">Follow</a>
+          <% } %>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
+
+<script>
+async function toggleFollow(userId, btn) {
+  try {
+    const r = await fetch(`/users/${userId}/follow`, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    const d = await r.json();
+    if (d.following) {
+      btn.className = btn.className.replace('btn-primary','btn-outline');
+      btn.innerHTML = '<i class="fa-solid fa-user-check"></i> Following';
+    } else {
+      btn.className = btn.className.replace('btn-outline','btn-primary');
+      btn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Follow';
+    }
+  } catch(e) { console.error(e); }
+}
+</script>

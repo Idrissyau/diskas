@@ -1,6 +1,36 @@
 const { query, queryOne, insert, remove } = require('../helpers/db');
 const { timeAgo } = require('../helpers/utils');
 
+/* ── Browse users ─────────────────────────────────────────────────────────── */
+exports.index = async (req, res) => {
+  try {
+    const q = req.query.q ? `%${req.query.q.trim()}%` : null;
+    let sql = `SELECT id, name, username, avatar, bio, role, created_at,
+                      (SELECT COUNT(*) FROM follows WHERE following_id = u.id) AS follower_count
+               FROM users u WHERE status = 'active'`;
+    const params = [];
+    if (q) { sql += ' AND (name LIKE ? OR username LIKE ? OR bio LIKE ?)'; params.push(q, q, q); }
+    sql += ' ORDER BY follower_count DESC, created_at DESC LIMIT 40';
+
+    const users = await query(sql, params);
+
+    let followingIds = new Set();
+    if (req.session.user) {
+      const fl = await query('SELECT following_id FROM follows WHERE follower_id = ?', [req.session.user.id]);
+      followingIds = new Set(fl.map(f => f.following_id));
+    }
+
+    res.render('users/index', {
+      title: 'Find People',
+      users: users.map(u => ({ ...u, isFollowing: followingIds.has(u.id), isMe: req.session.user && u.id === req.session.user.id })),
+      searchQ: req.query.q || '',
+    });
+  } catch (err) {
+    console.error(err);
+    res.render('users/index', { title: 'Find People', users: [], searchQ: '' });
+  }
+};
+
 /* ── Public profile ───────────────────────────────────────────────────────── */
 exports.show = async (req, res) => {
   try {
