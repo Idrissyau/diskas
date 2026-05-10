@@ -1,0 +1,80 @@
+<div class="container" style="max-width:800px;padding:2rem 1.25rem">
+  <a href="/communities/<%= community.slug %>" style="color:var(--text-muted);font-size:.88rem;display:inline-flex;align-items:center;gap:.4rem;margin-bottom:1.25rem">
+    <i class="fa-solid fa-arrow-left"></i> Back to <%= community.name %>
+  </a>
+
+  <!-- Post Card -->
+  <div class="card" style="padding:1.75rem;margin-bottom:1.5rem">
+    <!-- Author -->
+    <div class="comm-post-author" style="margin-bottom:1rem">
+      <a href="/users/<%= post.user_id %>">
+        <% if (post.author_avatar) { %>
+          <img src="<%= post.author_avatar %>" alt="" class="avatar-sm" />
+        <% } else { %>
+          <div class="avatar-placeholder-sm"><%= (post.author_name||'U').charAt(0) %></div>
+        <% } %>
+      </a>
+      <div>
+        <a href="/users/<%= post.user_id %>" class="comm-post-author-name"><%= post.author_name %></a>
+        <span class="comm-post-time"><%= post.timeAgo %></span>
+      </div>
+      <% if ((currentUser && post.user_id === currentUser.id) || isOwner) { %>
+        <form action="/communities/<%= community.slug %>/posts/<%= post.id %>/delete" method="POST"
+              style="margin-left:auto" onsubmit="return confirm('Delete this post?')">
+          <button class="comm-post-delete-btn"><i class="fa-solid fa-trash"></i></button>
+        </form>
+      <% } %>
+    </div>
+
+    <% if (post.title) { %>
+      <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:.75rem"><%= post.title %></h1>
+    <% } %>
+    <div style="white-space:pre-wrap;line-height:1.7;color:var(--body)"><%= post.content %></div>
+    <% if (post.image) { %>
+      <img src="<%= post.image %>" alt="" style="width:100%;max-height:480px;object-fit:cover;border-radius:10px;margin-top:1rem" />
+    <% } %>
+  </div>
+
+  <!-- Comments -->
+  <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:1rem">
+    <%= comments.length %> Comment<%= comments.length !== 1 ? 's' : '' %>
+  </h2>
+
+  <% comments.forEach(c => { %>
+    <div class="card" style="padding:1.25rem;margin-bottom:.75rem">
+      <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:.65rem">
+        <a href="/users/<%= c.user_id %>">
+          <% if (c.author_avatar) { %>
+            <img src="<%= c.author_avatar %>" alt="" class="avatar-sm" />
+          <% } else { %>
+            <div class="avatar-placeholder-sm"><%= (c.author_name||'U').charAt(0) %></div>
+          <% } %>
+        </a>
+        <div>
+          <a href="/users/<%= c.user_id %>" style="font-weight:600;font-size:.9rem"><%= c.author_name %></a>
+          <span style="color:var(--text-muted);font-size:.78rem;display:block"><%= c.timeAgo %></span>
+        </div>
+      </div>
+      <p style="white-space:pre-wrap;font-size:.92rem;line-height:1.65;color:var(--body)"><%= c.content %></p>
+    </div>
+  <% }) %>
+
+  <!-- Comment Form -->
+  <% if (membership || isOwner) { %>
+    <div class="card" style="padding:1.25rem;margin-top:1rem">
+      <h3 style="font-size:.95rem;font-weight:600;margin-bottom:.75rem">Add a comment</h3>
+      <form action="/communities/<%= community.slug %>/posts/<%= post.id %>/comment" method="POST">
+        <textarea name="content" class="form-input" rows="3" placeholder="Write your comment..." required style="margin-bottom:.75rem"></textarea>
+        <button type="submit" class="btn btn-primary btn-sm">Post Comment</button>
+      </form>
+    </div>
+  <% } else if (currentUser && !membership) { %>
+    <div class="card" style="padding:1.25rem;text-align:center;color:var(--text-muted)">
+      <a href="/communities/<%= community.slug %>/join" class="btn btn-primary btn-sm">Join to comment</a>
+    </div>
+  <% } else if (!currentUser) { %>
+    <div class="card" style="padding:1.25rem;text-align:center">
+      <a href="/auth/login" class="btn btn-primary btn-sm">Sign in to comment</a>
+    </div>
+  <% } %>
+</div>

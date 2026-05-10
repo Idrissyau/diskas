@@ -1,0 +1,270 @@
+<!-- Community Banner -->
+<div class="comm-banner">
+  <div class="comm-banner-cover">
+    <% if (community.cover_image) { %>
+      <img src="<%= community.cover_image %>" alt="<%= community.name %> cover" />
+    <% } else { %>
+      <div class="comm-banner-cover-default"></div>
+    <% } %>
+  </div>
+
+  <div class="container">
+    <div class="comm-banner-info">
+      <!-- Avatar -->
+      <div class="comm-banner-avatar">
+        <% if (community.avatar) { %>
+          <img src="<%= community.avatar %>" alt="<%= community.name %>" />
+        <% } else { %>
+          <div class="comm-banner-avatar-placeholder"><%= community.name.charAt(0).toUpperCase() %></div>
+        <% } %>
+      </div>
+
+      <div class="comm-banner-text">
+        <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
+          <h1 class="comm-banner-title"><%= community.name %></h1>
+          <% if (community.is_private) { %>
+            <span class="comm-private-badge"><i class="fa-solid fa-lock"></i> Private</span>
+          <% } %>
+        </div>
+        <p class="comm-banner-desc"><%= community.description %></p>
+        <div class="comm-banner-stats">
+          <span><i class="fa-solid fa-users"></i> <strong><%= community.member_count %></strong> members</span>
+          <span><i class="fa-solid fa-file-lines"></i> <strong><%= community.post_count %></strong> posts</span>
+          <span style="color:var(--text-muted);font-size:.8rem">By <%= community.owner_name %></span>
+        </div>
+      </div>
+
+      <div class="comm-banner-actions">
+        <% if (!currentUser) { %>
+          <a href="/auth/login" class="btn btn-primary">Join Community</a>
+        <% } else if (isOwner) { %>
+          <a href="/communities/<%= community.slug %>/settings" class="btn btn-outline">
+            <i class="fa-solid fa-gear"></i> Settings
+          </a>
+        <% } else if (membership) { %>
+          <form action="/communities/<%= community.slug %>/leave" method="POST" onsubmit="return confirm('Leave this community?')">
+            <button class="btn btn-outline" style="color:var(--danger);border-color:var(--danger)">
+              <i class="fa-solid fa-right-from-bracket"></i> Leave
+            </button>
+          </form>
+        <% } else { %>
+          <form action="/communities/<%= community.slug %>/join" method="POST">
+            <button class="btn btn-primary"><i class="fa-solid fa-plus"></i> Join Community</button>
+          </form>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Layout -->
+<div class="container">
+  <div class="comm-layout">
+
+    <!-- Left: Posts Feed -->
+    <div class="comm-main">
+
+      <!-- Compose Box (members only) -->
+      <% if (membership || isOwner) { %>
+        <div class="card comm-compose" id="composeCard">
+          <div class="comm-compose-trigger" id="composeTrigger">
+            <% if (currentUser.avatar) { %>
+              <img src="<%= currentUser.avatar %>" alt="" class="avatar-sm" />
+            <% } else { %>
+              <div class="avatar-placeholder-sm"><%= currentUser.name.charAt(0) %></div>
+            <% } %>
+            <div class="comm-compose-fake-input">Share something with the community...</div>
+          </div>
+
+          <div class="comm-compose-form" id="composeForm" style="display:none">
+            <form action="/communities/<%= community.slug %>/posts" method="POST" enctype="multipart/form-data">
+              <input type="text" name="title" class="form-input" placeholder="Post title (optional)" style="margin-bottom:.75rem" />
+              <textarea name="content" class="form-input" rows="4" placeholder="What's on your mind?" required style="margin-bottom:.75rem"></textarea>
+              <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+                <label class="comm-attach-btn">
+                  <i class="fa-solid fa-image"></i> Add Image
+                  <input type="file" name="image" accept="image/*" style="display:none" />
+                </label>
+                <div style="margin-left:auto;display:flex;gap:.5rem">
+                  <button type="button" id="cancelCompose" class="btn btn-outline btn-sm">Cancel</button>
+                  <button type="submit" class="btn btn-primary btn-sm">Publish Post</button>
+                </div>
+              </div>
+              <div id="imagePreviewWrap" style="margin-top:.75rem;display:none">
+                <img id="imagePreview" src="" alt="" style="max-height:200px;border-radius:8px;object-fit:cover" />
+              </div>
+            </form>
+          </div>
+        </div>
+      <% } %>
+
+      <!-- Posts -->
+      <% if (posts.length === 0) { %>
+        <div class="card" style="padding:3rem;text-align:center;color:var(--text-muted)">
+          <i class="fa-solid fa-pen-to-square" style="font-size:2.5rem;margin-bottom:1rem;display:block;opacity:.4"></i>
+          <p style="font-size:1.1rem;font-weight:600;margin-bottom:.35rem">No posts yet</p>
+          <p style="font-size:.9rem">
+            <% if (membership || isOwner) { %>Be the first to post something!
+            <% } else { %>Join the community to see and create posts.<% } %>
+          </p>
+        </div>
+      <% } else { %>
+        <% posts.forEach(post => { %>
+          <div class="card comm-post-card">
+            <!-- Author row -->
+            <div class="comm-post-author">
+              <a href="/users/<%= post.user_id %>">
+                <% if (post.author_avatar) { %>
+                  <img src="<%= post.author_avatar %>" alt="<%= post.author_name %>" class="avatar-sm" />
+                <% } else { %>
+                  <div class="avatar-placeholder-sm"><%= (post.author_name || 'U').charAt(0) %></div>
+                <% } %>
+              </a>
+              <div>
+                <a href="/users/<%= post.user_id %>" class="comm-post-author-name"><%= post.author_name %></a>
+                <span class="comm-post-time"><%= post.timeAgo %></span>
+              </div>
+              <% if (post.is_pinned) { %>
+                <span class="comm-pin-badge"><i class="fa-solid fa-thumbtack"></i> Pinned</span>
+              <% } %>
+              <% if ((currentUser && post.user_id === currentUser.id) || isOwner) { %>
+                <form action="/communities/<%= community.slug %>/posts/<%= post.id %>/delete" method="POST"
+                      style="margin-left:auto" onsubmit="return confirm('Delete this post?')">
+                  <button class="comm-post-delete-btn" title="Delete post">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </form>
+              <% } %>
+            </div>
+
+            <!-- Content -->
+            <a href="/communities/<%= community.slug %>/posts/<%= post.id %>" class="comm-post-link">
+              <% if (post.title) { %>
+                <h2 class="comm-post-title"><%= post.title %></h2>
+              <% } %>
+              <p class="comm-post-excerpt"><%= post.excerpt %></p>
+              <% if (post.image) { %>
+                <img src="<%= post.image %>" alt="" class="comm-post-img" loading="lazy" />
+              <% } %>
+            </a>
+
+            <!-- Meta -->
+            <div class="comm-post-meta">
+              <a href="/communities/<%= community.slug %>/posts/<%= post.id %>" class="comm-post-meta-btn">
+                <i class="fa-regular fa-comment"></i> <%= post.comment_count %> comment<%= post.comment_count !== 1 ? 's' : '' %>
+              </a>
+              <a href="/communities/<%= community.slug %>/posts/<%= post.id %>" class="comm-post-meta-btn">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> View
+              </a>
+            </div>
+          </div>
+        <% }) %>
+
+        <!-- Pagination -->
+        <% if (totalPages > 1) { %>
+          <div style="display:flex;justify-content:center;gap:.5rem;padding:1rem 0">
+            <% if (hasPrev) { %><a href="?page=<%= page-1 %>" class="btn btn-outline btn-sm">← Prev</a><% } %>
+            <span style="display:flex;align-items:center;padding:0 .75rem;color:var(--text-muted);font-size:.85rem">Page <%= page %> / <%= totalPages %></span>
+            <% if (hasNext) { %><a href="?page=<%= page+1 %>" class="btn btn-outline btn-sm">Next →</a><% } %>
+          </div>
+        <% } %>
+      <% } %>
+    </div>
+
+    <!-- Right Sidebar -->
+    <aside class="comm-sidebar">
+      <!-- About -->
+      <div class="card comm-sidebar-card">
+        <h3 class="comm-sidebar-heading">About</h3>
+        <p style="font-size:.88rem;color:var(--text-muted);line-height:1.6"><%= community.description %></p>
+        <div class="comm-sidebar-stats">
+          <div class="comm-sidebar-stat">
+            <span class="comm-sidebar-stat-num"><%= community.member_count %></span>
+            <span class="comm-sidebar-stat-label">Members</span>
+          </div>
+          <div class="comm-sidebar-stat">
+            <span class="comm-sidebar-stat-num"><%= community.post_count %></span>
+            <span class="comm-sidebar-stat-label">Posts</span>
+          </div>
+        </div>
+        <% if (!currentUser) { %>
+          <a href="/auth/login" class="btn btn-primary btn-sm" style="width:100%;margin-top:.75rem">Join Community</a>
+        <% } else if (!membership && !isOwner) { %>
+          <form action="/communities/<%= community.slug %>/join" method="POST" style="margin-top:.75rem">
+            <button class="btn btn-primary btn-sm" style="width:100%"><i class="fa-solid fa-plus"></i> Join Community</button>
+          </form>
+        <% } else if (isOwner) { %>
+          <a href="/communities/<%= community.slug %>/settings" class="btn btn-outline btn-sm" style="width:100%;margin-top:.75rem">
+            <i class="fa-solid fa-gear"></i> Manage Community
+          </a>
+        <% } %>
+      </div>
+
+      <!-- Members -->
+      <div class="card comm-sidebar-card">
+        <h3 class="comm-sidebar-heading">Members <span style="color:var(--text-muted);font-weight:400;font-size:.85rem">(<%= community.member_count %>)</span></h3>
+        <div class="comm-members-grid">
+          <% members.forEach(m => { %>
+            <a href="/users/<%= m.id %>" title="<%= m.name %> (<%= m.role %>)" class="comm-member-item">
+              <% if (m.avatar) { %>
+                <img src="<%= m.avatar %>" alt="<%= m.name %>" class="avatar-sm" />
+              <% } else { %>
+                <div class="avatar-placeholder-sm"><%= (m.name || 'U').charAt(0) %></div>
+              <% } %>
+              <% if (m.role === 'owner') { %>
+                <span class="comm-member-crown"><i class="fa-solid fa-crown"></i></span>
+              <% } %>
+            </a>
+          <% }) %>
+        </div>
+        <% if (community.member_count > 16) { %>
+          <p style="font-size:.8rem;color:var(--text-muted);margin-top:.75rem;text-align:center">
+            +<%= community.member_count - 16 %> more members
+          </p>
+        <% } %>
+      </div>
+
+      <!-- Back link -->
+      <a href="/communities" style="display:flex;align-items:center;gap:.4rem;color:var(--text-muted);font-size:.85rem;padding:.5rem 0">
+        <i class="fa-solid fa-arrow-left"></i> All Communities
+      </a>
+    </aside>
+  </div>
+</div>
+
+<script>
+  const trigger  = document.getElementById('composeTrigger');
+  const form     = document.getElementById('composeForm');
+  const cancelBtn = document.getElementById('cancelCompose');
+
+  if (trigger) {
+    trigger.addEventListener('click', () => {
+      trigger.style.display = 'none';
+      form.style.display = 'block';
+      form.querySelector('textarea').focus();
+    });
+  }
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      form.style.display = 'none';
+      trigger.style.display = 'flex';
+    });
+  }
+
+  // Image preview
+  const imageInput = document.querySelector('input[name="image"]');
+  if (imageInput) {
+    imageInput.addEventListener('change', function() {
+      const file = this.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const wrap = document.getElementById('imagePreviewWrap');
+        const img  = document.getElementById('imagePreview');
+        img.src = e.target.result;
+        wrap.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+</script>

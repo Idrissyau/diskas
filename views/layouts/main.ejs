@@ -60,7 +60,8 @@
       <% if (currentUser) { %>
         <a href="/home"        class="nav-link">Home</a>
       <% } %>
-      <a href="/discussions" class="nav-link">Discussions</a>
+      <a href="/discussions"  class="nav-link">Discussions</a>
+      <a href="/communities" class="nav-link">Communities</a>
       <a href="/jobs"        class="nav-link">Jobs</a>
       <a href="/skills"      class="nav-link">Skills</a>
     </div>
@@ -95,7 +96,8 @@
             <a href="/profile"         class="dropdown-item"><i class="fa-solid fa-user"></i> My Profile</a>
             <a href="/messages"        class="dropdown-item"><i class="fa-solid fa-comment-dots"></i> Messages</a>
             <div class="dropdown-divider"></div>
-            <a href="/discussions/new" class="dropdown-item"><i class="fa-solid fa-pen"></i> New Post</a>
+            <a href="/discussions/new"  class="dropdown-item"><i class="fa-solid fa-pen"></i> New Post</a>
+            <a href="/communities/new" class="dropdown-item"><i class="fa-solid fa-people-group"></i> Create Community</a>
             <a href="/jobs/new"        class="dropdown-item"><i class="fa-solid fa-briefcase"></i> Post Job</a>
             <a href="/skills/new"      class="dropdown-item"><i class="fa-solid fa-book-open"></i> Share Skill</a>
             <div class="dropdown-divider"></div>
@@ -121,6 +123,7 @@
     </form>
     <% if (currentUser) { %><a href="/home">Home</a><% } %>
     <a href="/discussions">Discussions</a>
+    <a href="/communities">Communities</a>
     <a href="/jobs">Jobs</a>
     <a href="/skills">Skills</a>
     <% if (currentUser) { %>

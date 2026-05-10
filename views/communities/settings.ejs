@@ -1,0 +1,174 @@
+<div class="container" style="max-width:760px;padding:2rem 1.25rem">
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem">
+    <a href="/communities/<%= community.slug %>" style="color:var(--text-muted)"><i class="fa-solid fa-arrow-left"></i></a>
+    <div>
+      <h1 style="font-size:1.5rem;font-weight:800">Community Settings</h1>
+      <p style="color:var(--text-muted);font-size:.88rem"><%= community.name %></p>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="comm-settings-tabs">
+    <button class="comm-settings-tab active" data-tab="general">General</button>
+    <button class="comm-settings-tab" data-tab="members">Members (<%= members.length %>)</button>
+    <button class="comm-settings-tab danger-tab" data-tab="danger">Danger Zone</button>
+  </div>
+
+  <!-- General Tab -->
+  <div class="comm-settings-panel active" id="tab-general">
+    <form action="/communities/<%= community.slug %>/settings" method="POST" enctype="multipart/form-data" class="card" style="padding:2rem;display:flex;flex-direction:column;gap:1.5rem">
+
+      <!-- Cover -->
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Cover Image</label>
+        <div class="comm-upload-cover" id="coverPreviewWrap" style="position:relative">
+          <% if (community.cover_image) { %>
+            <img id="coverPreview" src="<%= community.cover_image %>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px" />
+            <div id="coverPlaceholder" style="display:none"></div>
+          <% } else { %>
+            <div class="comm-upload-cover-placeholder" id="coverPlaceholder">
+              <i class="fa-solid fa-image" style="font-size:2rem;color:#CBD5E1"></i>
+              <span style="color:var(--text-muted);font-size:.85rem;margin-top:.5rem">Click to upload new cover</span>
+            </div>
+            <img id="coverPreview" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:10px" />
+          <% } %>
+          <input type="file" name="cover_image" id="coverInput" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" />
+        </div>
+      </div>
+
+      <!-- Avatar + Name -->
+      <div style="display:flex;gap:1.25rem;align-items:flex-end">
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Icon</label>
+          <div class="comm-upload-avatar" style="position:relative">
+            <% if (community.avatar) { %>
+              <img id="avatarPreview" src="<%= community.avatar %>" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />
+              <div id="avatarPlaceholder" style="display:none"></div>
+            <% } else { %>
+              <div id="avatarPlaceholder" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#CBD5E1;font-size:2rem">
+                <i class="fa-solid fa-camera"></i>
+              </div>
+              <img id="avatarPreview" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%" />
+            <% } %>
+            <input type="file" name="avatar" id="avatarInput" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer;border-radius:50%" />
+          </div>
+        </div>
+        <div class="form-group" style="margin:0;flex:1">
+          <label class="form-label" for="commName">Community Name</label>
+          <input type="text" id="commName" name="name" class="form-input" value="<%= community.name %>" maxlength="80" required />
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="form-group" style="margin:0">
+        <label class="form-label" for="commDesc">Description</label>
+        <textarea id="commDesc" name="description" class="form-input" rows="4" maxlength="1000" required><%= community.description %></textarea>
+      </div>
+
+      <!-- Privacy -->
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Privacy</label>
+        <div style="display:flex;flex-direction:column;gap:.75rem;margin-top:.35rem">
+          <label class="comm-radio-opt">
+            <input type="radio" name="is_private" value="" <%= !community.is_private ? 'checked' : '' %> />
+            <div class="comm-radio-box">
+              <div style="display:flex;align-items:center;gap:.6rem"><i class="fa-solid fa-globe" style="color:var(--success)"></i><strong>Public</strong></div>
+              <span style="color:var(--text-muted);font-size:.85rem">Anyone can find and join</span>
+            </div>
+          </label>
+          <label class="comm-radio-opt">
+            <input type="radio" name="is_private" value="1" <%= community.is_private ? 'checked' : '' %> />
+            <div class="comm-radio-box">
+              <div style="display:flex;align-items:center;gap:.6rem"><i class="fa-solid fa-lock" style="color:var(--warning)"></i><strong>Private</strong></div>
+              <span style="color:var(--text-muted);font-size:.85rem">Only members see the content</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:.75rem">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <a href="/communities/<%= community.slug %>" class="btn btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Members Tab -->
+  <div class="comm-settings-panel" id="tab-members">
+    <div class="card" style="padding:1.5rem">
+      <% members.forEach(m => { %>
+        <div class="comm-member-row">
+          <a href="/users/<%= m.id %>" style="display:flex;align-items:center;gap:.65rem;flex:1;min-width:0">
+            <% if (m.avatar) { %>
+              <img src="<%= m.avatar %>" alt="" class="avatar-sm" />
+            <% } else { %>
+              <div class="avatar-placeholder-sm"><%= (m.name||'U').charAt(0) %></div>
+            <% } %>
+            <div style="min-width:0">
+              <div style="font-weight:600;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= m.name %></div>
+              <div style="font-size:.78rem;color:var(--text-muted)">Joined <%= new Date(m.joined_at).toLocaleDateString('en-US',{month:'short',year:'numeric'}) %></div>
+            </div>
+          </a>
+          <span class="comm-role-badge comm-role-<%= m.role %>"><%= m.role.charAt(0).toUpperCase() + m.role.slice(1) %></span>
+          <% if (m.role !== 'owner') { %>
+            <form action="/communities/<%= community.slug %>/members/<%= m.id %>/remove" method="POST"
+                  onsubmit="return confirm('Remove <%= m.name %> from this community?')">
+              <button class="btn btn-sm" style="background:var(--danger);color:#fff;padding:.35rem .75rem">Remove</button>
+            </form>
+          <% } %>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <!-- Danger Zone Tab -->
+  <div class="comm-settings-panel" id="tab-danger">
+    <div class="card" style="padding:2rem;border:2px solid #FCA5A5">
+      <h3 style="color:var(--danger);font-size:1.1rem;margin-bottom:.5rem"><i class="fa-solid fa-triangle-exclamation"></i> Delete Community</h3>
+      <p style="color:var(--text-muted);font-size:.9rem;margin-bottom:1.25rem;line-height:1.6">
+        This will permanently delete <strong><%= community.name %></strong>, all its posts, comments, and membership data. This action <strong>cannot be undone</strong>.
+      </p>
+      <form action="/communities/<%= community.slug %>/delete" method="POST"
+            onsubmit="return confirm('Are you absolutely sure? Type DELETE to confirm.')">
+        <button type="submit" class="btn" style="background:var(--danger);color:#fff">
+          <i class="fa-solid fa-trash"></i> Delete This Community
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Cover preview
+  document.getElementById('coverInput').addEventListener('change', function() {
+    const file = this.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('coverPlaceholder').style.display = 'none';
+      const img = document.getElementById('coverPreview');
+      img.src = e.target.result; img.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  });
+  // Avatar preview
+  document.getElementById('avatarInput').addEventListener('change', function() {
+    const file = this.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('avatarPlaceholder').style.display = 'none';
+      const img = document.getElementById('avatarPreview');
+      img.src = e.target.result; img.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Tab switching
+  document.querySelectorAll('.comm-settings-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.comm-settings-tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.comm-settings-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+</script>

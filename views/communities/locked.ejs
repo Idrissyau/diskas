@@ -1,0 +1,49 @@
+<!-- Community Banner (same as show but locked) -->
+<div class="comm-banner">
+  <div class="comm-banner-cover">
+    <% if (community.cover_image) { %>
+      <img src="<%= community.cover_image %>" alt="<%= community.name %> cover" />
+    <% } else { %>
+      <div class="comm-banner-cover-default"></div>
+    <% } %>
+  </div>
+  <div class="container">
+    <div class="comm-banner-info">
+      <div class="comm-banner-avatar">
+        <% if (community.avatar) { %>
+          <img src="<%= community.avatar %>" alt="<%= community.name %>" />
+        <% } else { %>
+          <div class="comm-banner-avatar-placeholder"><%= community.name.charAt(0).toUpperCase() %></div>
+        <% } %>
+      </div>
+      <div class="comm-banner-text">
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <h1 class="comm-banner-title"><%= community.name %></h1>
+          <span class="comm-private-badge"><i class="fa-solid fa-lock"></i> Private</span>
+        </div>
+        <p class="comm-banner-desc"><%= community.description %></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container" style="padding:4rem 1.25rem;max-width:540px;text-align:center">
+  <div class="card" style="padding:3rem 2rem">
+    <div style="font-size:3.5rem;margin-bottom:1.25rem">🔒</div>
+    <h2 style="font-size:1.4rem;font-weight:800;margin-bottom:.5rem">This community is private</h2>
+    <p style="color:var(--text-muted);margin-bottom:1.75rem;line-height:1.6">
+      You need to join this community to see its posts and members. Request access from the community owner.
+    </p>
+    <% if (!currentUser) { %>
+      <a href="/auth/login" class="btn btn-primary" style="width:100%">Sign in to join</a>
+      <a href="/auth/register" class="btn btn-outline" style="width:100%;margin-top:.75rem">Create free account</a>
+    <% } else { %>
+      <form action="/communities/<%= community.slug %>/join" method="POST">
+        <button class="btn btn-primary" style="width:100%"><i class="fa-solid fa-plus"></i> Request to Join</button>
+      </form>
+    <% } %>
+    <a href="/communities" style="display:block;margin-top:1.25rem;color:var(--text-muted);font-size:.85rem">
+      ← Browse other communities
+    </a>
+  </div>
+</div>

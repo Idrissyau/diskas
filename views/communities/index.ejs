@@ -1,0 +1,99 @@
+<div class="comm-hero">
+  <div class="container">
+    <div class="comm-hero-inner">
+      <div>
+        <h1 class="comm-hero-title">Discover Communities</h1>
+        <p class="comm-hero-sub">Find your people. Join groups built around topics, careers, and passions.</p>
+      </div>
+      <% if (currentUser) { %>
+        <a href="/communities/new" class="btn btn-primary">
+          <i class="fa-solid fa-plus"></i> Create Community
+        </a>
+      <% } else { %>
+        <a href="/auth/register" class="btn btn-primary">
+          <i class="fa-solid fa-rocket"></i> Join Free
+        </a>
+      <% } %>
+    </div>
+
+    <form action="/communities" method="GET" class="comm-search-bar">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="search" name="q" placeholder="Search communities..." value="<%= searchQ %>" autocomplete="off" />
+      <button type="submit" class="btn btn-primary btn-sm">Search</button>
+    </form>
+  </div>
+</div>
+
+<div class="container" style="padding: 2rem 1.25rem;">
+
+  <% if (communities.length === 0) { %>
+    <div class="comm-empty">
+      <div class="comm-empty-icon"><i class="fa-solid fa-people-group"></i></div>
+      <h3>No communities yet</h3>
+      <p><%= searchQ ? 'No communities match your search.' : 'Be the first to create a community!' %></p>
+      <% if (currentUser) { %>
+        <a href="/communities/new" class="btn btn-primary" style="margin-top:1rem">Create the first one</a>
+      <% } %>
+    </div>
+  <% } else { %>
+    <div class="comm-grid">
+      <% communities.forEach(c => { %>
+        <div class="comm-card">
+          <!-- Cover -->
+          <a href="/communities/<%= c.slug %>" class="comm-card-cover">
+            <% if (c.cover_image) { %>
+              <img src="<%= c.cover_image %>" alt="<%= c.name %> cover" loading="lazy" />
+            <% } else { %>
+              <div class="comm-card-cover-placeholder"></div>
+            <% } %>
+          </a>
+
+          <!-- Avatar -->
+          <div class="comm-card-avatar-wrap">
+            <a href="/communities/<%= c.slug %>">
+              <% if (c.avatar) { %>
+                <img src="<%= c.avatar %>" alt="<%= c.name %>" class="comm-card-avatar" />
+              <% } else { %>
+                <div class="comm-card-avatar comm-card-avatar-placeholder"><%= c.name.charAt(0).toUpperCase() %></div>
+              <% } %>
+            </a>
+            <% if (c.is_private) { %>
+              <span class="comm-private-badge"><i class="fa-solid fa-lock"></i> Private</span>
+            <% } %>
+          </div>
+
+          <!-- Body -->
+          <div class="comm-card-body">
+            <a href="/communities/<%= c.slug %>" class="comm-card-name"><%= c.name %></a>
+            <p class="comm-card-desc"><%= c.description.length > 100 ? c.description.substring(0,100) + '…' : c.description %></p>
+            <div class="comm-card-meta">
+              <span><i class="fa-solid fa-users"></i> <%= c.member_count %> member<%= c.member_count !== 1 ? 's' : '' %></span>
+              <span><i class="fa-solid fa-file-lines"></i> <%= c.post_count %> post<%= c.post_count !== 1 ? 's' : '' %></span>
+            </div>
+          </div>
+
+          <!-- Action -->
+          <div class="comm-card-footer">
+            <% if (!currentUser) { %>
+              <a href="/auth/login" class="btn btn-outline btn-sm" style="width:100%">Sign in to join</a>
+            <% } else if (c.isOwner) { %>
+              <a href="/communities/<%= c.slug %>" class="btn btn-primary btn-sm" style="width:100%">
+                <i class="fa-solid fa-crown"></i> Your Community
+              </a>
+            <% } else if (c.isJoined) { %>
+              <a href="/communities/<%= c.slug %>" class="btn btn-success btn-sm" style="width:100%">
+                <i class="fa-solid fa-check"></i> Joined — View
+              </a>
+            <% } else { %>
+              <form action="/communities/<%= c.slug %>/join" method="POST" style="width:100%">
+                <button class="btn btn-primary btn-sm" style="width:100%">
+                  <i class="fa-solid fa-plus"></i> Join
+                </button>
+              </form>
+            <% } %>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</div>

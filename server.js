@@ -17,7 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ── Upload directories ─────────────────────────────────────────────────────
-['public/uploads/avatars', 'public/uploads/logos', 'public/uploads/skills', 'public/uploads/covers'].forEach(dir => {
+['public/uploads/avatars', 'public/uploads/logos', 'public/uploads/skills', 'public/uploads/covers', 'public/uploads/communities'].forEach(dir => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
@@ -142,6 +142,7 @@ app.use('/skills',      require('./routes/skills'));
 app.use('/admin',       require('./routes/admin'));
 app.use('/users',       require('./routes/users'));
 app.use('/messages',    require('./routes/messages'));
+app.use('/communities', require('./routes/communities'));
 
 // Vote endpoint at root level
 const postCtrl = require('./controllers/postController');
@@ -219,6 +220,52 @@ async function runMigrations() {
         created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
         FOREIGN KEY (sender_id)       REFERENCES users(id)         ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS communities (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        owner_id    INT NOT NULL,
+        name        VARCHAR(120) NOT NULL,
+        slug        VARCHAR(140) NOT NULL UNIQUE,
+        description TEXT NOT NULL,
+        avatar      VARCHAR(255) DEFAULT NULL,
+        cover_image VARCHAR(255) DEFAULT NULL,
+        is_private  TINYINT(1) DEFAULT 0,
+        status      ENUM('active','suspended') DEFAULT 'active',
+        created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS community_members (
+        id            INT AUTO_INCREMENT PRIMARY KEY,
+        community_id  INT NOT NULL,
+        user_id       INT NOT NULL,
+        role          ENUM('owner','admin','member') DEFAULT 'member',
+        joined_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_membership (community_id, user_id),
+        FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id)      REFERENCES users(id)       ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS community_posts (
+        id           INT AUTO_INCREMENT PRIMARY KEY,
+        community_id INT NOT NULL,
+        user_id      INT NOT NULL,
+        title        VARCHAR(255) DEFAULT NULL,
+        content      LONGTEXT NOT NULL,
+        image        VARCHAR(255) DEFAULT NULL,
+        is_pinned    TINYINT(1) DEFAULT 0,
+        created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id)      REFERENCES users(id)       ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS community_post_comments (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        post_id    INT NOT NULL,
+        user_id    INT NOT NULL,
+        content    TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (post_id)  REFERENCES community_posts(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id)  REFERENCES users(id)           ON DELETE CASCADE
       )`,
     ];
     for (const sql of migrations) await pool.execute(sql);
