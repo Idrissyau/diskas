@@ -99,12 +99,16 @@ exports.show = async (req, res) => {
     const messages = await query(
       `SELECT m.id, m.content, m.created_at, m.sender_id,
               m.file_url, m.file_type, m.file_name,
-              u.name AS sender_name, u.avatar AS sender_avatar
+              m.reply_to_id, m.reply_to_content, m.reply_to_name,
+              u.name AS sender_name, u.avatar AS sender_avatar,
+              (SELECT COUNT(*) FROM message_reactions WHERE message_id = m.id AND reaction = 'like')    AS like_count,
+              (SELECT COUNT(*) FROM message_reactions WHERE message_id = m.id AND reaction = 'dislike') AS dislike_count,
+              (SELECT reaction  FROM message_reactions WHERE message_id = m.id AND user_id = ?)         AS my_reaction
        FROM messages m
        JOIN users u ON m.sender_id = u.id
        WHERE m.conversation_id = ?
        ORDER BY m.created_at ASC`,
-      [convId]
+      [uid, convId]
     );
 
     // mark read
@@ -204,10 +208,18 @@ exports.send = async (req, res) => {
     // Must have content OR a file
     if (!content && !file_url) return res.status(400).json({ error: 'Nothing to send.' });
 
+    // ── Handle optional reply context ─────────────────────────────────────
+    const replyToId      = parseInt(req.body.reply_to_id) || null;
+    const replyToContent = (req.body.reply_to_content || '').trim().substring(0, 120) || null;
+    const replyToName    = (req.body.reply_to_name    || '').trim().substring(0, 100) || null;
+
     const msgData = { conversation_id: convId, sender_id: uid, content: content || '' };
-    if (file_url)  msgData.file_url  = file_url;
-    if (file_type) msgData.file_type = file_type;
-    if (file_name) msgData.file_name = file_name;
+    if (file_url)      msgData.file_url         = file_url;
+    if (file_type)     msgData.file_type        = file_type;
+    if (file_name)     msgData.file_name        = file_name;
+    if (replyToId)     msgData.reply_to_id      = replyToId;
+    if (replyToContent)msgData.reply_to_content = replyToContent;
+    if (replyToName)   msgData.reply_to_name    = replyToName;
 
     const msgId = await insert('messages', msgData);
     await query('UPDATE conversations SET updated_at = NOW() WHERE id = ?', [convId]);
@@ -215,7 +227,9 @@ exports.send = async (req, res) => {
     const message = await queryOne(
       `SELECT m.id, m.content, m.created_at, m.sender_id,
               m.file_url, m.file_type, m.file_name,
-              u.name AS sender_name, u.avatar AS sender_avatar
+              m.reply_to_id, m.reply_to_content, m.reply_to_name,
+              u.name AS sender_name, u.avatar AS sender_avatar,
+              0 AS like_count, 0 AS dislike_count, NULL AS my_reaction
        FROM messages m JOIN users u ON m.sender_id = u.id
        WHERE m.id = ?`,
       [msgId]
@@ -249,11 +263,15 @@ exports.poll = async (req, res) => {
     const messages = await query(
       `SELECT m.id, m.content, m.created_at, m.sender_id,
               m.file_url, m.file_type, m.file_name,
-              u.name AS sender_name, u.avatar AS sender_avatar
+              m.reply_to_id, m.reply_to_content, m.reply_to_name,
+              u.name AS sender_name, u.avatar AS sender_avatar,
+              (SELECT COUNT(*) FROM message_reactions WHERE message_id = m.id AND reaction = 'like')    AS like_count,
+              (SELECT COUNT(*) FROM message_reactions WHERE message_id = m.id AND reaction = 'dislike') AS dislike_count,
+              (SELECT reaction  FROM message_reactions WHERE message_id = m.id AND user_id = ?)         AS my_reaction
        FROM messages m JOIN users u ON m.sender_id = u.id
        WHERE m.conversation_id = ? AND m.id > ?
        ORDER BY m.created_at ASC`,
-      [convId, afterId]
+      [uid, convId, afterId]
     );
 
     if (messages.length) {
@@ -269,6 +287,56 @@ exports.poll = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.json({ messages: [] });
+  }
+};
+
+/* ── React to a message (like / dislike) ─────────────────────────────────── */
+exports.react = async (req, res) => {
+  try {
+    const uid      = req.session.user.id;
+    const msgId    = parseInt(req.params.msgId);
+    const convId   = parseInt(req.params.id);
+    const reaction = req.body.reaction; // 'like' | 'dislike'
+
+    if (!['like', 'dislike'].includes(reaction))
+      return res.status(400).json({ error: 'Invalid reaction' });
+
+    // Must be a participant
+    const part = await queryOne(
+      'SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ?',
+      [convId, uid]
+    );
+    if (!part) return res.status(403).json({ error: 'Not a participant' });
+
+    const existing = await queryOne(
+      'SELECT reaction FROM message_reactions WHERE message_id = ? AND user_id = ?',
+      [msgId, uid]
+    );
+
+    let myReaction = null;
+    if (existing) {
+      if (existing.reaction === reaction) {
+        // Toggle off
+        await query('DELETE FROM message_reactions WHERE message_id = ? AND user_id = ?', [msgId, uid]);
+      } else {
+        // Switch to the other
+        await query('UPDATE message_reactions SET reaction = ? WHERE message_id = ? AND user_id = ?', [reaction, msgId, uid]);
+        myReaction = reaction;
+      }
+    } else {
+      await query('INSERT INTO message_reactions (message_id, user_id, reaction) VALUES (?, ?, ?)', [msgId, uid, reaction]);
+      myReaction = reaction;
+    }
+
+    const [likeRow, dislikeRow] = await Promise.all([
+      queryOne('SELECT COUNT(*) AS count FROM message_reactions WHERE message_id = ? AND reaction = "like"',    [msgId]),
+      queryOne('SELECT COUNT(*) AS count FROM message_reactions WHERE message_id = ? AND reaction = "dislike"', [msgId]),
+    ]);
+
+    res.json({ success: true, myReaction, likes: likeRow?.count || 0, dislikes: dislikeRow?.count || 0 });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
 };
 

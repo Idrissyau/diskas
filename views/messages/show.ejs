@@ -79,29 +79,39 @@
       <% let lastDate = null; %>
       <% messages.forEach(msg => { %>
         <%
-          const msgDate = new Date(msg.created_at).toDateString();
-          const today = new Date().toDateString();
+          const msgDate   = new Date(msg.created_at).toDateString();
+          const today     = new Date().toDateString();
           const yesterday = new Date(Date.now()-86400000).toDateString();
           const dateLabel = msgDate===today?'Today':msgDate===yesterday?'Yesterday':new Date(msg.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+          const senderLabel = msg.isMine ? 'You' : (other ? other.name : 'User');
         %>
         <% if (msgDate !== lastDate) { %>
           <div class="msg-date-divider"><span><%= dateLabel %></span></div>
           <% lastDate = msgDate; %>
         <% } %>
 
-        <div class="msg-bubble-row <%= msg.isMine ? 'msg-bubble-row--mine' : 'msg-bubble-row--theirs' %>" data-id="<%= msg.id %>">
+        <div class="msg-bubble-row <%= msg.isMine ? 'msg-bubble-row--mine' : 'msg-bubble-row--theirs' %>"
+             data-id="<%= msg.id %>"
+             data-is-mine="<%= msg.isMine ? 1 : 0 %>">
+
+          <%/* Avatar — only for theirs, placed first in DOM */%>
           <% if (!msg.isMine) { %>
             <div class="msg-bubble-avatar">
               <% if (other && other.avatar) { %><img src="<%= other.avatar %>" alt="" />
               <% } else { %><div class="msg-bubble-initial"><%= (other?.name||'U').charAt(0) %></div><% } %>
             </div>
           <% } %>
-          <% if (msg.isMine) { %>
-            <button class="msg-delete-btn" title="Delete message" data-msg-id="<%= msg.id %>" data-conv-id="<%= conversation.id %>">
-              <i class="fa-solid fa-trash-can"></i>
-            </button>
-          <% } %>
+
+          <%/* Bubble content */%>
           <div class="msg-bubble-wrap">
+            <%/* Reply quote block */%>
+            <% if (msg.reply_to_content) { %>
+              <div class="msg-reply-quote">
+                <span class="msg-reply-quote-name"><%= msg.reply_to_name || 'Someone' %></span>
+                <span class="msg-reply-quote-text"><%= msg.reply_to_content %></span>
+              </div>
+            <% } %>
+
             <div class="msg-bubble">
               <%- msg.content ? msg.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') : '' %>
               <% if (msg.file_url) { %>
@@ -112,10 +122,10 @@
                 <% } else if (msg.file_type === 'video') { %>
                   <video class="msg-media-video" controls preload="metadata" playsinline>
                     <source src="<%= msg.file_url %>" type="<%=
-                      msg.file_url.endsWith('.mp4') ? 'video/mp4' :
-                      msg.file_url.endsWith('.webm') ? 'video/webm' :
-                      msg.file_url.endsWith('.ogg') ? 'video/ogg' :
-                      msg.file_url.endsWith('.mov') ? 'video/quicktime' : 'video/mp4'
+                      msg.file_url.endsWith('.mp4')  ? 'video/mp4'       :
+                      msg.file_url.endsWith('.webm') ? 'video/webm'      :
+                      msg.file_url.endsWith('.ogg')  ? 'video/ogg'       :
+                      msg.file_url.endsWith('.mov')  ? 'video/quicktime' : 'video/mp4'
                     %>" />
                     Your browser does not support video.
                   </video>
@@ -127,15 +137,60 @@
                 <% } %>
               <% } %>
             </div>
+
+            <%/* Reaction chips */%>
+            <div class="msg-reactions" id="rxn-<%= msg.id %>">
+              <% if (msg.like_count > 0) { %>
+                <span class="msg-rxn-chip" data-type="like">❤️ <%= msg.like_count %></span>
+              <% } %>
+              <% if (msg.dislike_count > 0) { %>
+                <span class="msg-rxn-chip" data-type="dislike">👎 <%= msg.dislike_count %></span>
+              <% } %>
+            </div>
+
             <span class="msg-bubble-time"><%= msg.timeAgo %></span>
           </div>
-        </div>
+
+          <%/* Action bar — sits beside the bubble */%>
+          <div class="msg-actions">
+            <button class="msg-action-btn msg-action-reply" title="Reply"
+                    data-content="<%= (msg.content || (msg.file_name ? msg.file_name : 'Attachment')).substring(0,80).replace(/"/g,'&quot;') %>"
+                    data-name="<%= senderLabel.replace(/"/g,'&quot;') %>">
+              <i class="fa-solid fa-reply"></i>
+            </button>
+            <button class="msg-action-btn msg-action-like <%= msg.my_reaction === 'like' ? 'active' : '' %>" title="Like">
+              <i class="fa-solid fa-heart"></i>
+            </button>
+            <button class="msg-action-btn msg-action-dislike <%= msg.my_reaction === 'dislike' ? 'active' : '' %>" title="Dislike">
+              <i class="fa-solid fa-thumbs-down"></i>
+            </button>
+            <% if (msg.isMine) { %>
+              <button class="msg-action-btn msg-action-delete" title="Delete message">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            <% } %>
+          </div>
+
+        </div><%/* end .msg-bubble-row */%>
       <% }) %>
     </div>
 
     <!-- Input bar -->
     <div class="msg-input-bar">
-      <!-- File preview -->
+
+      <!-- Reply strip (shown when replying) -->
+      <div class="msg-reply-strip" id="replyStrip" style="display:none">
+        <i class="fa-solid fa-reply msg-reply-strip-icon"></i>
+        <div class="msg-reply-strip-body">
+          <span class="msg-reply-strip-name" id="replyToName"></span>
+          <span class="msg-reply-strip-text" id="replyToText"></span>
+        </div>
+        <button type="button" class="msg-reply-strip-cancel" id="cancelReply" title="Cancel reply">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- File preview strip -->
       <div class="msg-file-preview" id="filePreview" style="display:none">
         <div class="msg-file-preview-inner">
           <img id="filePreviewImg" src="" alt="" style="display:none" />
@@ -150,10 +205,11 @@
       </div>
 
       <form id="messageForm" class="msg-input-form" autocomplete="off" enctype="multipart/form-data">
-        <!-- Attach button -->
         <label class="msg-attach-label" title="Attach file">
           <i class="fa-solid fa-paperclip"></i>
-          <input type="file" id="fileInput" name="file" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar" style="display:none" />
+          <input type="file" id="fileInput" name="file"
+                 accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
+                 style="display:none" />
         </label>
 
         <div class="msg-input-wrap">
@@ -177,17 +233,26 @@
   const otherAvatar  = '<%= other?.avatar || "" %>';
   const otherInitial = '<%= (other?.name || "U").charAt(0).toUpperCase() %>';
 
-  const area      = document.getElementById('chatMessages');
-  const form      = document.getElementById('messageForm');
-  const input     = document.getElementById('messageInput');
-  const fileInput = document.getElementById('fileInput');
-  const preview   = document.getElementById('filePreview');
-  const prevImg   = document.getElementById('filePreviewImg');
-  const prevChip  = document.getElementById('filePreviewChip');
-  const prevName  = document.getElementById('filePreviewName');
-  const clearBtn  = document.getElementById('clearFile');
-  const sendBtn   = document.getElementById('sendBtn');
+  const area       = document.getElementById('chatMessages');
+  const form       = document.getElementById('messageForm');
+  const input      = document.getElementById('messageInput');
+  const fileInput  = document.getElementById('fileInput');
+  const preview    = document.getElementById('filePreview');
+  const prevImg    = document.getElementById('filePreviewImg');
+  const prevChip   = document.getElementById('filePreviewChip');
+  const prevName   = document.getElementById('filePreviewName');
+  const clearBtn   = document.getElementById('clearFile');
+  const sendBtn    = document.getElementById('sendBtn');
   const emptyState = document.getElementById('chatEmptyState');
+  const replyStrip = document.getElementById('replyStrip');
+  const replyToName= document.getElementById('replyToName');
+  const replyToText= document.getElementById('replyToText');
+  const cancelReply= document.getElementById('cancelReply');
+
+  // Reply state
+  let replyingToId      = null;
+  let replyingToContent = '';
+  let replyingToName    = '';
 
   let lastId = 0;
   const rows = area.querySelectorAll('.msg-bubble-row[data-id]');
@@ -197,7 +262,7 @@
   function scrollBottom(smooth) { area.scrollTo({ top: area.scrollHeight, behavior: smooth ? 'smooth' : 'instant' }); }
   scrollBottom(false);
 
-  /* ── File picker ── */
+  /* ─────────────────────────────────────────────────────── file picker */
   fileInput.addEventListener('change', () => {
     const file = fileInput.files[0];
     if (!file) return;
@@ -212,22 +277,28 @@
       prevName.textContent = file.name;
     }
   });
-
   clearBtn.addEventListener('click', () => {
     fileInput.value = '';
     preview.style.display = 'none';
-    prevImg.src = '';
-    prevImg.style.display = 'none';
+    prevImg.src = ''; prevImg.style.display = 'none';
     prevChip.style.display = 'none';
   });
 
-  /* ── Build bubble HTML ── */
+  /* ─────────────────────────────────────────────────────── build bubble */
+  function buildReactionBar(likes, dislikes) {
+    let html = '';
+    if (likes   > 0) html += `<span class="msg-rxn-chip" data-type="like">❤️ ${likes}</span>`;
+    if (dislikes > 0) html += `<span class="msg-rxn-chip" data-type="dislike">👎 ${dislikes}</span>`;
+    return html;
+  }
+
   function buildBubble(msg) {
     if (emptyState) emptyState.remove();
     const isMine = msg.isMine || msg.sender_id === CURRENT_UID;
     const row = document.createElement('div');
     row.className = `msg-bubble-row ${isMine ? 'msg-bubble-row--mine' : 'msg-bubble-row--theirs'}`;
-    row.dataset.id = msg.id;
+    row.dataset.id     = msg.id;
+    row.dataset.isMine = isMine ? '1' : '0';
 
     const avatarHtml = !isMine
       ? (otherAvatar
@@ -246,8 +317,8 @@
           <img src="${esc(msg.file_url)}" alt="${esc(msg.file_name||'image')}" class="msg-media-img" loading="lazy" />
         </a>`;
       } else if (msg.file_type === 'video') {
-        const ext = (msg.file_url || '').split('.').pop().toLowerCase();
-        const mime = ext === 'webm' ? 'video/webm' : ext === 'ogg' ? 'video/ogg' : ext === 'mov' ? 'video/quicktime' : 'video/mp4';
+        const ext  = (msg.file_url||'').split('.').pop().toLowerCase();
+        const mime = ext==='webm'?'video/webm':ext==='ogg'?'video/ogg':ext==='mov'?'video/quicktime':'video/mp4';
         mediaHtml = `<video class="msg-media-video" controls preload="metadata" playsinline>
           <source src="${esc(msg.file_url)}" type="${mime}" />
         </video>`;
@@ -259,23 +330,48 @@
       }
     }
 
-    const deleteHtml = isMine
-      ? `<button class="msg-delete-btn" title="Delete message" data-msg-id="${msg.id}" data-conv-id="${CONV_ID}"><i class="fa-solid fa-trash-can"></i></button>`
+    const quoteHtml = msg.reply_to_content
+      ? `<div class="msg-reply-quote">
+           <span class="msg-reply-quote-name">${esc(msg.reply_to_name||'Someone')}</span>
+           <span class="msg-reply-quote-text">${esc(msg.reply_to_content)}</span>
+         </div>`
       : '';
+
+    const deleteBtn = isMine
+      ? `<button class="msg-action-btn msg-action-delete" title="Delete message"><i class="fa-solid fa-trash-can"></i></button>`
+      : '';
+
+    const replyContent = msg.content || (msg.file_name || 'Attachment');
+    const senderLabel  = isMine ? 'You' : otherName;
 
     row.innerHTML = `
       ${avatarHtml}
-      ${deleteHtml}
       <div class="msg-bubble-wrap">
+        ${quoteHtml}
         <div class="msg-bubble">${textHtml}${mediaHtml}</div>
+        <div class="msg-reactions" id="rxn-${msg.id}">${buildReactionBar(msg.like_count||0, msg.dislike_count||0)}</div>
         <span class="msg-bubble-time">${esc(msg.timeAgo || 'just now')}</span>
+      </div>
+      <div class="msg-actions">
+        <button class="msg-action-btn msg-action-reply" title="Reply"
+                data-content="${esc(String(replyContent).substring(0,80))}"
+                data-name="${esc(senderLabel)}">
+          <i class="fa-solid fa-reply"></i>
+        </button>
+        <button class="msg-action-btn msg-action-like ${msg.my_reaction==='like'?'active':''}" title="Like">
+          <i class="fa-solid fa-heart"></i>
+        </button>
+        <button class="msg-action-btn msg-action-dislike ${msg.my_reaction==='dislike'?'active':''}" title="Dislike">
+          <i class="fa-solid fa-thumbs-down"></i>
+        </button>
+        ${deleteBtn}
       </div>`;
 
     area.appendChild(row);
     scrollBottom(true);
   }
 
-  /* ── Send ── */
+  /* ─────────────────────────────────────────────────────── send */
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const text = input.value.trim();
@@ -289,6 +385,11 @@
       const fd = new FormData();
       if (text) fd.append('content', text);
       if (file) fd.append('file', file);
+      if (replyingToId) {
+        fd.append('reply_to_id',      replyingToId);
+        fd.append('reply_to_content', replyingToContent.substring(0,120));
+        fd.append('reply_to_name',    replyingToName);
+      }
 
       const res  = await fetch(`/messages/${CONV_ID}`, {
         method: 'POST',
@@ -296,26 +397,31 @@
         body: fd,
       });
       const data = await res.json();
-
       if (data.success && data.message) {
         buildBubble({ ...data.message, isMine: true });
         lastId = data.message.id;
       }
     } catch (err) { console.error(err); }
     finally {
-      input.value = '';
-      input.style.height = 'auto';
+      input.value = ''; input.style.height = 'auto';
       fileInput.value = '';
       preview.style.display = 'none';
-      prevImg.src = '';
-      prevImg.style.display = 'none';
+      prevImg.src = ''; prevImg.style.display = 'none';
       prevChip.style.display = 'none';
+      clearReply();
       sendBtn.disabled = false;
       sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
     }
   });
 
-  /* ── Auto-resize textarea ── */
+  /* ─────────────────────────────────────────────────────── reply */
+  function clearReply() {
+    replyingToId = null; replyingToContent = ''; replyingToName = '';
+    replyStrip.style.display = 'none';
+  }
+  cancelReply.addEventListener('click', clearReply);
+
+  /* ─────────────────────────────────────────────────────── textarea auto-resize */
   input.addEventListener('input', () => {
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 120) + 'px';
@@ -324,43 +430,110 @@
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
   });
 
-  /* ── Delete message ── */
+  /* ─────────────────────────────────────────────────────── action bar click handler */
   area.addEventListener('click', async (e) => {
-    const btn = e.target.closest('.msg-delete-btn');
-    if (!btn) return;
-    if (!confirm('Delete this message? This cannot be undone.')) return;
+    const btn = e.target.closest('.msg-action-btn');
+    if (!btn) {
+      // Tap elsewhere on mobile dismisses open action bar
+      area.querySelectorAll('.msg-bubble-row--active').forEach(r => r.classList.remove('msg-bubble-row--active'));
+      return;
+    }
 
-    const msgId  = btn.dataset.msgId;
-    const convId = btn.dataset.convId;
     const row    = btn.closest('.msg-bubble-row');
+    const msgId  = row?.dataset.id;
+    const isMine = row?.dataset.isMine === '1';
 
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    /* ── Reply ── */
+    if (btn.classList.contains('msg-action-reply')) {
+      replyingToId      = msgId;
+      replyingToContent = btn.dataset.content || '';
+      replyingToName    = btn.dataset.name    || 'Someone';
+      replyToName.textContent = replyingToName;
+      replyToText.textContent = replyingToContent.length > 60
+        ? replyingToContent.substring(0,60) + '…'
+        : replyingToContent;
+      replyStrip.style.display = 'flex';
+      input.focus();
+      return;
+    }
 
-    try {
-      const r = await fetch(`/messages/${convId}/messages/${msgId}`, {
-        method: 'DELETE',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      });
-      const d = await r.json();
-      if (d.success) {
-        // Fade out then remove
-        row.style.transition = 'opacity .25s, transform .25s';
-        row.style.opacity = '0';
-        row.style.transform = 'scale(.95)';
-        setTimeout(() => row.remove(), 260);
-      } else {
+    /* ── Like / Dislike ── */
+    if (btn.classList.contains('msg-action-like') || btn.classList.contains('msg-action-dislike')) {
+      const reaction = btn.classList.contains('msg-action-like') ? 'like' : 'dislike';
+      try {
+        const r = await fetch(`/messages/${CONV_ID}/messages/${msgId}/react`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+          body: JSON.stringify({ reaction }),
+        });
+        const d = await r.json();
+        if (!d.success) return;
+
+        // Update action button states in this row
+        const likeBtn    = row.querySelector('.msg-action-like');
+        const dislikeBtn = row.querySelector('.msg-action-dislike');
+        likeBtn?.classList.toggle('active', d.myReaction === 'like');
+        dislikeBtn?.classList.toggle('active', d.myReaction === 'dislike');
+
+        // Update reaction chips
+        const rxnEl = document.getElementById(`rxn-${msgId}`);
+        if (rxnEl) rxnEl.innerHTML = buildReactionBar(d.likes, d.dislikes);
+      } catch (err) { console.error(err); }
+      return;
+    }
+
+    /* ── Delete ── */
+    if (btn.classList.contains('msg-action-delete')) {
+      if (!isMine) return;
+      if (!confirm('Delete this message? This cannot be undone.')) return;
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+      try {
+        const r = await fetch(`/messages/${CONV_ID}/messages/${msgId}`, {
+          method: 'DELETE',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        const d = await r.json();
+        if (d.success) {
+          row.style.transition = 'opacity .25s, transform .25s';
+          row.style.opacity = '0'; row.style.transform = 'scale(.95)';
+          setTimeout(() => row.remove(), 260);
+        } else {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+        }
+      } catch (err) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
-        alert(d.error || 'Could not delete message.');
       }
-    } catch (err) {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+      return;
     }
   });
 
-  /* ── Poll ── */
+  /* ─────────────────────────────────────────────────────── long press (mobile) */
+  let pressTimer = null;
+  area.addEventListener('touchstart', (e) => {
+    const row = e.target.closest('.msg-bubble-row');
+    if (!row || e.target.closest('.msg-actions') || e.target.closest('a, button, video')) return;
+    pressTimer = setTimeout(() => {
+      area.querySelectorAll('.msg-bubble-row--active').forEach(r => r !== row && r.classList.remove('msg-bubble-row--active'));
+      row.classList.toggle('msg-bubble-row--active');
+      // Haptic feedback if available
+      if (navigator.vibrate) navigator.vibrate(40);
+    }, 450);
+  }, { passive: true });
+
+  const clearPress = () => clearTimeout(pressTimer);
+  area.addEventListener('touchend',   clearPress, { passive: true });
+  area.addEventListener('touchmove',  clearPress, { passive: true });
+  area.addEventListener('touchcancel',clearPress, { passive: true });
+
+  // Dismiss on scroll
+  area.addEventListener('scroll', () => {
+    area.querySelectorAll('.msg-bubble-row--active').forEach(r => r.classList.remove('msg-bubble-row--active'));
+  }, { passive: true });
+
+  /* ─────────────────────────────────────────────────────── poll */
   async function poll() {
     try {
       const r = await fetch(`/messages/${CONV_ID}/poll?after=${lastId}`);

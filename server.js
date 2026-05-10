@@ -267,6 +267,15 @@ async function runMigrations() {
         FOREIGN KEY (post_id)  REFERENCES community_posts(id) ON DELETE CASCADE,
         FOREIGN KEY (user_id)  REFERENCES users(id)           ON DELETE CASCADE
       )`,
+      `CREATE TABLE IF NOT EXISTS message_reactions (
+        message_id INT NOT NULL,
+        user_id    INT NOT NULL,
+        reaction   VARCHAR(20) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (message_id, user_id),
+        FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE CASCADE
+      )`,
     ];
     for (const sql of migrations) await pool.execute(sql);
 
@@ -276,9 +285,12 @@ async function runMigrations() {
       `ALTER TABLE users    ADD COLUMN cover_image VARCHAR(255) NULL AFTER avatar`,
       `ALTER TABLE posts    ADD COLUMN vote_count  INT NOT NULL DEFAULT 0`,
       `ALTER TABLE posts    ADD COLUMN reply_count INT NOT NULL DEFAULT 0`,
-      `ALTER TABLE messages ADD COLUMN file_url   VARCHAR(500) DEFAULT NULL`,
-      `ALTER TABLE messages ADD COLUMN file_type  VARCHAR(50)  DEFAULT NULL`,
-      `ALTER TABLE messages ADD COLUMN file_name  VARCHAR(255) DEFAULT NULL`,
+      `ALTER TABLE messages ADD COLUMN file_url         VARCHAR(500) DEFAULT NULL`,
+      `ALTER TABLE messages ADD COLUMN file_type        VARCHAR(50)  DEFAULT NULL`,
+      `ALTER TABLE messages ADD COLUMN file_name        VARCHAR(255) DEFAULT NULL`,
+      `ALTER TABLE messages ADD COLUMN reply_to_id      INT          DEFAULT NULL`,
+      `ALTER TABLE messages ADD COLUMN reply_to_content VARCHAR(120) DEFAULT NULL`,
+      `ALTER TABLE messages ADD COLUMN reply_to_name    VARCHAR(100) DEFAULT NULL`,
     ];
     for (const sql of columnMigrations) {
       try { await pool.execute(sql); } catch (e) { /* column already exists */ }
