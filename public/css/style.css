@@ -1099,9 +1099,10 @@ label:hover .tw-avatar-cam { opacity: 1; }
 .msg-attach-label:hover { background: var(--bg-light); color: var(--primary); }
 
 /* ── File preview strip (above input) ─────────────────────────────────────── */
-.msg-file-preview { background: var(--bg-light); border-top: 1px solid var(--border); padding: .6rem 1.25rem; max-height: 110px; overflow: hidden; }
-.msg-file-preview-inner { display: flex; align-items: center; gap: .75rem; height: 100%; }
-.msg-file-preview-inner img { height: 72px; width: auto; max-width: 110px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
+.msg-file-preview { background: var(--bg-light); border-top: 1px solid var(--border); padding: .55rem 1.25rem; overflow: hidden; }
+.msg-file-preview-inner { display: flex; align-items: center; gap: .75rem; height: 80px; overflow: hidden; }
+/* CSS fallback — JS also stamps these via cssText for guaranteed override */
+.msg-file-preview-inner img { height: 72px !important; width: auto !important; max-width: 120px !important; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); flex-shrink: 0; }
 .msg-file-preview-chip { display: flex; align-items: center; gap: .5rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: .45rem .85rem; font-size: .83rem; color: var(--body); }
 .msg-file-preview-chip i { color: var(--primary); }
 .msg-clear-file { background: none; border: none; cursor: pointer; color: var(--text-muted); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-left: auto; transition: all .15s; font-size: .85rem; }

@@ -271,7 +271,7 @@
     preview.style.display = 'block';
     if (file.type.startsWith('image/')) {
       prevImg.src = URL.createObjectURL(file);
-      prevImg.style.display = 'block';
+      prevImg.style.cssText = 'display:block;height:72px;width:auto;max-width:120px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0;flex-shrink:0;';
       prevChip.style.display = 'none';
     } else {
       prevImg.style.display = 'none';
@@ -282,7 +282,7 @@
   clearBtn.addEventListener('click', () => {
     fileInput.value = '';
     preview.style.display = 'none';
-    prevImg.src = ''; prevImg.style.display = 'none';
+    prevImg.src = ''; prevImg.style.cssText = 'display:none;';
     prevChip.style.display = 'none';
   });
 
@@ -409,7 +409,7 @@
       input.value = ''; input.style.height = 'auto';
       fileInput.value = '';
       preview.style.display = 'none';
-      prevImg.src = ''; prevImg.style.display = 'none';
+      prevImg.src = ''; prevImg.style.cssText = 'display:none;';
       prevChip.style.display = 'none';
       clearReply();
       sendBtn.disabled = false;
