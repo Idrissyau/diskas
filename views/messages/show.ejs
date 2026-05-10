@@ -1,131 +1,201 @@
-<div class="chat-page">
+<div class="msg-shell">
 
-  <!-- Header -->
-  <div class="chat-header">
-    <a href="/messages" class="chat-back"><i class="fa-solid fa-arrow-left"></i></a>
-    <% if (other) { %>
-      <% if (other.avatar) { %>
-        <img src="<%= other.avatar %>" alt="<%= other.name %>" class="avatar-sm" />
-      <% } else { %>
-        <div class="avatar-placeholder-sm"><%= other.name.charAt(0).toUpperCase() %></div>
-      <% } %>
-      <div class="chat-header-info">
-        <a href="/users/<%= other.id %>" class="chat-header-name"><%= other.name %></a>
-        <span class="chat-online-dot" id="onlineStatus"></span>
-      </div>
-    <% } %>
-    <% if (other) { %>
-      <a href="/users/<%= other.id %>" class="btn btn-outline btn-sm" style="margin-left:auto">
-        <i class="fa-solid fa-user"></i> Profile
-      </a>
-    <% } %>
-  </div>
+  <!-- Sidebar -->
+  <aside class="msg-sidebar">
+    <div class="msg-sidebar-head">
+      <a href="/messages" class="msg-back-mobile"><i class="fa-solid fa-arrow-left"></i></a>
+      <h1 class="msg-sidebar-title">Messages</h1>
+    </div>
 
-  <!-- Messages -->
-  <div class="chat-messages" id="chatMessages">
-    <% if (messages.length === 0) { %>
-      <div class="chat-empty">
-        <i class="fa-solid fa-comment-dots"></i>
-        <p>Say hello to <strong><%= other?.name %></strong>!</p>
-      </div>
-    <% } %>
-    <% messages.forEach(msg => { %>
-      <div class="message-row <%= msg.isMine ? 'message-mine' : 'message-theirs' %>" data-id="<%= msg.id %>">
-        <% if (!msg.isMine && other?.avatar) { %>
-          <img src="<%= other.avatar %>" alt="<%= other.name %>" class="avatar-xs msg-avatar" />
-        <% } else if (!msg.isMine) { %>
-          <div class="avatar-placeholder-xs msg-avatar"><%= (other?.name || 'U').charAt(0).toUpperCase() %></div>
-        <% } %>
-        <div class="message-bubble">
-          <div class="message-content"><%- msg.content.replace(/\n/g,'<br>') %></div>
-          <div class="message-time"><%= msg.timeAgo %></div>
+    <div class="msg-conv-list">
+      <% if (conversations.length === 0) { %>
+        <div class="msg-empty-sidebar">
+          <i class="fa-solid fa-comment-dots"></i>
+          <p>No conversations yet</p>
         </div>
-      </div>
-    <% }) %>
-  </div>
+      <% } %>
+      <% conversations.forEach(conv => { %>
+        <a href="/messages/<%= conv.id %>"
+           class="msg-conv-item <%= conv.id === activeConvId ? 'msg-conv-item--active' : '' %>">
+          <div class="msg-conv-avatar">
+            <% if (conv.other_avatar) { %>
+              <img src="<%= conv.other_avatar %>" alt="<%= conv.other_name %>" />
+            <% } else { %>
+              <div class="msg-conv-initial"><%= conv.other_name.charAt(0).toUpperCase() %></div>
+            <% } %>
+            <% if (conv.unread > 0 && conv.id !== activeConvId) { %><span class="msg-unread-dot"></span><% } %>
+          </div>
+          <div class="msg-conv-body">
+            <div class="msg-conv-top">
+              <span class="msg-conv-name <%= conv.unread > 0 && conv.id !== activeConvId ? 'msg-conv-name--bold' : '' %>"><%= conv.other_name %></span>
+              <span class="msg-conv-time"><%= conv.timeAgo %></span>
+            </div>
+            <p class="msg-conv-preview <%= conv.unread > 0 && conv.id !== activeConvId ? 'msg-conv-preview--bold' : '' %>">
+              <%= conv.last_msg ? conv.last_msg.substring(0,55) + (conv.last_msg.length > 55 ? '…' : '') : 'Start the conversation' %>
+            </p>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  </aside>
 
-  <!-- Input -->
-  <div class="chat-input-bar">
-    <form id="messageForm" class="chat-input-form" autocomplete="off">
-      <textarea
-        id="messageInput"
-        class="chat-textarea"
-        placeholder="Type a message…"
-        rows="1"
-        maxlength="2000"
-        required
-      ></textarea>
-      <button type="submit" class="chat-send-btn" aria-label="Send">
-        <i class="fa-solid fa-paper-plane"></i>
-      </button>
-    </form>
-  </div>
+  <!-- Chat Panel -->
+  <main class="msg-chat-panel" id="chatPanel">
+
+    <!-- Chat Header -->
+    <div class="msg-chat-header">
+      <a href="/messages" class="msg-back-btn" aria-label="Back to messages">
+        <i class="fa-solid fa-arrow-left"></i>
+      </a>
+      <% if (other) { %>
+        <a href="/users/<%= other.id %>" class="msg-chat-header-avatar">
+          <% if (other.avatar) { %>
+            <img src="<%= other.avatar %>" alt="<%= other.name %>" />
+          <% } else { %>
+            <div class="msg-chat-initial"><%= (other.name || 'U').charAt(0).toUpperCase() %></div>
+          <% } %>
+          <span class="msg-online-indicator" id="onlineIndicator"></span>
+        </a>
+        <div class="msg-chat-header-info">
+          <a href="/users/<%= other.id %>" class="msg-chat-other-name"><%= other.name %></a>
+          <span class="msg-chat-status" id="chatStatus">Active</span>
+        </div>
+        <div class="msg-chat-header-actions">
+          <a href="/users/<%= other.id %>" class="msg-header-btn" title="View profile">
+            <i class="fa-solid fa-user"></i>
+          </a>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Messages area -->
+    <div class="msg-messages-area" id="chatMessages">
+      <% if (messages.length === 0) { %>
+        <div class="msg-chat-start" id="chatEmptyState">
+          <% if (other && other.avatar) { %>
+            <img src="<%= other.avatar %>" alt="" class="msg-chat-start-avatar" />
+          <% } else if (other) { %>
+            <div class="msg-chat-start-initial"><%= (other.name||'U').charAt(0) %></div>
+          <% } %>
+          <p class="msg-chat-start-name"><%= other?.name %></p>
+          <p class="msg-chat-start-hint">Say hello and start the conversation!</p>
+        </div>
+      <% } %>
+
+      <% let lastDate = null; %>
+      <% messages.forEach(msg => { %>
+        <%
+          const msgDate = new Date(msg.created_at).toDateString();
+          const today   = new Date().toDateString();
+          const yesterday = new Date(Date.now() - 86400000).toDateString();
+          const dateLabel = msgDate === today ? 'Today' : msgDate === yesterday ? 'Yesterday' : new Date(msg.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+        %>
+        <% if (msgDate !== lastDate) { %>
+          <div class="msg-date-divider"><span><%= dateLabel %></span></div>
+          <% lastDate = msgDate; %>
+        <% } %>
+
+        <div class="msg-bubble-row <%= msg.isMine ? 'msg-bubble-row--mine' : 'msg-bubble-row--theirs' %>" data-id="<%= msg.id %>">
+          <% if (!msg.isMine) { %>
+            <div class="msg-bubble-avatar">
+              <% if (other && other.avatar) { %>
+                <img src="<%= other.avatar %>" alt="" />
+              <% } else { %>
+                <div class="msg-bubble-initial"><%= (other?.name||'U').charAt(0) %></div>
+              <% } %>
+            </div>
+          <% } %>
+          <div class="msg-bubble-wrap">
+            <div class="msg-bubble"><%- msg.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') %></div>
+            <span class="msg-bubble-time"><%= msg.timeAgo %></span>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+
+    <!-- Input bar -->
+    <div class="msg-input-bar">
+      <form id="messageForm" class="msg-input-form" autocomplete="off">
+        <div class="msg-input-wrap">
+          <textarea
+            id="messageInput"
+            class="msg-textarea"
+            placeholder="Type a message…"
+            rows="1"
+            maxlength="2000"
+            required
+          ></textarea>
+        </div>
+        <button type="submit" class="msg-send-btn" aria-label="Send message">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </form>
+    </div>
+
+  </main>
 </div>
 
 <script>
 (function () {
-  const CONV_ID       = <%= conversation.id %>;
-  const CURRENT_UID   = <%= currentUserId %>;
-  const otherName     = '<%= (other?.name || "User").replace(/'/g, "\\'") %>';
-  const otherAvatar   = '<%= other?.avatar || "" %>';
-  const otherInitial  = '<%= (other?.name || "U").charAt(0).toUpperCase() %>';
+  const CONV_ID     = <%= conversation.id %>;
+  const CURRENT_UID = <%= currentUserId %>;
+  const otherName   = '<%= (other?.name || "User").replace(/'/g, "\\'") %>';
+  const otherAvatar = '<%= other?.avatar || "" %>';
+  const otherInitial = '<%= (other?.name || "U").charAt(0).toUpperCase() %>';
 
-  const container  = document.getElementById('chatMessages');
-  const form       = document.getElementById('messageForm');
-  const input      = document.getElementById('messageInput');
+  const area    = document.getElementById('chatMessages');
+  const form    = document.getElementById('messageForm');
+  const input   = document.getElementById('messageInput');
+  const empty   = document.getElementById('chatEmptyState');
 
-  // Track last message id for polling
   let lastId = 0;
-  const rows = container.querySelectorAll('.message-row[data-id]');
+  const rows = area.querySelectorAll('.msg-bubble-row[data-id]');
   if (rows.length) lastId = parseInt(rows[rows.length - 1].dataset.id);
 
-  /* ── Helpers ── */
-  function escHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-  function scrollBottom() {
-    container.scrollTop = container.scrollHeight;
+  function scrollBottom(smooth) {
+    area.scrollTo({ top: area.scrollHeight, behavior: smooth ? 'smooth' : 'instant' });
   }
-  scrollBottom();
+  scrollBottom(false);
 
   function buildBubble(msg) {
+    if (empty) empty.remove();
     const isMine = msg.isMine || msg.sender_id === CURRENT_UID;
-    const wrap   = document.createElement('div');
-    wrap.className = `message-row ${isMine ? 'message-mine' : 'message-theirs'}`;
-    wrap.dataset.id = msg.id;
+    const row = document.createElement('div');
+    row.className = `msg-bubble-row ${isMine ? 'msg-bubble-row--mine' : 'msg-bubble-row--theirs'}`;
+    row.dataset.id = msg.id;
 
-    let avatarHtml = '';
-    if (!isMine) {
-      avatarHtml = otherAvatar
-        ? `<img src="${escHtml(otherAvatar)}" alt="${escHtml(otherName)}" class="avatar-xs msg-avatar">`
-        : `<div class="avatar-placeholder-xs msg-avatar">${escHtml(otherInitial)}</div>`;
-    }
+    const avatarHtml = !isMine
+      ? (otherAvatar
+          ? `<div class="msg-bubble-avatar"><img src="${esc(otherAvatar)}" alt="${esc(otherName)}" /></div>`
+          : `<div class="msg-bubble-avatar"><div class="msg-bubble-initial">${esc(otherInitial)}</div></div>`)
+      : '';
 
-    wrap.innerHTML = `
+    const content = esc(msg.content).replace(/\n/g,'<br>');
+
+    row.innerHTML = `
       ${avatarHtml}
-      <div class="message-bubble">
-        <div class="message-content">${escHtml(msg.content).replace(/\n/g,'<br>')}</div>
-        <div class="message-time">${escHtml(msg.timeAgo || 'just now')}</div>
+      <div class="msg-bubble-wrap">
+        <div class="msg-bubble">${content}</div>
+        <span class="msg-bubble-time">${esc(msg.timeAgo || 'just now')}</span>
       </div>`;
 
-    // Remove chat-empty placeholder if present
-    const empty = container.querySelector('.chat-empty');
-    if (empty) empty.remove();
-
-    container.appendChild(wrap);
+    area.appendChild(row);
+    scrollBottom(true);
   }
 
-  /* ── Send message ── */
+  /* Send */
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const text = input.value.trim();
     if (!text) return;
-
     input.value = '';
     input.style.height = 'auto';
 
     try {
-      const res  = await fetch(`/messages/${CONV_ID}`, {
+      const res = await fetch(`/messages/${CONV_ID}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
         body: JSON.stringify({ content: text }),
@@ -134,45 +204,41 @@
       if (data.success && data.message) {
         buildBubble({ ...data.message, isMine: true });
         lastId = data.message.id;
-        scrollBottom();
       }
     } catch (err) { console.error(err); }
   });
 
-  /* ── Auto-resize textarea ── */
+  /* Auto-resize */
   input.addEventListener('input', () => {
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 120) + 'px';
   });
-  /* ── Send on Enter (Shift+Enter for newline) ── */
+
+  /* Enter to send */
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
   });
 
-  /* ── Poll for new messages every 3s ── */
+  /* Poll */
   async function poll() {
     try {
-      const r    = await fetch(`/messages/${CONV_ID}/poll?after=${lastId}`);
+      const r = await fetch(`/messages/${CONV_ID}/poll?after=${lastId}`);
       const data = await r.json();
       if (data.messages && data.messages.length) {
-        data.messages.forEach(msg => buildBubble(msg));
+        data.messages.forEach(m => buildBubble(m));
         lastId = data.messages[data.messages.length - 1].id;
-        scrollBottom();
       }
-    } catch (e) { /* silent */ }
+    } catch(e) {}
   }
 
-  let pollTimer = setInterval(poll, 3000);
-
+  let timer = setInterval(poll, 3000);
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      clearInterval(pollTimer);
-    } else {
-      poll();                              // catch up immediately
-      pollTimer = setInterval(poll, 3000);
-    }
+    if (document.hidden) { clearInterval(timer); }
+    else { poll(); timer = setInterval(poll, 3000); }
   });
+  window.addEventListener('beforeunload', () => clearInterval(timer));
 
-  window.addEventListener('beforeunload', () => clearInterval(pollTimer));
+  /* Focus input */
+  input.focus();
 })();
 </script>

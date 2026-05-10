@@ -1,47 +1,53 @@
-<div class="page-header">
-  <div class="container">
-    <div class="page-header-row">
-      <div>
-        <h1><i class="fa-solid fa-comments"></i> Messages</h1>
-        <p>Your private conversations</p>
-      </div>
-    </div>
-  </div>
-</div>
+<div class="msg-shell">
 
-<div class="container" style="padding:2rem 1.25rem;max-width:720px">
-  <% if (conversations.length === 0) { %>
-    <div class="empty-state card">
-      <i class="fa-solid fa-comment-slash"></i>
-      <h3>No conversations yet</h3>
-      <p>Visit a user's profile and click <strong>Message</strong> to start chatting.</p>
-      <a href="/discussions" class="btn btn-primary" style="margin-top:1rem">
-        <i class="fa-solid fa-users"></i> Browse Community
-      </a>
+  <!-- Sidebar -->
+  <aside class="msg-sidebar">
+    <div class="msg-sidebar-head">
+      <h1 class="msg-sidebar-title">Messages</h1>
     </div>
-  <% } else { %>
-    <div class="conv-list">
+
+    <div class="msg-conv-list">
+      <% if (conversations.length === 0) { %>
+        <div class="msg-empty-sidebar">
+          <i class="fa-solid fa-comment-dots"></i>
+          <p>No conversations yet</p>
+          <span>Visit a profile and click <strong>Message</strong></span>
+        </div>
+      <% } %>
       <% conversations.forEach(conv => { %>
-        <a href="/messages/<%= conv.id %>" class="conv-item <%= conv.unread > 0 ? 'conv-unread' : '' %>">
-          <div class="conv-avatar">
+        <a href="/messages/<%= conv.id %>" class="msg-conv-item">
+          <div class="msg-conv-avatar">
             <% if (conv.other_avatar) { %>
-              <img src="<%= conv.other_avatar %>" alt="<%= conv.other_name %>" class="avatar-md" />
+              <img src="<%= conv.other_avatar %>" alt="<%= conv.other_name %>" />
             <% } else { %>
-              <div class="avatar-placeholder-md"><%= conv.other_name.charAt(0).toUpperCase() %></div>
+              <div class="msg-conv-initial"><%= conv.other_name.charAt(0).toUpperCase() %></div>
             <% } %>
-            <% if (conv.unread > 0) { %>
-              <span class="conv-badge"><%= conv.unread %></span>
-            <% } %>
+            <% if (conv.unread > 0) { %><span class="msg-unread-dot"></span><% } %>
           </div>
-          <div class="conv-body">
-            <div class="conv-top">
-              <span class="conv-name"><%= conv.other_name %></span>
-              <span class="conv-time"><%= conv.timeAgo %></span>
+          <div class="msg-conv-body">
+            <div class="msg-conv-top">
+              <span class="msg-conv-name <%= conv.unread > 0 ? 'msg-conv-name--bold' : '' %>"><%= conv.other_name %></span>
+              <span class="msg-conv-time"><%= conv.timeAgo %></span>
             </div>
-            <p class="conv-preview"><%= conv.last_msg ? conv.last_msg.substring(0, 80) + (conv.last_msg.length > 80 ? '…' : '') : 'No messages yet' %></p>
+            <p class="msg-conv-preview <%= conv.unread > 0 ? 'msg-conv-preview--bold' : '' %>">
+              <%= conv.last_msg ? conv.last_msg.substring(0,60) + (conv.last_msg.length > 60 ? '…' : '') : 'Start the conversation' %>
+            </p>
           </div>
         </a>
       <% }) %>
     </div>
-  <% } %>
+  </aside>
+
+  <!-- Empty chat panel -->
+  <main class="msg-chat-panel msg-chat-empty-panel">
+    <div class="msg-chat-empty-state">
+      <div class="msg-chat-empty-icon"><i class="fa-solid fa-comments"></i></div>
+      <h2>Your Messages</h2>
+      <p>Select a conversation to start chatting, or visit a user's profile to send them a message.</p>
+      <a href="/users" class="btn btn-primary btn-sm" style="margin-top:1rem">
+        <i class="fa-solid fa-users"></i> Find People
+      </a>
+    </div>
+  </main>
+
 </div>

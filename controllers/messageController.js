@@ -37,12 +37,35 @@ exports.index = async (req, res) => {
       timeAgo: timeAgo(c.last_msg_at || c.updated_at),
     }));
 
-    res.render('messages/index', { title: 'Messages', conversations: list });
+    res.render('messages/index', { title: 'Messages', conversations: list, activeConvId: null });
   } catch (err) {
     console.error(err);
     res.render('messages/index', { title: 'Messages', conversations: [] });
   }
 };
+
+/* ── Helper: get sidebar conversations ───────────────────────────────────── */
+async function getSidebarConversations(uid) {
+  return query(
+    `SELECT
+       c.id, c.updated_at,
+       u.id AS other_id, u.name AS other_name, u.avatar AS other_avatar,
+       lm.content AS last_msg, lm.created_at AS last_msg_at,
+       (SELECT COUNT(*) FROM messages x
+        WHERE x.conversation_id = c.id AND x.sender_id <> ?
+          AND x.created_at > COALESCE(cp.last_read_at,'1970-01-01 00:00:00')
+       ) AS unread
+     FROM conversations c
+     JOIN conversation_participants cp  ON c.id = cp.conversation_id AND cp.user_id = ?
+     JOIN conversation_participants cp2 ON c.id = cp2.conversation_id AND cp2.user_id <> ?
+     JOIN users u ON u.id = cp2.user_id
+     LEFT JOIN messages lm ON lm.id = (
+       SELECT id FROM messages WHERE conversation_id = c.id ORDER BY id DESC LIMIT 1
+     )
+     ORDER BY c.updated_at DESC`,
+    [uid, uid, uid]
+  );
+}
 
 /* ── Single conversation ──────────────────────────────────────────────────── */
 exports.show = async (req, res) => {
@@ -79,12 +102,17 @@ exports.show = async (req, res) => {
       [convId, uid]
     );
 
+    const conversations = await getSidebarConversations(uid);
+    const convList = conversations.map(c => ({ ...c, timeAgo: timeAgo(c.last_msg_at || c.updated_at) }));
+
     res.render('messages/show', {
       title: `Chat with ${other?.name || 'User'}`,
       conversation: { id: convId },
       other,
       messages: messages.map(m => ({ ...m, timeAgo: timeAgo(m.created_at), isMine: m.sender_id === uid })),
       currentUserId: uid,
+      conversations: convList,
+      activeConvId: convId,
     });
   } catch (err) {
     console.error(err);
