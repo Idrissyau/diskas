@@ -105,8 +105,13 @@
                     <img src="<%= msg.file_url %>" alt="<%= msg.file_name %>" class="msg-media-img" loading="lazy" />
                   </a>
                 <% } else if (msg.file_type === 'video') { %>
-                  <video class="msg-media-video" controls preload="metadata">
-                    <source src="<%= msg.file_url %>" />
+                  <video class="msg-media-video" controls preload="metadata" playsinline>
+                    <source src="<%= msg.file_url %>" type="<%=
+                      msg.file_url.endsWith('.mp4') ? 'video/mp4' :
+                      msg.file_url.endsWith('.webm') ? 'video/webm' :
+                      msg.file_url.endsWith('.ogg') ? 'video/ogg' :
+                      msg.file_url.endsWith('.mov') ? 'video/quicktime' : 'video/mp4'
+                    %>" />
                     Your browser does not support video.
                   </video>
                 <% } else { %>
@@ -236,8 +241,10 @@
           <img src="${esc(msg.file_url)}" alt="${esc(msg.file_name||'image')}" class="msg-media-img" loading="lazy" />
         </a>`;
       } else if (msg.file_type === 'video') {
-        mediaHtml = `<video class="msg-media-video" controls preload="metadata">
-          <source src="${esc(msg.file_url)}" />
+        const ext = (msg.file_url || '').split('.').pop().toLowerCase();
+        const mime = ext === 'webm' ? 'video/webm' : ext === 'ogg' ? 'video/ogg' : ext === 'mov' ? 'video/quicktime' : 'video/mp4';
+        mediaHtml = `<video class="msg-media-video" controls preload="metadata" playsinline>
+          <source src="${esc(msg.file_url)}" type="${mime}" />
         </video>`;
       } else {
         mediaHtml = `<a href="${esc(msg.file_url)}" target="_blank" download="${esc(msg.file_name||'file')}" class="msg-file-chip">

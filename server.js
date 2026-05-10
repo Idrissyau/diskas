@@ -26,7 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(methodOverride('_method'));
-app.use(fileUpload({ limits: { fileSize: 5 * 1024 * 1024 }, useTempFiles: false }));
+app.use(fileUpload({ limits: { fileSize: 20 * 1024 * 1024 }, useTempFiles: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const sessionStore = new MySQLStore({}, pool);
