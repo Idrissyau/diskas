@@ -96,6 +96,11 @@
               <% } else { %><div class="msg-bubble-initial"><%= (other?.name||'U').charAt(0) %></div><% } %>
             </div>
           <% } %>
+          <% if (msg.isMine) { %>
+            <button class="msg-delete-btn" title="Delete message" data-msg-id="<%= msg.id %>" data-conv-id="<%= conversation.id %>">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          <% } %>
           <div class="msg-bubble-wrap">
             <div class="msg-bubble">
               <%- msg.content ? msg.content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') : '' %>
@@ -254,8 +259,13 @@
       }
     }
 
+    const deleteHtml = isMine
+      ? `<button class="msg-delete-btn" title="Delete message" data-msg-id="${msg.id}" data-conv-id="${CONV_ID}"><i class="fa-solid fa-trash-can"></i></button>`
+      : '';
+
     row.innerHTML = `
       ${avatarHtml}
+      ${deleteHtml}
       <div class="msg-bubble-wrap">
         <div class="msg-bubble">${textHtml}${mediaHtml}</div>
         <span class="msg-bubble-time">${esc(msg.timeAgo || 'just now')}</span>
@@ -312,6 +322,42 @@
   });
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+  });
+
+  /* ── Delete message ── */
+  area.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.msg-delete-btn');
+    if (!btn) return;
+    if (!confirm('Delete this message? This cannot be undone.')) return;
+
+    const msgId  = btn.dataset.msgId;
+    const convId = btn.dataset.convId;
+    const row    = btn.closest('.msg-bubble-row');
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+    try {
+      const r = await fetch(`/messages/${convId}/messages/${msgId}`, {
+        method: 'DELETE',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      });
+      const d = await r.json();
+      if (d.success) {
+        // Fade out then remove
+        row.style.transition = 'opacity .25s, transform .25s';
+        row.style.opacity = '0';
+        row.style.transform = 'scale(.95)';
+        setTimeout(() => row.remove(), 260);
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+        alert(d.error || 'Could not delete message.');
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+    }
   });
 
   /* ── Poll ── */

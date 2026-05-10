@@ -9,5 +9,6 @@ router.get('/unread',        requireAuth, ctrl.unreadCount);
 router.get('/:id',           requireAuth, ctrl.show);
 router.post('/:id',          requireAuth, ctrl.send);
 router.get('/:id/poll',      requireAuth, ctrl.poll);
+router.delete('/:id/messages/:msgId', requireAuth, ctrl.deleteMessage);
 
 module.exports = router;

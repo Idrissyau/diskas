@@ -272,6 +272,36 @@ exports.poll = async (req, res) => {
   }
 };
 
+/* ── Delete a message ────────────────────────────────────────────────────── */
+exports.deleteMessage = async (req, res) => {
+  try {
+    const uid   = req.session.user.id;
+    const msgId = parseInt(req.params.msgId);
+
+    // Fetch the message — must be the sender
+    const msg = await queryOne(
+      'SELECT id, sender_id, file_url, conversation_id FROM messages WHERE id = ?',
+      [msgId]
+    );
+    if (!msg)             return res.status(404).json({ error: 'Message not found' });
+    if (msg.sender_id !== uid) return res.status(403).json({ error: 'Not your message' });
+
+    // Delete the physical file if one exists
+    if (msg.file_url) {
+      const filePath = path.join(__dirname, '..', 'public', msg.file_url);
+      fs.unlink(filePath, () => {}); // fire-and-forget; ignore if already gone
+    }
+
+    // Hard-delete the row
+    await query('DELETE FROM messages WHERE id = ?', [msgId]);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 /* ── Unread count (for nav badge) ────────────────────────────────────────── */
 exports.unreadCount = async (req, res) => {
   try {
