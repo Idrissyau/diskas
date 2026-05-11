@@ -2,8 +2,8 @@
 /* ── Product card ── */
 .prod-card { display:flex;flex-direction:column;border-radius:14px;overflow:hidden;border:1.5px solid var(--border);background:var(--card);transition:box-shadow .18s,transform .18s;position:relative }
 .prod-card:hover { box-shadow:0 8px 32px rgba(0,0,0,.1);transform:translateY(-2px) }
-.prod-img { width:100%;height:160px;object-fit:cover;display:block }
-.prod-img-placeholder { height:130px;display:flex;align-items:center;justify-content:center;font-size:2.2rem }
+.prod-img { width:100%;aspect-ratio:16/9;object-fit:cover;display:block }
+.prod-img-placeholder { aspect-ratio:16/9;width:100%;display:flex;align-items:center;justify-content:center;font-size:2.5rem }
 .prod-body { padding:1.1rem 1.1rem .85rem;flex:1;display:flex;flex-direction:column;gap:.35rem }
 .prod-foot { padding:.75rem 1.1rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap }
 .file-badge { display:inline-flex;align-items:center;gap:.3rem;font-size:.68rem;font-weight:700;padding:.2rem .55rem;border-radius:5px;letter-spacing:.04em }
@@ -16,6 +16,8 @@
 .owner-table tr:hover td { background:#FAFBFF }
 /* ── Status badge ── */
 .status-dot { display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:.35rem }
+/* ── Price fields ── */
+.price-grid { display:grid;grid-template-columns:1fr 1fr;gap:1rem }
 </style>
 
 <div class="container" style="max-width:1040px;padding:2rem 1.25rem">
@@ -56,7 +58,7 @@
             <i class="fa-solid <%= s.icon %>" style="color:<%= s.color %>"></i>
           </div>
           <div>
-            <div style="font-size:1.3rem;font-weight:800"><%= s.raw ? s.val : s.val %></div>
+            <div style="font-size:1.3rem;font-weight:800"><%= s.val %></div>
             <div style="font-size:.72rem;color:var(--text-muted);font-weight:600"><%= s.label %></div>
           </div>
         </div>
@@ -93,10 +95,10 @@
                   <!-- Thumbnail -->
                   <td style="padding:.6rem .75rem">
                     <% if (prod.preview_image) { %>
-                      <img src="<%= prod.preview_image %>" style="width:38px;height:38px;border-radius:7px;object-fit:cover" />
+                      <img src="<%= prod.preview_image %>" style="width:56px;height:32px;border-radius:5px;object-fit:cover" />
                     <% } else { %>
-                      <div style="width:38px;height:38px;border-radius:7px;background:linear-gradient(135deg,#0F172A,#1E3A5F);display:flex;align-items:center;justify-content:center">
-                        <i class="fa-solid fa-<%= prod.file_type==='PDF'?'file-pdf':prod.file_type==='ZIP'?'file-zipper':'file-arrow-down' %>" style="font-size:.85rem;color:rgba(255,255,255,.7)"></i>
+                      <div style="width:56px;height:32px;border-radius:5px;background:linear-gradient(135deg,#0F172A,#1E3A5F);display:flex;align-items:center;justify-content:center">
+                        <i class="fa-solid fa-<%= prod.file_type==='PDF'?'file-pdf':prod.file_type==='ZIP'?'file-zipper':'file-arrow-down' %>" style="font-size:.75rem;color:rgba(255,255,255,.7)"></i>
                       </div>
                     <% } %>
                   </td>
@@ -104,7 +106,7 @@
                   <td style="max-width:220px">
                     <div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= prod.title %></div>
                     <% if (prod.description) { %>
-                      <div style="font-size:.75rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"><%= prod.description %></div>
+                      <div style="font-size:.75rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"><%- prod.description.replace(/<[^>]+>/g,'') %></div>
                     <% } %>
                     <% if (prod.tags) { %>
                       <div style="margin-top:.25rem;display:flex;gap:.25rem;flex-wrap:wrap">
@@ -114,9 +116,15 @@
                   </td>
                   <!-- Price -->
                   <td>
+                    <% if (prod.original_price > 0 && prod.original_price > prod.price) { %>
+                      <span class="price-was"><%= formatUSD(prod.original_price) %></span><br>
+                    <% } %>
                     <span style="font-weight:800;color:<%= prod.price>0?'var(--primary)':'var(--success)' %>">
                       <%= prod.price > 0 ? formatUSD(prod.price) : 'Free' %>
                     </span>
+                    <% if (prod.original_price > 0 && prod.original_price > prod.price) { %>
+                      <span class="price-discount-badge">-<%= Math.round((1-prod.price/prod.original_price)*100) %>%</span>
+                    <% } %>
                   </td>
                   <!-- File info -->
                   <td>
@@ -206,7 +214,7 @@
                data-price="<%= prod.price > 0 ? 'paid' : 'free' %>"
                data-owned="<%= prod.isPurchased || prod.price==0 ? 'yes' : 'no' %>">
 
-            <!-- Cover / placeholder -->
+            <!-- Cover / placeholder (16:9) -->
             <% if (prod.preview_image) { %>
               <img src="<%= prod.preview_image %>" alt="<%= prod.title %>" class="prod-img" />
             <% } else { %>
@@ -218,11 +226,15 @@
               </div>
             <% } %>
 
-            <!-- Already purchased ribbon -->
+            <!-- Ribbon badges -->
             <% if (prod.isPurchased) { %>
               <div style="position:absolute;top:.65rem;right:.65rem;background:#10B981;color:#fff;font-size:.68rem;font-weight:700;padding:.2rem .6rem;border-radius:20px"><i class="fa-solid fa-check"></i> Owned</div>
             <% } else if (prod.price == 0) { %>
               <div style="position:absolute;top:.65rem;right:.65rem;background:#F0FDF4;color:#16A34A;font-size:.68rem;font-weight:700;padding:.2rem .6rem;border-radius:20px;border:1px solid #86EFAC">Free</div>
+            <% } else if (prod.original_price > 0 && prod.original_price > prod.price) { %>
+              <div style="position:absolute;top:.65rem;right:.65rem;background:#FEF2F2;color:#DC2626;font-size:.68rem;font-weight:700;padding:.2rem .6rem;border-radius:20px;border:1px solid #FECACA">
+                -<%= Math.round((1-prod.price/prod.original_price)*100) %>% OFF
+              </div>
             <% } %>
 
             <div class="prod-body">
@@ -237,7 +249,7 @@
               <h3 style="font-size:.97rem;font-weight:700;margin:0;line-height:1.3"><%= prod.title %></h3>
 
               <% if (prod.description) { %>
-                <p style="font-size:.8rem;color:var(--text-muted);margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5"><%= prod.description %></p>
+                <p style="font-size:.8rem;color:var(--text-muted);margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5"><%- prod.description.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim() %></p>
               <% } %>
 
               <!-- Tags -->
@@ -256,16 +268,21 @@
             </div>
 
             <div class="prod-foot">
-              <span style="font-weight:800;font-size:1.1rem;color:<%= prod.price>0?'var(--primary)':'var(--success)' %>">
-                <%= prod.price > 0 ? formatUSD(prod.price) : 'Free' %>
-              </span>
+              <div>
+                <% if (prod.original_price > 0 && prod.original_price > prod.price) { %>
+                  <div style="display:flex;align-items:center;gap:.4rem">
+                    <span class="price-was"><%= formatUSD(prod.original_price) %></span>
+                  </div>
+                <% } %>
+                <span style="font-weight:800;font-size:1.1rem;color:<%= prod.price>0?'var(--primary)':'var(--success)' %>">
+                  <%= prod.price > 0 ? formatUSD(prod.price) : 'Free' %>
+                </span>
+              </div>
               <div style="display:flex;gap:.4rem">
-                <!-- Detail / preview button -->
                 <button class="btn btn-sm btn-outline" style="font-size:.78rem"
                         onclick="openDetail(<%= JSON.stringify(prod) %>)">
                   <i class="fa-solid fa-eye"></i> Details
                 </button>
-                <!-- Action button -->
                 <% if (prod.isPurchased || prod.price == 0) { %>
                   <% if (prod.file_url) { %>
                     <a href="/products/<%= prod.id %>/download" class="btn btn-sm" style="background:var(--success);color:#fff;font-size:.78rem">
@@ -298,7 +315,7 @@
 ══════════════════════════════════════════════════════════ -->
 <% if (isOwner) { %>
 <div class="modal-overlay" id="createProductModal">
-  <div class="modal-box" style="max-width:580px;max-height:90vh;overflow-y:auto">
+  <div class="modal-box" style="max-width:620px;max-height:92vh;overflow-y:auto">
     <div class="modal-head">
       <h2 class="modal-title"><i class="fa-solid fa-box" style="color:var(--primary)"></i> New Product</h2>
       <button type="button" class="modal-close" onclick="closeCreate()"><i class="fa-solid fa-xmark"></i></button>
@@ -312,30 +329,41 @@
         <input type="text" name="title" class="form-input" placeholder="e.g. Ultimate Marketing Checklist PDF" required />
       </div>
 
-      <!-- Description -->
+      <!-- Description (RTE) -->
       <div class="form-group" style="margin:0">
         <label class="form-label">Description <span style="font-weight:400;color:var(--text-muted)">(what's inside?)</span></label>
-        <textarea name="description" class="form-input" rows="3" placeholder="Describe what buyers will get — what problems it solves, what's included…"></textarea>
+        <textarea name="description" id="createDescTA" data-rte rows="4"
+                  placeholder="Describe what buyers will get — problems it solves, what's included…"></textarea>
       </div>
 
-      <!-- Price + Access -->
+      <!-- Prices -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
         <div class="form-group" style="margin:0">
-          <label class="form-label">Price (USD)</label>
+          <label class="form-label">Sale Price (USD)</label>
           <div style="position:relative">
             <span style="position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:#94A3B8;font-weight:700">$</span>
             <input type="number" name="price" class="form-input" placeholder="0.00" min="0" step="0.01" style="padding-left:1.75rem" />
           </div>
-          <p style="font-size:.72rem;color:var(--text-muted);margin-top:.2rem">Leave at $0.00 for a free product</p>
+          <p style="font-size:.72rem;color:var(--text-muted);margin-top:.2rem">Leave $0.00 for free</p>
         </div>
         <div class="form-group" style="margin:0">
-          <label class="form-label">Who Can Buy</label>
-          <select name="access_type" class="form-input">
-            <option value="anyone">Anyone</option>
-            <option value="members_only">Members Only</option>
-            <option value="plan_only">Specific Plan Only</option>
-          </select>
+          <label class="form-label">Regular Price <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
+          <div style="position:relative">
+            <span style="position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:#94A3B8;font-weight:700">$</span>
+            <input type="number" name="original_price" class="form-input" placeholder="0.00" min="0" step="0.01" style="padding-left:1.75rem" />
+          </div>
+          <p style="font-size:.72rem;color:var(--text-muted);margin-top:.2rem">Shows as strikethrough if &gt; Sale Price</p>
         </div>
+      </div>
+
+      <!-- Access -->
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Who Can Buy</label>
+        <select name="access_type" class="form-input">
+          <option value="anyone">Anyone</option>
+          <option value="members_only">Members Only</option>
+          <option value="plan_only">Specific Plan Only</option>
+        </select>
       </div>
 
       <!-- Tags -->
@@ -359,12 +387,18 @@
         </div>
       </div>
 
-      <!-- Preview image -->
+      <!-- Cover image (16:9) -->
       <div class="form-group" style="margin:0">
-        <label class="form-label">Cover / Preview Image <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
-        <input type="file" name="preview_image" class="form-input" accept="image/*" style="font-size:.82rem"
-               onchange="previewImg(this,'createImgPrev')" />
-        <img id="createImgPrev" src="" alt="" style="display:none;width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-top:.5rem" />
+        <label class="form-label">Cover Image <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
+        <div class="prod-cover-wrap" id="createCoverWrap">
+          <div class="placeholder-inner">
+            <i class="fa-solid fa-image" style="font-size:1.75rem;color:#CBD5E1"></i>
+            <span style="font-size:.8rem;color:var(--text-muted)">Click to upload cover</span>
+          </div>
+          <img id="createImgPrev" src="" alt="" class="placed" style="display:none" />
+          <input type="file" name="preview_image" accept="image/*" onchange="previewCover(this,'createImgPrev','createCoverWrap')" />
+        </div>
+        <p class="cover-upload-hint"><i class="fa-solid fa-crop-simple"></i> Recommended: <strong>1280 × 720 px</strong> (16:9) · PNG or JPG</p>
       </div>
 
       <div class="modal-footer-btns">
@@ -377,7 +411,7 @@
 
 <!-- EDIT PRODUCT MODAL -->
 <div class="modal-overlay" id="editProductModal">
-  <div class="modal-box" style="max-width:580px;max-height:90vh;overflow-y:auto">
+  <div class="modal-box" style="max-width:620px;max-height:92vh;overflow-y:auto">
     <div class="modal-head">
       <h2 class="modal-title"><i class="fa-solid fa-pen" style="color:var(--primary)"></i> Edit Product</h2>
       <button type="button" class="modal-close" onclick="closeEdit()"><i class="fa-solid fa-xmark"></i></button>
@@ -392,7 +426,7 @@
 ══════════════════════════════════════════════════════════ -->
 <% if (!isOwner) { %>
 <div class="modal-overlay" id="detailModal">
-  <div class="modal-box" style="max-width:560px">
+  <div class="modal-box" style="max-width:580px">
     <div class="modal-head">
       <h2 class="modal-title" id="detailTitle">Product Details</h2>
       <button type="button" class="modal-close" onclick="closeDetail()"><i class="fa-solid fa-xmark"></i></button>
@@ -416,6 +450,9 @@
 <script>
 /* ─────────────── Shared helpers ─────────────── */
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function stripHtml(s){ return String(s||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim(); }
+function fmtPrice(p){ return p>0 ? '$'+parseFloat(p).toFixed(2) : 'Free'; }
+function discountPct(orig, sale){ return orig>sale && orig>0 ? Math.round((1-sale/orig)*100) : 0; }
 
 function showFileInfo(input, infoId) {
   const f = input.files[0]; if (!f) return;
@@ -436,15 +473,25 @@ function showFileInfo(input, infoId) {
   }
 }
 
-function previewImg(input, imgId) {
+function previewCover(input, imgId, wrapId) {
   const f = input.files[0]; if (!f) return;
   const reader = new FileReader();
-  reader.onload = e => { const img = document.getElementById(imgId); if(img){img.src=e.target.result;img.style.display='block';} };
+  reader.onload = e => {
+    const img  = document.getElementById(imgId);
+    const wrap = document.getElementById(wrapId);
+    if (img)  { img.src = e.target.result; img.style.display = 'block'; }
+    if (wrap) { wrap.querySelector('.placeholder-inner') && (wrap.querySelector('.placeholder-inner').style.display = 'none'); }
+  };
   reader.readAsDataURL(f);
 }
 
 /* ─────────────── Owner: Create ─────────────── */
-function openCreate() { document.getElementById('createProductModal').classList.add('open'); }
+function openCreate() {
+  document.getElementById('createProductModal').classList.add('open');
+  // Init RTE on description textarea inside modal
+  const ta = document.getElementById('createDescTA');
+  if (ta && !ta.dataset.rteInit && window.initRTE) initRTE(ta);
+}
 function closeCreate() { document.getElementById('createProductModal').classList.remove('open'); }
 document.getElementById('createProductModal')?.addEventListener('click', e => { if(e.target===document.getElementById('createProductModal')) closeCreate(); });
 
@@ -456,34 +503,50 @@ function openEdit(prod) {
     `<option value="${v}" ${prod.access_type===v?'selected':''}>${v==='anyone'?'Anyone':v==='members_only'?'Members Only':'Specific Plan Only'}</option>`
   ).join('');
 
+  const hasDiscount = prod.original_price > 0 && prod.original_price > prod.price;
+  const coverHasImg = prod.preview_image ? 'display:block' : 'display:none';
+
   document.getElementById('editProductBody').innerHTML = `
 <form action="/communities/<%= community.slug %>/products/${prod.id}/update" method="POST" enctype="multipart/form-data"
       style="display:flex;flex-direction:column;gap:1.1rem">
+
   <div class="form-group" style="margin:0">
     <label class="form-label">Product Title *</label>
     <input type="text" name="title" class="form-input" value="${esc(prod.title)}" required />
   </div>
+
   <div class="form-group" style="margin:0">
     <label class="form-label">Description</label>
-    <textarea name="description" class="form-input" rows="3">${esc(prod.description||'')}</textarea>
+    <textarea name="description" id="editDescTA" rows="4">${prod.description||''}</textarea>
   </div>
+
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
     <div class="form-group" style="margin:0">
-      <label class="form-label">Price (USD)</label>
+      <label class="form-label">Sale Price (USD)</label>
       <div style="position:relative">
         <span style="position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:#94A3B8;font-weight:700">$</span>
         <input type="number" name="price" class="form-input" value="${prod.price||0}" min="0" step="0.01" style="padding-left:1.75rem" />
       </div>
     </div>
     <div class="form-group" style="margin:0">
-      <label class="form-label">Who Can Buy</label>
-      <select name="access_type" class="form-input">${accessOpts}</select>
+      <label class="form-label">Regular Price <span style="font-weight:400;color:var(--text-muted)">(optional, strikethrough)</span></label>
+      <div style="position:relative">
+        <span style="position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:#94A3B8;font-weight:700">$</span>
+        <input type="number" name="original_price" class="form-input" value="${prod.original_price||''}" min="0" step="0.01" style="padding-left:1.75rem" placeholder="0.00" />
+      </div>
     </div>
   </div>
+
+  <div class="form-group" style="margin:0">
+    <label class="form-label">Who Can Buy</label>
+    <select name="access_type" class="form-input">${accessOpts}</select>
+  </div>
+
   <div class="form-group" style="margin:0">
     <label class="form-label">Tags (comma separated)</label>
     <input type="text" name="tags" class="form-input" value="${esc(prod.tags||'')}" placeholder="PDF, Template, Marketing" />
   </div>
+
   <div style="padding:1rem;border:2px dashed var(--border);border-radius:10px;background:#FAFBFF">
     <div style="font-size:.82rem;font-weight:600;margin-bottom:.5rem"><i class="fa-solid fa-file-arrow-up" style="color:var(--primary)"></i> Replace Product File</div>
     ${prod.file_url ? `<div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.5rem"><i class="fa-solid fa-check" style="color:var(--success)"></i> Current: ${esc(prod.file_name||prod.file_url.split('/').pop())} ${prod.file_size>0?`(${(prod.file_size/1024/1024).toFixed(2)} MB)`:''}</div>` : ''}
@@ -493,16 +556,30 @@ function openEdit(prod) {
       <i class="fa-solid fa-ban"></i> Video files cannot be uploaded. Use Courses instead.
     </div>
   </div>
+
   <div class="form-group" style="margin:0">
-    <label class="form-label">Replace Cover Image</label>
-    <input type="file" name="preview_image" class="form-input" accept="image/*" style="font-size:.8rem" onchange="previewImg(this,'editImgPrev')" />
-    <img id="editImgPrev" src="${esc(prod.preview_image||'')}" alt="" style="${prod.preview_image?'display:block':'display:none'};width:100%;max-height:110px;object-fit:cover;border-radius:8px;margin-top:.5rem" />
+    <label class="form-label">Cover Image (16:9 recommended)</label>
+    <div class="prod-cover-wrap" id="editCoverWrap">
+      <div class="placeholder-inner" ${prod.preview_image?'style="display:none"':''}>
+        <i class="fa-solid fa-image" style="font-size:1.75rem;color:#CBD5E1"></i>
+        <span style="font-size:.8rem;color:var(--text-muted)">Click to replace cover</span>
+      </div>
+      <img id="editImgPrev" src="${esc(prod.preview_image||'')}" alt="" class="placed" style="${coverHasImg}" />
+      <input type="file" name="preview_image" accept="image/*" onchange="previewCover(this,'editImgPrev','editCoverWrap')" />
+    </div>
+    <p class="cover-upload-hint"><i class="fa-solid fa-crop-simple"></i> Recommended: <strong>1280 × 720 px</strong> (16:9) · PNG or JPG</p>
   </div>
+
   <div class="modal-footer-btns">
     <button type="button" class="btn btn-outline btn-sm" onclick="closeEdit()">Cancel</button>
     <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
   </div>
 </form>`;
+
+  // Init RTE on the freshly-created textarea
+  const ta = document.getElementById('editDescTA');
+  if (ta && window.initRTE) initRTE(ta);
+
   document.getElementById('editProductModal').classList.add('open');
 }
 function closeEdit() { document.getElementById('editProductModal').classList.remove('open'); }
@@ -512,24 +589,35 @@ document.getElementById('editProductModal')?.addEventListener('click', e => { if
 function openDetail(prod) {
   document.getElementById('detailTitle').textContent = prod.title;
   const isOwned = prod.isPurchased || prod.price == 0;
-  const fileInfo = prod.file_type ? `<span style="font-size:.75rem;background:#EFF6FF;color:var(--primary);padding:.2rem .6rem;border-radius:5px;font-weight:700"><i class="fa-solid fa-file"></i> ${esc(prod.file_type)}${prod.file_size>0?` · ${(prod.file_size/1024/1024).toFixed(1)} MB`:''}</span>` : '';
+  const fileInfo = prod.file_type
+    ? `<span style="font-size:.75rem;background:#EFF6FF;color:var(--primary);padding:.2rem .6rem;border-radius:5px;font-weight:700"><i class="fa-solid fa-file"></i> ${esc(prod.file_type)}${prod.file_size>0?` · ${(prod.file_size/1024/1024).toFixed(1)} MB`:''}</span>`
+    : '';
+  const pct = discountPct(prod.original_price, prod.price);
+  const priceHtml = pct > 0
+    ? `<span class="price-was">$${parseFloat(prod.original_price).toFixed(2)}</span>
+       <span style="font-size:1.6rem;font-weight:800;color:var(--primary)">$${parseFloat(prod.price).toFixed(2)}</span>
+       <span class="price-discount-badge">-${pct}%</span>`
+    : `<span style="font-size:1.6rem;font-weight:800;color:${prod.price>0?'var(--primary)':'var(--success)'}">` +
+      (prod.price>0?'$'+parseFloat(prod.price).toFixed(2):'Free') + `</span>`;
 
   document.getElementById('detailBody').innerHTML = `
-    ${prod.preview_image ? `<img src="${esc(prod.preview_image)}" style="width:100%;max-height:220px;object-fit:cover" />` : ''}
+    ${prod.preview_image ? `<img src="${esc(prod.preview_image)}" style="width:100%;aspect-ratio:16/9;object-fit:cover" />` : ''}
     <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem">
       <div style="display:flex;align-items:center;gap:.65rem;flex-wrap:wrap">
         ${fileInfo}
         ${prod.tags ? prod.tags.split(',').slice(0,5).map(t=>`<span style="font-size:.72rem;padding:.15rem .55rem;border-radius:20px;background:#F1F5F9;color:var(--text-muted)">${esc(t.trim())}</span>`).join('') : ''}
       </div>
-      ${prod.description ? `<p style="font-size:.9rem;line-height:1.7;color:var(--body);margin:0">${esc(prod.description).replace(/\\n/g,'<br>')}</p>` : ''}
+      ${prod.description ? `<div class="rich-content" style="font-size:.9rem;line-height:1.7;color:var(--body)">${prod.description}</div>` : ''}
       <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem;background:#F8FAFC;border-radius:10px;flex-wrap:wrap;gap:.75rem">
-        <div>
-          <div style="font-size:1.6rem;font-weight:800;color:${prod.price>0?'var(--primary)':'var(--success)'}">${prod.price>0?'$'+parseFloat(prod.price).toFixed(2):'Free'}</div>
+        <div>${priceHtml}
           ${prod.access_type!=='anyone'?`<div style="font-size:.75rem;color:var(--text-muted);margin-top:.2rem"><i class="fa-solid fa-lock"></i> ${prod.access_type==='members_only'?'Members only':'Plan required'}</div>`:''}
         </div>
         <div style="display:flex;gap:.5rem">
-          ${isOwned && prod.file_url ? `<a href="/products/${prod.id}/download" class="btn btn-primary" style="font-size:.85rem"><i class="fa-solid fa-download"></i> Download</a>` :
-            !isOwned ? `<button class="btn btn-primary" style="font-size:.85rem" onclick="closeDetail();openBuy(${JSON.stringify(prod).replace(/"/g,'&quot;')})"><i class="fa-solid fa-shopping-cart"></i> Buy Now</button>` : ''}
+          ${isOwned && prod.file_url
+            ? `<a href="/products/${prod.id}/download" class="btn btn-primary" style="font-size:.85rem"><i class="fa-solid fa-download"></i> Download</a>`
+            : !isOwned
+              ? `<button class="btn btn-primary" style="font-size:.85rem" onclick="closeDetail();openBuy(${JSON.stringify(prod).replace(/"/g,'&quot;')})"><i class="fa-solid fa-shopping-cart"></i> Buy Now</button>`
+              : ''}
           <button class="btn btn-outline" style="font-size:.85rem" onclick="closeDetail()">Close</button>
         </div>
       </div>
@@ -541,12 +629,21 @@ document.getElementById('detailModal')?.addEventListener('click', e => { if(e.ta
 
 /* ─────────────── Buyer: Buy modal ─────────────── */
 function openBuy(prod) {
+  const pct = discountPct(prod.original_price, prod.price);
+  const priceDisplay = pct > 0
+    ? `<span class="price-was">$${parseFloat(prod.original_price).toFixed(2)}</span>
+       <span style="font-size:1.2rem;font-weight:800;color:var(--primary)">$${parseFloat(prod.price).toFixed(2)}</span>
+       <span class="price-discount-badge">-${pct}%</span>`
+    : `<span style="font-size:1.2rem;font-weight:800;color:var(--primary)">$${parseFloat(prod.price).toFixed(2)}</span>`;
+
   document.getElementById('buyBody').innerHTML = `
     <div style="display:flex;align-items:center;gap:.85rem;margin-bottom:1.25rem">
-      ${prod.preview_image?`<img src="${esc(prod.preview_image)}" style="width:56px;height:56px;border-radius:8px;object-fit:cover;flex-shrink:0" />`:`<div style="width:56px;height:56px;border-radius:8px;background:linear-gradient(135deg,#0F172A,#1E3A5F);display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-file-arrow-down" style="color:rgba(255,255,255,.7)"></i></div>`}
+      ${prod.preview_image
+        ? `<img src="${esc(prod.preview_image)}" style="width:72px;height:40px;border-radius:6px;object-fit:cover;flex-shrink:0" />`
+        : `<div style="width:72px;height:40px;border-radius:6px;background:linear-gradient(135deg,#0F172A,#1E3A5F);display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-file-arrow-down" style="color:rgba(255,255,255,.7)"></i></div>`}
       <div>
-        <div style="font-weight:700">${esc(prod.title)}</div>
-        <div style="font-size:1.3rem;font-weight:800;color:var(--primary)">$${parseFloat(prod.price).toFixed(2)}</div>
+        <div style="font-weight:700;font-size:.9rem">${esc(prod.title)}</div>
+        <div style="margin-top:.15rem">${priceDisplay}</div>
       </div>
     </div>
     <form action="/checkout/product/${prod.id}" method="POST" style="display:flex;flex-direction:column;gap:1rem">

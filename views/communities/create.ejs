@@ -27,6 +27,7 @@
         <img id="coverPreview" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:10px" />
         <input type="file" name="cover_image" id="coverInput" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer" />
       </div>
+      <p class="cover-upload-hint"><i class="fa-solid fa-crop-simple"></i> Recommended: <strong>1280 × 720 px</strong> (16:9 ratio) · PNG or JPG</p>
     </div>
 
     <!-- Avatar + Name row -->
@@ -50,7 +51,9 @@
     <!-- Description -->
     <div class="form-group" style="margin:0">
       <label class="form-label" for="commDesc">Description <span style="color:var(--danger)">*</span></label>
-      <textarea id="commDesc" name="description" class="form-input" rows="4" placeholder="What is this community about? Who should join?" maxlength="1000" required></textarea>
+      <textarea id="commDesc" name="description" class="form-input" rows="4"
+                placeholder="What is this community about? Who should join?"
+                data-rte required></textarea>
     </div>
 
     <!-- Privacy -->

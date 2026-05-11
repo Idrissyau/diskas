@@ -537,14 +537,15 @@ async function runMigrations() {
 
     // Digital product column additions
     const productColMigrations = [
-      `ALTER TABLE digital_products ADD COLUMN file_name      VARCHAR(255) DEFAULT NULL`,
-      `ALTER TABLE digital_products ADD COLUMN file_size      BIGINT       DEFAULT 0`,
-      `ALTER TABLE digital_products ADD COLUMN file_type      VARCHAR(50)  DEFAULT NULL`,
-      `ALTER TABLE digital_products ADD COLUMN download_count INT          DEFAULT 0`,
-      `ALTER TABLE digital_products ADD COLUMN buyer_count    INT          DEFAULT 0`,
-      `ALTER TABLE digital_products ADD COLUMN sort_order     INT          DEFAULT 0`,
-      `ALTER TABLE digital_products ADD COLUMN tags           VARCHAR(255) DEFAULT NULL`,
-      `ALTER TABLE digital_products ADD COLUMN plan_id        INT          DEFAULT NULL`,
+      `ALTER TABLE digital_products ADD COLUMN file_name       VARCHAR(255)   DEFAULT NULL`,
+      `ALTER TABLE digital_products ADD COLUMN file_size       BIGINT         DEFAULT 0`,
+      `ALTER TABLE digital_products ADD COLUMN file_type       VARCHAR(50)    DEFAULT NULL`,
+      `ALTER TABLE digital_products ADD COLUMN download_count  INT            DEFAULT 0`,
+      `ALTER TABLE digital_products ADD COLUMN buyer_count     INT            DEFAULT 0`,
+      `ALTER TABLE digital_products ADD COLUMN sort_order      INT            DEFAULT 0`,
+      `ALTER TABLE digital_products ADD COLUMN tags            VARCHAR(255)   DEFAULT NULL`,
+      `ALTER TABLE digital_products ADD COLUMN plan_id         INT            DEFAULT NULL`,
+      `ALTER TABLE digital_products ADD COLUMN original_price  DECIMAL(10,2)  DEFAULT NULL`,
     ];
     for (const sql of productColMigrations) {
       try { await pool.execute(sql); } catch (e) { /* column already exists */ }

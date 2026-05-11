@@ -1290,7 +1290,7 @@ exports.createProduct = async (req, res) => {
     const community = await queryOne('SELECT * FROM communities WHERE slug = ? AND owner_id = ?', [req.params.slug, req.session.user.id]);
     if (!community) return res.status(403).send('Forbidden');
 
-    const { title, description, price, access_type, plan_id, tags } = req.body;
+    const { title, description, price, original_price, access_type, plan_id, tags } = req.body;
     if (!title || !title.trim()) {
       req.flash('error', 'Product title is required.');
       return res.redirect(`/communities/${req.params.slug}/products`);
@@ -1305,20 +1305,24 @@ exports.createProduct = async (req, res) => {
     // Count existing products for sort_order
     const lastRow = await queryOne('SELECT MAX(sort_order) AS ms FROM digital_products WHERE community_id = ?', [community.id]);
 
+    const salePrice = parseFloat(price) || 0;
+    const origPrice = original_price ? parseFloat(original_price) : null;
+
     await insert('digital_products', {
-      community_id:  community.id,
-      title:         title.trim(),
-      description:   description ? description.trim() : null,
-      price:         parseFloat(price) || 0,
-      file_url:      files.file_url,
-      file_name:     files.file_name,
-      file_size:     files.file_size,
-      file_type:     files.file_type,
-      preview_image: files.preview_image,
-      access_type:   access_type || 'anyone',
-      plan_id:       plan_id ? parseInt(plan_id) : null,
-      tags:          tags ? tags.trim() : null,
-      sort_order:    (lastRow?.ms || 0) + 1,
+      community_id:   community.id,
+      title:          title.trim(),
+      description:    description ? description.trim() : null,
+      price:          salePrice,
+      original_price: origPrice && origPrice > salePrice ? origPrice : null,
+      file_url:       files.file_url,
+      file_name:      files.file_name,
+      file_size:      files.file_size,
+      file_type:      files.file_type,
+      preview_image:  files.preview_image,
+      access_type:    access_type || 'anyone',
+      plan_id:        plan_id ? parseInt(plan_id) : null,
+      tags:           tags ? tags.trim() : null,
+      sort_order:     (lastRow?.ms || 0) + 1,
     });
 
     req.flash('success', `"${title.trim()}" created!`);
@@ -1339,7 +1343,7 @@ exports.updateProduct = async (req, res) => {
     const product = await queryOne('SELECT * FROM digital_products WHERE id = ? AND community_id = ?', [req.params.productId, community.id]);
     if (!product) return res.status(404).send('Not found');
 
-    const { title, description, price, access_type, plan_id, tags } = req.body;
+    const { title, description, price, original_price, access_type, plan_id, tags } = req.body;
 
     const files = await _saveProductFiles(req, product);
     if (files.error) {
@@ -1347,18 +1351,24 @@ exports.updateProduct = async (req, res) => {
       return res.redirect(`/communities/${req.params.slug}/products`);
     }
 
+    const salePrice = price !== undefined ? parseFloat(price) || 0 : product.price;
+    const origPrice = original_price !== undefined
+      ? (parseFloat(original_price) || null)
+      : product.original_price;
+
     await update('digital_products', {
-      title:         title       ? title.trim()       : product.title,
-      description:   description ? description.trim() : product.description,
-      price:         price !== undefined ? parseFloat(price) || 0 : product.price,
-      file_url:      files.file_url,
-      file_name:     files.file_name,
-      file_size:     files.file_size,
-      file_type:     files.file_type,
-      preview_image: files.preview_image,
-      access_type:   access_type || product.access_type,
-      plan_id:       plan_id ? parseInt(plan_id) : null,
-      tags:          tags !== undefined ? tags.trim() : product.tags,
+      title:          title       ? title.trim()       : product.title,
+      description:    description !== undefined ? description.trim() : product.description,
+      price:          salePrice,
+      original_price: origPrice && origPrice > salePrice ? origPrice : null,
+      file_url:       files.file_url,
+      file_name:      files.file_name,
+      file_size:      files.file_size,
+      file_type:      files.file_type,
+      preview_image:  files.preview_image,
+      access_type:    access_type || product.access_type,
+      plan_id:        plan_id ? parseInt(plan_id) : null,
+      tags:           tags !== undefined ? tags.trim() : product.tags,
     }, 'id = ?', [product.id]);
 
     req.flash('success', 'Product updated!');

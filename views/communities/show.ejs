@@ -26,7 +26,7 @@
             <span class="comm-private-badge"><i class="fa-solid fa-lock"></i> Private</span>
           <% } %>
         </div>
-        <p class="comm-banner-desc"><%= community.description %></p>
+        <div class="comm-banner-desc rich-content"><%- community.description %></div>
         <div class="comm-banner-stats">
           <span><i class="fa-solid fa-users"></i> <strong><%= community.member_count %></strong> members</span>
           <span><i class="fa-solid fa-file-lines"></i> <strong><%= community.post_count %></strong> posts</span>
@@ -181,7 +181,7 @@
       <!-- About -->
       <div class="card comm-sidebar-card">
         <h3 class="comm-sidebar-heading">About</h3>
-        <p style="font-size:.88rem;color:var(--text-muted);line-height:1.6"><%= community.description %></p>
+        <div class="rich-content" style="font-size:.88rem;color:var(--text-muted);line-height:1.6"><%- community.description %></div>
         <div class="comm-sidebar-stats">
           <div class="comm-sidebar-stat">
             <span class="comm-sidebar-stat-num"><%= community.member_count %></span>
