@@ -58,6 +58,7 @@ router.post('/communities/:slug/products',                    requireAuth,   ctr
 router.post('/communities/:slug/products/:productId/update',  requireAuth,   ctrl.updateProduct);
 router.post('/communities/:slug/products/:productId/toggle',  requireAuth,   ctrl.toggleProduct);
 router.post('/communities/:slug/products/:productId/delete',  requireAuth,   ctrl.deleteProduct);
+router.get( '/products/:productId',                                          ctrl.getProductLanding);
 router.get( '/products/:productId/download',                  requireAuth,   ctrl.downloadProduct);
 
 /* ── Admin ──────────────────────────────────────────────────────────────── */

@@ -2446,3 +2446,12 @@ label:hover .tw-avatar-cam { opacity: 1; }
 /* Sale price display */
 .price-was { font-size: .82rem; color: var(--text-muted); text-decoration: line-through; font-weight: 500; }
 .price-discount-badge { display: inline-block; background: #FEF2F2; color: #DC2626; font-size: .68rem; font-weight: 800; padding: .15rem .45rem; border-radius: 20px; letter-spacing: .03em; }
+
+/* ── Cover dimension preset picker ── */
+.dim-btn { display: flex; flex-direction: column; align-items: flex-start; padding: .4rem .65rem; border: 1.5px solid var(--border); border-radius: 8px; background: var(--card); cursor: pointer; gap: .05rem; transition: border-color .12s, background .12s; min-width: 96px; }
+.dim-btn:hover { border-color: var(--primary); background: #EEF2FF; }
+.dim-btn.active { border-color: var(--primary); background: #EEF2FF; }
+.dim-tag { font-size: .65rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: .05em; }
+.dim-name { font-size: .78rem; font-weight: 700; color: var(--body); font-family: monospace; }
+.dim-desc { font-size: .65rem; color: var(--text-muted); white-space: nowrap; }
+.dim-hint { margin-top: .5rem; font-size: .75rem; color: var(--text-muted); padding: .4rem .65rem; background: #F8FAFC; border-radius: 6px; border-left: 3px solid var(--primary); }

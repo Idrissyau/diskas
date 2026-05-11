@@ -1,0 +1,429 @@
+<style>
+/* ── Landing page layout ── */
+.pl-wrap { max-width: 1080px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+.pl-hero  { display: grid; grid-template-columns: 1fr 380px; gap: 2.5rem; align-items: start; margin-bottom: 3rem; }
+.pl-cover { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 14px; display: block; box-shadow: 0 8px 40px rgba(0,0,0,.12); }
+.pl-cover-placeholder { width: 100%; aspect-ratio: 16/9; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 4rem; }
+.pl-buy-card { position: sticky; top: 80px; border: 1.5px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--card); box-shadow: 0 4px 24px rgba(0,0,0,.07); }
+.pl-buy-top { padding: 1.5rem; }
+.pl-buy-foot { padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: #F8FAFC; }
+.pl-section { margin-bottom: 2.5rem; }
+.pl-section-title { font-size: 1rem; font-weight: 800; margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; color: var(--body); }
+.pl-meta-row { display: flex; flex-wrap: wrap; gap: .65rem; align-items: center; margin-bottom: 1.25rem; }
+.pl-feature-list { display: flex; flex-direction: column; gap: .6rem; }
+.pl-feature-item { display: flex; align-items: center; gap: .65rem; font-size: .88rem; }
+.pl-more-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+.pl-more-card { border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--card); text-decoration: none; color: inherit; transition: box-shadow .15s, transform .15s; display: block; }
+.pl-more-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.1); transform: translateY(-2px); }
+.pl-more-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+.pl-more-thumb-ph { width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; }
+.pl-more-body { padding: .85rem; }
+
+/* Share dropdown */
+.share-drop { position: relative; display: inline-block; }
+.share-menu { position: absolute; top: calc(100% + .5rem); right: 0; background: var(--card); border: 1.5px solid var(--border); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,.12); padding: .5rem; min-width: 220px; z-index: 200; display: none; }
+.share-menu.open { display: block; }
+.share-item { display: flex; align-items: center; gap: .65rem; padding: .65rem .85rem; border-radius: 8px; font-size: .85rem; cursor: pointer; transition: background .1s; border: none; background: none; width: 100%; text-align: left; text-decoration: none; color: var(--body); }
+.share-item:hover { background: var(--bg-light); }
+.share-item i { width: 18px; text-align: center; }
+
+/* Sticky top bar (hidden until scrolled) */
+.pl-sticky { position: fixed; top: 64px; left: 0; right: 0; z-index: 90; background: var(--card); border-bottom: 1px solid var(--border); padding: .65rem 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; transform: translateY(-120%); transition: transform .25s; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+.pl-sticky.visible { transform: translateY(0); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .pl-hero { grid-template-columns: 1fr; }
+  .pl-buy-card { position: static; }
+  .pl-more-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .pl-more-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<!-- Sticky scroll bar -->
+<div class="pl-sticky" id="plSticky">
+  <div style="display:flex;align-items:center;gap:.75rem;min-width:0">
+    <% if (product.preview_image) { %>
+      <img src="<%= product.preview_image %>" style="width:36px;height:20px;object-fit:cover;border-radius:4px;flex-shrink:0" />
+    <% } %>
+    <span style="font-weight:700;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= product.title %></span>
+  </div>
+  <div style="display:flex;align-items:center;gap:.65rem;flex-shrink:0">
+    <% if (product.original_price > 0 && product.original_price > product.price) { %>
+      <span style="font-size:.78rem;text-decoration:line-through;color:var(--text-muted)"><%= formatUSD(product.original_price) %></span>
+    <% } %>
+    <span style="font-weight:800;font-size:1rem;color:<%= product.price>0?'var(--primary)':'var(--success)' %>">
+      <%= product.price > 0 ? formatUSD(product.price) : 'Free' %>
+    </span>
+    <% if (isPurchased || product.price == 0) { %>
+      <% if (product.file_url) { %>
+        <a href="/products/<%= product.id %>/download" class="btn btn-sm" style="background:var(--success);color:#fff">
+          <i class="fa-solid fa-download"></i> Download
+        </a>
+      <% } %>
+    <% } else if (!isOwner) { %>
+      <button class="btn btn-primary btn-sm" onclick="scrollToBuy()">
+        <i class="fa-solid fa-shopping-cart"></i> Get It Now
+      </button>
+    <% } %>
+  </div>
+</div>
+
+<div class="pl-wrap">
+
+  <!-- Breadcrumb -->
+  <nav style="font-size:.82rem;color:var(--text-muted);margin-bottom:1.5rem;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">
+    <a href="/communities/<%= product.community_slug %>" style="color:var(--text-muted)"><%= product.community_name %></a>
+    <i class="fa-solid fa-chevron-right" style="font-size:.65rem"></i>
+    <a href="/communities/<%= product.community_slug %>/products" style="color:var(--text-muted)">Products</a>
+    <i class="fa-solid fa-chevron-right" style="font-size:.65rem"></i>
+    <span style="color:var(--body)"><%= product.title %></span>
+    <% if (!product.is_active) { %>
+      <span style="background:#FEF3C7;color:#92400E;font-size:.7rem;font-weight:700;padding:.15rem .5rem;border-radius:20px;margin-left:.25rem"><i class="fa-solid fa-eye-slash"></i> Hidden (only visible to you)</span>
+    <% } %>
+  </nav>
+
+  <!-- ── Hero ── -->
+  <div class="pl-hero">
+
+    <!-- Left: cover + meta + description -->
+    <div>
+      <!-- Cover image -->
+      <% if (product.preview_image) { %>
+        <img src="<%= product.preview_image %>" alt="<%= product.title %>" class="pl-cover" />
+      <% } else { %>
+        <div class="pl-cover-placeholder" style="background:linear-gradient(135deg,#0F172A,#1E3A5F);border-radius:14px">
+          <i class="fa-solid fa-<%= product.file_type==='PDF'?'file-pdf':product.file_type==='ZIP'?'file-zipper':'file-arrow-down' %>" style="color:rgba(255,255,255,.5)"></i>
+        </div>
+      <% } %>
+
+      <!-- Meta pills -->
+      <div class="pl-meta-row" style="margin-top:1.25rem">
+        <% if (product.file_type) { %>
+          <span style="display:inline-flex;align-items:center;gap:.35rem;font-size:.78rem;font-weight:700;padding:.3rem .75rem;border-radius:20px;background:#EFF6FF;color:var(--primary)">
+            <i class="fa-solid fa-file"></i> <%= product.file_type %>
+            <% if (product.file_size > 0) { %> · <%= (product.file_size/1024/1024).toFixed(1) %> MB<% } %>
+          </span>
+        <% } %>
+        <% if (product.tags) { %>
+          <% product.tags.split(',').slice(0,5).forEach(t => { %>
+            <span style="font-size:.75rem;padding:.25rem .65rem;border-radius:20px;background:#F1F5F9;color:var(--text-muted);border:1px solid var(--border)"><%= t.trim() %></span>
+          <% }) %>
+        <% } %>
+        <% if (product.access_type === 'members_only') { %>
+          <span style="font-size:.75rem;padding:.25rem .65rem;border-radius:20px;background:#FFFBEB;color:#92400E;border:1px solid #FDE68A"><i class="fa-solid fa-users"></i> Members only</span>
+        <% } %>
+      </div>
+
+      <!-- Title + share row -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
+        <h1 style="font-size:1.9rem;font-weight:800;line-height:1.2;margin:0;flex:1"><%= product.title %></h1>
+        <!-- Share button -->
+        <div class="share-drop" id="shareDropWrap">
+          <button class="btn btn-outline btn-sm" onclick="toggleShare(event)" title="Share this product">
+            <i class="fa-solid fa-share-nodes"></i> Share
+          </button>
+          <div class="share-menu" id="shareMenu">
+            <button class="share-item" onclick="copyLink()">
+              <i class="fa-solid fa-link" style="color:#6366F1"></i> Copy Link
+            </button>
+            <a class="share-item" href="https://twitter.com/intent/tweet?text=<%= encodeURIComponent(product.title) %>&url=<%= encodeURIComponent(productUrl) %>" target="_blank" rel="noopener">
+              <i class="fa-brands fa-x-twitter" style="color:#000"></i> Post on X (Twitter)
+            </a>
+            <a class="share-item" href="https://www.facebook.com/sharer/sharer.php?u=<%= encodeURIComponent(productUrl) %>" target="_blank" rel="noopener">
+              <i class="fa-brands fa-facebook" style="color:#1877F2"></i> Share on Facebook
+            </a>
+            <a class="share-item" href="https://api.whatsapp.com/send?text=<%= encodeURIComponent(product.title + ' ' + productUrl) %>" target="_blank" rel="noopener">
+              <i class="fa-brands fa-whatsapp" style="color:#25D366"></i> Share on WhatsApp
+            </a>
+            <a class="share-item" href="https://www.linkedin.com/sharing/share-offsite/?url=<%= encodeURIComponent(productUrl) %>" target="_blank" rel="noopener">
+              <i class="fa-brands fa-linkedin" style="color:#0A66C2"></i> Share on LinkedIn
+            </a>
+            <a class="share-item" href="mailto:?subject=<%= encodeURIComponent(product.title) %>&body=<%= encodeURIComponent('Check this out: ' + productUrl) %>">
+              <i class="fa-solid fa-envelope" style="color:#6B7280"></i> Send via Email
+            </a>
+            <div style="border-top:1px solid var(--border);margin:.4rem 0 .3rem"></div>
+            <div style="padding:.45rem .85rem;font-size:.72rem;color:var(--text-muted)">
+              <i class="fa-solid fa-link" style="margin-right:.3rem"></i>
+              <span id="urlDisplay" style="word-break:break-all;font-family:monospace"><%= productUrl %></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Creator row -->
+      <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:1.75rem">
+        <% if (product.community_avatar) { %>
+          <img src="<%= product.community_avatar %>" style="width:32px;height:32px;border-radius:50%;object-fit:cover" />
+        <% } else { %>
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:.85rem">
+            <%= (product.community_name||'C').charAt(0) %>
+          </div>
+        <% } %>
+        <div>
+          <a href="/communities/<%= product.community_slug %>" style="font-weight:600;font-size:.88rem;color:var(--body)"><%= product.community_name %></a>
+          <div style="font-size:.75rem;color:var(--text-muted)">by <%= product.creator_name %></div>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <% if (product.description) { %>
+        <div class="pl-section">
+          <h2 class="pl-section-title"><i class="fa-solid fa-align-left" style="color:var(--primary)"></i> About this product</h2>
+          <div class="rich-content" style="line-height:1.8;color:var(--body)"><%- product.description %></div>
+        </div>
+      <% } %>
+
+      <!-- What you get -->
+      <div class="pl-section">
+        <h2 class="pl-section-title"><i class="fa-solid fa-box-open" style="color:var(--primary)"></i> What you get</h2>
+        <div class="pl-feature-list">
+          <% if (product.file_type) { %>
+            <div class="pl-feature-item">
+              <div style="width:32px;height:32px;border-radius:8px;background:#EFF6FF;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <i class="fa-solid fa-file" style="color:var(--primary);font-size:.85rem"></i>
+              </div>
+              <div>
+                <div style="font-weight:600"><%= product.file_type %> file</div>
+                <% if (product.file_size > 0) { %><div style="font-size:.78rem;color:var(--text-muted)"><%= (product.file_size/1024/1024).toFixed(2) %> MB download</div><% } %>
+              </div>
+            </div>
+          <% } %>
+          <div class="pl-feature-item">
+            <div style="width:32px;height:32px;border-radius:8px;background:#F0FDF4;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="fa-solid fa-infinity" style="color:var(--success);font-size:.85rem"></i>
+            </div>
+            <div style="font-weight:600">Lifetime access · Re-download anytime</div>
+          </div>
+          <div class="pl-feature-item">
+            <div style="width:32px;height:32px;border-radius:8px;background:#FFFBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="fa-solid fa-bolt" style="color:#F59E0B;font-size:.85rem"></i>
+            </div>
+            <div style="font-weight:600">Instant delivery after payment</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: sticky buy card -->
+    <div id="buyCardAnchor">
+      <div class="pl-buy-card">
+        <div class="pl-buy-top">
+          <!-- Price -->
+          <div style="margin-bottom:1.25rem">
+            <% if (product.original_price > 0 && product.original_price > product.price) { %>
+              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.25rem">
+                <span style="font-size:.9rem;text-decoration:line-through;color:var(--text-muted)"><%= formatUSD(product.original_price) %></span>
+                <span style="background:#FEF2F2;color:#DC2626;font-size:.72rem;font-weight:800;padding:.15rem .5rem;border-radius:20px">
+                  -<%= Math.round((1-product.price/product.original_price)*100) %>% OFF
+                </span>
+              </div>
+            <% } %>
+            <div style="font-size:2.2rem;font-weight:800;line-height:1;color:<%= product.price>0?'var(--primary)':'var(--success)' %>">
+              <%= product.price > 0 ? formatUSD(product.price) : 'Free' %>
+            </div>
+            <% if (product.original_price > 0 && product.original_price > product.price) { %>
+              <div style="font-size:.78rem;color:var(--success);margin-top:.3rem;font-weight:600">
+                <i class="fa-solid fa-tag"></i> You save <%= formatUSD(product.original_price - product.price) %>
+              </div>
+            <% } %>
+          </div>
+
+          <!-- CTA -->
+          <% if (isOwner) { %>
+            <div style="padding:.85rem;background:#F8FAFC;border-radius:10px;text-align:center;font-size:.85rem;color:var(--text-muted);margin-bottom:1rem">
+              <i class="fa-solid fa-eye"></i> You're the creator — this is how buyers see your page
+            </div>
+            <a href="/communities/<%= product.community_slug %>/products" class="btn btn-outline" style="width:100%;text-align:center;margin-bottom:.6rem">
+              <i class="fa-solid fa-arrow-left"></i> Manage Products
+            </a>
+          <% } else if (isPurchased || product.price == 0) { %>
+            <% if (product.file_url) { %>
+              <a href="/products/<%= product.id %>/download" class="btn" style="width:100%;text-align:center;background:var(--success);color:#fff;font-size:1rem;padding:.9rem;margin-bottom:.75rem">
+                <i class="fa-solid fa-download"></i> Download Now
+              </a>
+            <% } %>
+            <div style="text-align:center;font-size:.78rem;color:var(--success);font-weight:600">
+              <i class="fa-solid fa-check-circle"></i> <%= product.price == 0 ? 'Free — no purchase needed' : 'You already own this product' %>
+            </div>
+          <% } else if (!currentUser) { %>
+            <a href="/auth/login?next=/products/<%= product.id %>" class="btn btn-primary" style="width:100%;text-align:center;font-size:1rem;padding:.9rem;margin-bottom:.6rem">
+              <i class="fa-solid fa-lock"></i> Sign in to Purchase
+            </a>
+          <% } else { %>
+            <!-- Buy form with coupon -->
+            <form action="/checkout/product/<%= product.id %>" method="POST" id="buyForm">
+              <button type="submit" class="btn btn-primary" style="width:100%;font-size:1rem;padding:.9rem;margin-bottom:.85rem">
+                <i class="fa-solid fa-shopping-cart"></i> Buy Now — <%= formatUSD(product.price) %>
+              </button>
+              <details style="margin-bottom:.75rem">
+                <summary style="font-size:.8rem;color:var(--text-muted);cursor:pointer;list-style:none;display:flex;align-items:center;gap:.35rem">
+                  <i class="fa-solid fa-ticket" style="color:var(--primary)"></i> Have a coupon code?
+                </summary>
+                <div style="margin-top:.65rem;display:flex;gap:.5rem">
+                  <input type="text" name="coupon_code" class="form-input" placeholder="Enter code…"
+                         style="font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;flex:1" />
+                  <button type="submit" class="btn btn-outline btn-sm">Apply</button>
+                </div>
+              </details>
+            </form>
+          <% } %>
+
+          <!-- Trust signals -->
+          <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem">
+            <div style="font-size:.75rem;color:var(--text-muted);display:flex;align-items:center;gap:.4rem">
+              <i class="fa-solid fa-shield-halved" style="color:var(--success)"></i> Secure payment · SSL encrypted
+            </div>
+            <div style="font-size:.75rem;color:var(--text-muted);display:flex;align-items:center;gap:.4rem">
+              <i class="fa-solid fa-bolt" style="color:#F59E0B"></i> Instant access after purchase
+            </div>
+            <div style="font-size:.75rem;color:var(--text-muted);display:flex;align-items:center;gap:.4rem">
+              <i class="fa-solid fa-rotate-left" style="color:#6366F1"></i> Re-download anytime from your account
+            </div>
+          </div>
+        </div>
+
+        <!-- Creator mini card in buy box -->
+        <div class="pl-buy-foot">
+          <div style="font-size:.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:.6rem">Sold by</div>
+          <a href="/communities/<%= product.community_slug %>" style="display:flex;align-items:center;gap:.6rem;text-decoration:none;color:inherit">
+            <% if (product.community_avatar) { %>
+              <img src="<%= product.community_avatar %>" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0" />
+            <% } else { %>
+              <div style="width:34px;height:34px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex-shrink:0">
+                <%= (product.community_name||'C').charAt(0) %>
+              </div>
+            <% } %>
+            <div>
+              <div style="font-weight:700;font-size:.87rem"><%= product.community_name %></div>
+              <div style="font-size:.72rem;color:var(--text-muted)">by <%= product.creator_name %></div>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Share block under buy card -->
+      <div style="margin-top:1rem;padding:1rem;border:1.5px solid var(--border);border-radius:12px;background:var(--card)">
+        <div style="font-size:.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem">Share this product</div>
+        <div style="display:flex;flex-wrap:wrap;gap:.4rem">
+          <button onclick="copyLink()" class="btn btn-sm btn-outline" style="font-size:.75rem;gap:.3rem">
+            <i class="fa-solid fa-link"></i> Copy Link
+          </button>
+          <a href="https://twitter.com/intent/tweet?text=<%= encodeURIComponent(product.title) %>&url=<%= encodeURIComponent(productUrl) %>" target="_blank" rel="noopener"
+             class="btn btn-sm" style="background:#000;color:#fff;font-size:.75rem">
+            <i class="fa-brands fa-x-twitter"></i>
+          </a>
+          <a href="https://www.facebook.com/sharer/sharer.php?u=<%= encodeURIComponent(productUrl) %>" target="_blank" rel="noopener"
+             class="btn btn-sm" style="background:#1877F2;color:#fff;font-size:.75rem">
+            <i class="fa-brands fa-facebook"></i>
+          </a>
+          <a href="https://api.whatsapp.com/send?text=<%= encodeURIComponent(product.title + ' ' + productUrl) %>" target="_blank" rel="noopener"
+             class="btn btn-sm" style="background:#25D366;color:#fff;font-size:.75rem">
+            <i class="fa-brands fa-whatsapp"></i>
+          </a>
+          <a href="https://www.linkedin.com/sharing/share-offsite/?url=<%= encodeURIComponent(productUrl) %>" target="_blank" rel="noopener"
+             class="btn btn-sm" style="background:#0A66C2;color:#fff;font-size:.75rem">
+            <i class="fa-brands fa-linkedin"></i>
+          </a>
+          <a href="mailto:?subject=<%= encodeURIComponent(product.title) %>&body=<%= encodeURIComponent('Check this out: ' + productUrl) %>"
+             class="btn btn-sm btn-outline" style="font-size:.75rem">
+            <i class="fa-solid fa-envelope"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── More from this creator ── -->
+  <% if (moreProducts.length > 0) { %>
+    <div class="pl-section">
+      <h2 class="pl-section-title" style="font-size:1.15rem">
+        <i class="fa-solid fa-store" style="color:var(--primary)"></i>
+        More from <a href="/communities/<%= product.community_slug %>/products" style="color:var(--primary)"><%= product.community_name %></a>
+      </h2>
+      <div class="pl-more-grid">
+        <% moreProducts.forEach(mp => { %>
+          <a href="/products/<%= mp.id %>" class="pl-more-card">
+            <% if (mp.preview_image) { %>
+              <img src="<%= mp.preview_image %>" alt="<%= mp.title %>" class="pl-more-thumb" />
+            <% } else { %>
+              <div class="pl-more-thumb-ph" style="background:linear-gradient(135deg,#0F172A,#1E3A5F)">
+                <i class="fa-solid fa-<%= mp.file_type==='PDF'?'file-pdf':mp.file_type==='ZIP'?'file-zipper':'file-arrow-down' %>" style="color:rgba(255,255,255,.6)"></i>
+              </div>
+            <% } %>
+            <div class="pl-more-body">
+              <div style="font-weight:700;font-size:.88rem;margin-bottom:.35rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= mp.title %></div>
+              <div style="display:flex;align-items:center;gap:.4rem">
+                <% if (mp.original_price > 0 && mp.original_price > mp.price) { %>
+                  <span style="font-size:.72rem;text-decoration:line-through;color:var(--text-muted)"><%= formatUSD(mp.original_price) %></span>
+                <% } %>
+                <span style="font-weight:800;font-size:.9rem;color:<%= mp.price>0?'var(--primary)':'var(--success)' %>">
+                  <%= mp.price > 0 ? formatUSD(mp.price) : 'Free' %>
+                </span>
+                <% if (mp.original_price > 0 && mp.original_price > mp.price) { %>
+                  <span style="background:#FEF2F2;color:#DC2626;font-size:.62rem;font-weight:800;padding:.1rem .35rem;border-radius:20px">
+                    -<%= Math.round((1-mp.price/mp.original_price)*100) %>%
+                  </span>
+                <% } %>
+              </div>
+            </div>
+          </a>
+        <% }) %>
+      </div>
+    </div>
+  <% } %>
+
+</div>
+
+<!-- Copy link toast -->
+<div id="copyToast" style="position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(80px);background:#1E293B;color:#fff;padding:.65rem 1.25rem;border-radius:30px;font-size:.85rem;font-weight:600;z-index:999;transition:transform .25s;pointer-events:none;display:flex;align-items:center;gap:.5rem">
+  <i class="fa-solid fa-check" style="color:#34D399"></i> Link copied to clipboard!
+</div>
+
+<script>
+/* ── Share dropdown ── */
+function toggleShare(e) {
+  e.stopPropagation();
+  document.getElementById('shareMenu').classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('shareDropWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('shareMenu')?.classList.remove('open');
+  }
+});
+
+/* ── Copy link ── */
+const PRODUCT_URL = '<%= productUrl %>';
+function copyLink() {
+  navigator.clipboard.writeText(PRODUCT_URL).then(() => showToast()).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = PRODUCT_URL;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast();
+  });
+  document.getElementById('shareMenu')?.classList.remove('open');
+}
+function showToast() {
+  const t = document.getElementById('copyToast');
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  setTimeout(() => { t.style.transform = 'translateX(-50%) translateY(80px)'; }, 2500);
+}
+
+/* ── Sticky bar ── */
+function scrollToBuy() {
+  document.getElementById('buyCardAnchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+const stickyEl = document.getElementById('plSticky');
+window.addEventListener('scroll', () => {
+  const anchor = document.getElementById('buyCardAnchor');
+  if (!anchor || !stickyEl) return;
+  const rect = anchor.getBoundingClientRect();
+  stickyEl.classList.toggle('visible', rect.top < -20);
+}, { passive: true });
+</script>

@@ -1488,6 +1488,74 @@ exports.deleteProduct = async (req, res) => {
 };
 
 /* ─────────────────────────────────────────────────────────────────────────
+   PRODUCT LANDING PAGE  GET /products/:productId
+───────────────────────────────────────────────────────────────────────── */
+exports.getProductLanding = async (req, res) => {
+  try {
+    const product = await queryOne(
+      `SELECT dp.*,
+              c.slug AS community_slug, c.name AS community_name,
+              c.avatar AS community_avatar, c.cover_image AS community_cover,
+              c.owner_id,
+              u.name AS creator_name, u.avatar AS creator_avatar, u.id AS creator_id
+       FROM digital_products dp
+       JOIN communities c ON dp.community_id = c.id
+       JOIN users u ON c.owner_id = u.id
+       WHERE dp.id = ?`,
+      [req.params.productId]
+    );
+
+    if (!product) return res.status(404).render('errors/404', { title: 'Not found' });
+
+    const uid     = req.session.user?.id;
+    const isOwner = uid && product.owner_id === uid;
+
+    // Gate: non-owners can only see active products
+    if (!product.is_active && !isOwner) {
+      return res.status(404).render('errors/404', { title: 'Not found' });
+    }
+
+    let isPurchased = false;
+    if (uid && !isOwner) {
+      const purchase = await queryOne(
+        'SELECT id FROM product_purchases WHERE user_id = ? AND product_id = ?',
+        [uid, product.id]
+      );
+      isPurchased = !!purchase;
+    }
+
+    // More products from same community (max 4, excluding this one)
+    const moreProducts = await query(
+      `SELECT id, title, price, original_price, preview_image, file_type, file_size
+       FROM digital_products
+       WHERE community_id = ? AND id != ? AND is_active = 1
+       ORDER BY sort_order ASC, created_at DESC LIMIT 4`,
+      [product.community_id, product.id]
+    );
+
+    const appUrl     = process.env.APP_URL || 'https://diskas.idrisyau.com';
+    const productUrl = `${appUrl}/products/${product.id}`;
+
+    // OG description — strip HTML tags
+    const plainDesc = product.description
+      ? product.description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160)
+      : `Get "${product.title}" — a digital download by ${product.creator_name}`;
+
+    res.render('monetize/product-landing', {
+      title:       product.title,
+      metaDesc:    plainDesc,
+      ogImage:     product.preview_image || null,
+      canonicalPath: `/products/${product.id}`,
+      product, isPurchased, isOwner, moreProducts, productUrl,
+      formatUSD:   ps.formatUSD,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).render('errors/404', { title: 'Error' });
+  }
+};
+
+/* ─────────────────────────────────────────────────────────────────────────
    ADMIN — MONETIZATION DASHBOARD
 ───────────────────────────────────────────────────────────────────────── */
 exports.adminMonetize = async (req, res) => {

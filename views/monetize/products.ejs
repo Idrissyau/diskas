@@ -153,11 +153,18 @@
                   </td>
                   <!-- Actions -->
                   <td>
-                    <div style="display:flex;gap:.35rem">
+                    <div style="display:flex;gap:.35rem;flex-wrap:wrap">
                       <button class="btn btn-sm btn-outline" style="font-size:.72rem;padding:.3rem .65rem"
                               onclick="openEdit(<%= JSON.stringify(prod) %>)" title="Edit">
                         <i class="fa-solid fa-pen"></i>
                       </button>
+                      <button class="btn btn-sm btn-outline" style="font-size:.72rem;padding:.3rem .65rem"
+                              onclick="shareProduct('<%= prod.id %>','<%= encodeURIComponent(prod.title) %>')" title="Share">
+                        <i class="fa-solid fa-share-nodes"></i>
+                      </button>
+                      <a href="/products/<%= prod.id %>" class="btn btn-sm btn-outline" style="font-size:.72rem;padding:.3rem .65rem" title="View landing page" target="_blank">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                      </a>
                       <% if (prod.file_url) { %>
                         <a href="/products/<%= prod.id %>/download" class="btn btn-sm btn-outline" style="font-size:.72rem;padding:.3rem .65rem" title="Download">
                           <i class="fa-solid fa-download"></i>
@@ -387,18 +394,44 @@
         </div>
       </div>
 
-      <!-- Cover image (16:9) -->
+      <!-- Cover image with dimension presets -->
       <div class="form-group" style="margin:0">
         <label class="form-label">Cover Image <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
+
+        <!-- Dimension preset picker -->
+        <div style="margin-bottom:.75rem">
+          <div style="font-size:.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">Choose format for best results:</div>
+          <div class="dim-presets" id="createDimPresets" style="display:flex;flex-wrap:wrap;gap:.4rem">
+            <button type="button" class="dim-btn active" data-w="1280" data-h="720" data-label="1280×720 px" data-ratio="16/9" data-use="Product page &amp; general sharing" onclick="selectDim(this,'createCoverWrap','createDimHint')">
+              <span class="dim-tag">⭐ 16:9</span><span class="dim-name">1280×720</span><span class="dim-desc">General / Landing page</span>
+            </button>
+            <button type="button" class="dim-btn" data-w="1200" data-h="630" data-label="1200×630 px" data-ratio="1.91/1" data-use="Facebook, LinkedIn &amp; link previews" onclick="selectDim(this,'createCoverWrap','createDimHint')">
+              <span class="dim-tag">OG</span><span class="dim-name">1200×630</span><span class="dim-desc">Facebook / LinkedIn</span>
+            </button>
+            <button type="button" class="dim-btn" data-w="1080" data-h="1080" data-label="1080×1080 px" data-ratio="1/1" data-use="Instagram, TikTok &amp; square posts" onclick="selectDim(this,'createCoverWrap','createDimHint')">
+              <span class="dim-tag">1:1</span><span class="dim-name">1080×1080</span><span class="dim-desc">Instagram / Square</span>
+            </button>
+            <button type="button" class="dim-btn" data-w="1080" data-h="1920" data-label="1080×1920 px" data-ratio="9/16" data-use="Instagram Stories, TikTok &amp; Reels" onclick="selectDim(this,'createCoverWrap','createDimHint')">
+              <span class="dim-tag">Story</span><span class="dim-name">1080×1920</span><span class="dim-desc">Stories / Reels</span>
+            </button>
+            <button type="button" class="dim-btn" data-w="1000" data-h="1500" data-label="1000×1500 px" data-ratio="2/3" data-use="Pinterest pins &amp; portrait layouts" onclick="selectDim(this,'createCoverWrap','createDimHint')">
+              <span class="dim-tag">Pin</span><span class="dim-name">1000×1500</span><span class="dim-desc">Pinterest / Portrait</span>
+            </button>
+          </div>
+          <div id="createDimHint" class="dim-hint">
+            <i class="fa-solid fa-crop-simple"></i> <strong>Recommended: 1280×720 px (16:9)</strong> — Best for product page &amp; general sharing
+          </div>
+        </div>
+
+        <!-- Upload area -->
         <div class="prod-cover-wrap" id="createCoverWrap">
           <div class="placeholder-inner">
             <i class="fa-solid fa-image" style="font-size:1.75rem;color:#CBD5E1"></i>
-            <span style="font-size:.8rem;color:var(--text-muted)">Click to upload cover</span>
+            <span style="font-size:.8rem;color:var(--text-muted)">Click to upload cover image</span>
           </div>
           <img id="createImgPrev" src="" alt="" class="placed" style="display:none" />
           <input type="file" name="preview_image" accept="image/*" onchange="previewCover(this,'createImgPrev','createCoverWrap')" />
         </div>
-        <p class="cover-upload-hint"><i class="fa-solid fa-crop-simple"></i> Recommended: <strong>1280 × 720 px</strong> (16:9) · PNG or JPG</p>
       </div>
 
       <div class="modal-footer-btns">
@@ -558,7 +591,30 @@ function openEdit(prod) {
   </div>
 
   <div class="form-group" style="margin:0">
-    <label class="form-label">Cover Image (16:9 recommended)</label>
+    <label class="form-label">Cover Image</label>
+    <div style="margin-bottom:.65rem">
+      <div style="font-size:.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.45rem">Choose format for best results:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:.4rem" id="editDimPresets">
+        <button type="button" class="dim-btn active" data-w="1280" data-h="720" onclick="selectDim(this,'editCoverWrap','editDimHint')">
+          <span class="dim-tag">⭐ 16:9</span><span class="dim-name">1280×720</span><span class="dim-desc">General / Landing page</span>
+        </button>
+        <button type="button" class="dim-btn" data-w="1200" data-h="630" onclick="selectDim(this,'editCoverWrap','editDimHint')">
+          <span class="dim-tag">OG</span><span class="dim-name">1200×630</span><span class="dim-desc">Facebook / LinkedIn</span>
+        </button>
+        <button type="button" class="dim-btn" data-w="1080" data-h="1080" onclick="selectDim(this,'editCoverWrap','editDimHint')">
+          <span class="dim-tag">1:1</span><span class="dim-name">1080×1080</span><span class="dim-desc">Instagram / Square</span>
+        </button>
+        <button type="button" class="dim-btn" data-w="1080" data-h="1920" onclick="selectDim(this,'editCoverWrap','editDimHint')">
+          <span class="dim-tag">Story</span><span class="dim-name">1080×1920</span><span class="dim-desc">Stories / Reels</span>
+        </button>
+        <button type="button" class="dim-btn" data-w="1000" data-h="1500" onclick="selectDim(this,'editCoverWrap','editDimHint')">
+          <span class="dim-tag">Pin</span><span class="dim-name">1000×1500</span><span class="dim-desc">Pinterest / Portrait</span>
+        </button>
+      </div>
+      <div id="editDimHint" class="dim-hint">
+        <i class="fa-solid fa-crop-simple"></i> <strong>Recommended: 1280×720 px (16:9)</strong> — Best for product page &amp; general sharing
+      </div>
+    </div>
     <div class="prod-cover-wrap" id="editCoverWrap">
       <div class="placeholder-inner" ${prod.preview_image?'style="display:none"':''}>
         <i class="fa-solid fa-image" style="font-size:1.75rem;color:#CBD5E1"></i>
@@ -567,7 +623,6 @@ function openEdit(prod) {
       <img id="editImgPrev" src="${esc(prod.preview_image||'')}" alt="" class="placed" style="${coverHasImg}" />
       <input type="file" name="preview_image" accept="image/*" onchange="previewCover(this,'editImgPrev','editCoverWrap')" />
     </div>
-    <p class="cover-upload-hint"><i class="fa-solid fa-crop-simple"></i> Recommended: <strong>1280 × 720 px</strong> (16:9) · PNG or JPG</p>
   </div>
 
   <div class="modal-footer-btns">
@@ -682,4 +737,102 @@ function filterProducts() {
   const nr = document.getElementById('noResults');
   if (nr) nr.style.display = visible===0 ? 'block' : 'none';
 }
+
+/* ─────────────── Owner: Share product ─────────────── */
+const APP_BASE = '<%= appUrl %>';
+function shareProduct(id, titleEnc) {
+  const url  = `${APP_BASE}/products/${id}`;
+  const title = decodeURIComponent(titleEnc);
+  document.getElementById('shareProdTitle').textContent = title;
+  document.getElementById('shareProdUrl').textContent   = url;
+  document.getElementById('shareTwitter').href  = `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`;
+  document.getElementById('shareFacebook').href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+  document.getElementById('shareWhatsapp').href = `https://api.whatsapp.com/send?text=${encodeURIComponent(title+' '+url)}`;
+  document.getElementById('shareLinkedin').href = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+  document.getElementById('shareEmail').href    = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent('Check this out: '+url)}`;
+  document.getElementById('shareProdModal').classList.add('open');
+  window._shareProdUrl = url;
+}
+function copyShareUrl() {
+  const url = window._shareProdUrl || '';
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('copyShareBtn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+    btn.style.background = 'var(--success)';
+    btn.style.color = '#fff';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; btn.style.color = ''; }, 2000);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+}
+document.getElementById('shareProdModal')?.addEventListener('click', e => {
+  if (e.target === document.getElementById('shareProdModal')) document.getElementById('shareProdModal').classList.remove('open');
+});
+
+/* ─────────────── Dimension presets ─────────────── */
+const DIM_USES = {
+  '1280x720':  'Best for product page & general sharing',
+  '1200x630':  'Best for Facebook, LinkedIn & link previews',
+  '1080x1080': 'Best for Instagram, TikTok & square posts',
+  '1080x1920': 'Best for Instagram Stories, TikTok & Reels',
+  '1000x1500': 'Best for Pinterest pins & portrait layouts',
+};
+function selectDim(btn, wrapId, hintId) {
+  // Deselect siblings
+  btn.closest('[id$="Presets"], [id$="DimPresets"], div').querySelectorAll('.dim-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const w = btn.dataset.w, h = btn.dataset.h;
+  const key = `${w}x${h}`;
+  const use = DIM_USES[key] || '';
+  // Compute ratio label
+  const gcd = (a,b)=>b?gcd(b,a%b):a;
+  const g = gcd(+w, +h);
+  const ratioLabel = `${w/g}:${h/g}`;
+  // Update hint
+  const hint = document.getElementById(hintId);
+  if (hint) hint.innerHTML = `<i class="fa-solid fa-crop-simple"></i> <strong>Recommended: ${w}×${h} px (${ratioLabel})</strong> — ${use}`;
+  // Update cover wrap aspect-ratio so preview matches
+  const wrap = document.getElementById(wrapId);
+  if (wrap) wrap.style.aspectRatio = `${w}/${h}`;
+}
 </script>
+
+<!-- Share product modal (owner) -->
+<% if (isOwner) { %>
+<div class="modal-overlay" id="shareProdModal">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-head">
+      <h2 class="modal-title"><i class="fa-solid fa-share-nodes" style="color:var(--primary)"></i> Share Product</h2>
+      <button type="button" class="modal-close" onclick="document.getElementById('shareProdModal').classList.remove('open')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div style="padding:1.25rem 1.5rem 1.5rem;display:flex;flex-direction:column;gap:1rem">
+      <div style="padding:.75rem 1rem;background:#F8FAFC;border:1px solid var(--border);border-radius:10px">
+        <div style="font-size:.7rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem">Product landing page</div>
+        <div style="font-size:.82rem;font-family:monospace;word-break:break-all;color:var(--body)" id="shareProdUrl"></div>
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <button id="copyShareBtn" class="btn btn-outline btn-sm" onclick="copyShareUrl()" style="flex:1">
+          <i class="fa-solid fa-copy"></i> Copy Link
+        </button>
+        <a id="shareTwitter"  href="#" target="_blank" rel="noopener" class="btn btn-sm" style="background:#000;color:#fff"><i class="fa-brands fa-x-twitter"></i></a>
+        <a id="shareFacebook" href="#" target="_blank" rel="noopener" class="btn btn-sm" style="background:#1877F2;color:#fff"><i class="fa-brands fa-facebook"></i></a>
+        <a id="shareWhatsapp" href="#" target="_blank" rel="noopener" class="btn btn-sm" style="background:#25D366;color:#fff"><i class="fa-brands fa-whatsapp"></i></a>
+        <a id="shareLinkedin" href="#" target="_blank" rel="noopener" class="btn btn-sm" style="background:#0A66C2;color:#fff"><i class="fa-brands fa-linkedin"></i></a>
+        <a id="shareEmail"    href="#" class="btn btn-sm btn-outline"><i class="fa-solid fa-envelope"></i></a>
+      </div>
+      <div style="text-align:center;font-size:.78rem;color:var(--text-muted)">
+        Share your product page with your audience on any platform
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:.85rem;font-size:.8rem;color:var(--text-muted)">
+        <span id="shareProdTitle" style="font-weight:600;color:var(--body)"></span>
+      </div>
+    </div>
+  </div>
+</div>
+<% } %>
