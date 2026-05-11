@@ -1,0 +1,130 @@
+<div class="container" style="max-width:560px;padding:2.5rem 1.25rem">
+
+  <!-- Header -->
+  <div style="text-align:center;margin-bottom:2rem">
+    <% if (plan.community_avatar) { %>
+      <img src="<%= plan.community_avatar %>" alt="<%= plan.community_name %>" style="width:64px;height:64px;border-radius:50%;object-fit:cover;margin-bottom:.75rem;box-shadow:0 2px 12px rgba(0,0,0,.1)" />
+    <% } else { %>
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.75rem;font-weight:800;margin:0 auto .75rem"><%= plan.community_name.charAt(0) %></div>
+    <% } %>
+    <h1 style="font-size:1.4rem;font-weight:800">Join <%= plan.community_name %></h1>
+    <p style="color:var(--text-muted);font-size:.9rem;margin-top:.25rem">You're about to join as a member</p>
+  </div>
+
+  <!-- Plan Card -->
+  <div class="card" style="padding:1.5rem;margin-bottom:1.5rem;border:2px solid var(--primary)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div style="font-weight:700;font-size:1.05rem;margin-bottom:.25rem"><%= plan.name %></div>
+        <% if (plan.description) { %><p style="color:var(--text-muted);font-size:.88rem"><%= plan.description %></p><% } %>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:1.75rem;font-weight:800;color:var(--primary)" id="displayPrice">
+          <%= plan.billing_type === 'free' ? 'Free' : formatUSD(plan.price) %>
+        </div>
+        <div style="font-size:.8rem;color:var(--text-muted)">
+          <% if (plan.billing_type === 'monthly') { %>per month<% } else if (plan.billing_type === 'yearly') { %>per year<% } else if (plan.billing_type === 'lifetime') { %>lifetime<% } else if (plan.billing_type === 'one_time') { %>one-time<% } %>
+        </div>
+      </div>
+    </div>
+    <% if (plan.trial_days > 0) { %>
+      <div style="margin-top:.75rem;padding:.5rem .75rem;background:#F0FDF4;border-radius:8px;font-size:.83rem;color:#16A34A;font-weight:600">
+        <i class="fa-solid fa-gift"></i> <%= plan.trial_days %>-day free trial included
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Checkout Form -->
+  <form action="/checkout/plan/<%= plan.id %>" method="POST" class="card" style="padding:1.75rem;display:flex;flex-direction:column;gap:1.25rem" id="checkoutForm">
+
+    <% if (plan.billing_type !== 'free' && plan.price > 0) { %>
+      <!-- Coupon -->
+      <div>
+        <label class="form-label" style="font-size:.82rem">Discount Code</label>
+        <div style="display:flex;gap:.5rem">
+          <input type="text" id="couponInput" name="coupon_code" class="form-input" placeholder="Enter coupon code" style="font-family:monospace;text-transform:uppercase" />
+          <button type="button" class="btn btn-outline btn-sm" onclick="applyCoupon()" style="white-space:nowrap">Apply</button>
+        </div>
+        <div id="couponMsg" style="font-size:.8rem;margin-top:.35rem"></div>
+        <input type="hidden" id="couponApplied" name="coupon_code_applied" value="" />
+      </div>
+
+      <!-- Order Summary -->
+      <div style="background:#F8FAFC;border-radius:10px;padding:1rem">
+        <div style="display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:.4rem">
+          <span>Subtotal</span><span id="subtotal"><%= formatUSD(plan.price) %></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:.4rem;color:var(--success)" id="discountRow" style="display:none">
+          <span>Discount</span><span id="discountAmt">-$0.00</span>
+        </div>
+        <div style="border-top:1px solid var(--border);margin:.5rem 0"></div>
+        <div style="display:flex;justify-content:space-between;font-weight:700;font-size:1.05rem">
+          <span>Total</span><span id="totalAmt"><%= formatUSD(plan.price) %></span>
+        </div>
+      </div>
+
+      <!-- Payment details note -->
+      <div style="background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;padding:.85rem 1rem;font-size:.83rem;color:#C2410C">
+        <i class="fa-solid fa-circle-info"></i>
+        <strong>Payment Note:</strong> After submitting, your payment request will be reviewed and access granted within 24 hours.
+        To enable instant payment, the platform owner can configure Stripe in the settings.
+      </div>
+
+      <div class="form-group" style="margin:0">
+        <label class="form-label" style="font-size:.82rem">Additional Note (optional)</label>
+        <textarea name="notes" class="form-input" rows="2" placeholder="Any notes for the community owner…" style="font-size:.88rem"></textarea>
+      </div>
+    <% } else { %>
+      <div style="background:#F0FDF4;border-radius:8px;padding:1rem;text-align:center;color:#16A34A;font-size:.9rem;font-weight:600">
+        <i class="fa-solid fa-circle-check"></i> This is a free plan — no payment required!
+      </div>
+    <% } %>
+
+    <button type="submit" class="btn btn-primary btn-full" style="font-size:1rem;padding:.85rem" id="submitBtn">
+      <i class="fa-solid fa-lock" style="font-size:.85rem"></i>
+      <%= plan.billing_type === 'free' ? 'Join Community' : 'Complete Purchase' %>
+    </button>
+
+    <p style="text-align:center;font-size:.75rem;color:var(--text-muted)">
+      <i class="fa-solid fa-shield-halved"></i> Your information is secure.
+      By joining you agree to the community rules.
+    </p>
+  </form>
+</div>
+
+<script>
+const planPrice = <%= plan.price %>;
+
+async function applyCoupon() {
+  const code = document.getElementById('couponInput').value.trim();
+  if (!code) return;
+
+  try {
+    const r = await fetch('/checkout/coupon', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+      body: JSON.stringify({ code, community_id: <%= plan.community_id %>, amount: planPrice }),
+    });
+    const d = await r.json();
+    const msg = document.getElementById('couponMsg');
+    if (d.valid) {
+      const discount = d.discount;
+      const newTotal = Math.max(0, planPrice - discount);
+      document.getElementById('discountRow').style.display = 'flex';
+      document.getElementById('discountAmt').textContent = '-$' + discount.toFixed(2);
+      document.getElementById('totalAmt').textContent = '$' + newTotal.toFixed(2);
+      document.getElementById('displayPrice').textContent = '$' + newTotal.toFixed(2);
+      document.getElementById('couponApplied').value = code.toUpperCase();
+      msg.innerHTML = '<span style="color:#16A34A"><i class="fa-solid fa-check"></i> Coupon applied! You save $' + discount.toFixed(2) + '</span>';
+    } else {
+      msg.innerHTML = '<span style="color:#DC2626"><i class="fa-solid fa-xmark"></i> ' + d.message + '</span>';
+    }
+  } catch(e) {}
+}
+
+document.getElementById('checkoutForm').addEventListener('submit', function() {
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing…';
+});
+</script>

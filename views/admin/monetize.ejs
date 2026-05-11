@@ -1,0 +1,245 @@
+<!-- Revenue Stats -->
+<div class="stats-row" style="margin-bottom:2rem">
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <div class="stat-card-label">Total Revenue</div>
+      <div class="stat-card-value"><%= formatUSD(totalRevenue) %></div>
+      <div class="stat-card-sub">All time member payments</div>
+    </div>
+    <div class="stat-card-icon" style="background:#F0FDF4;color:#16A34A"><i class="fa-solid fa-dollar-sign"></i></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <div class="stat-card-label">Platform Revenue</div>
+      <div class="stat-card-value"><%= formatUSD(platformRevenue) %></div>
+      <div class="stat-card-sub"><%= commissionPct %>% commission</div>
+    </div>
+    <div class="stat-card-icon" style="background:#EFF6FF;color:#0EA5E9"><i class="fa-solid fa-building-columns"></i></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <div class="stat-card-label">Active Subscriptions</div>
+      <div class="stat-card-value"><%= activeSubscriptions %></div>
+      <div class="stat-card-sub">Across <%= paidCommunities %> paid communities</div>
+    </div>
+    <div class="stat-card-icon" style="background:#FDF4FF;color:#A855F7"><i class="fa-solid fa-users"></i></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <div class="stat-card-label">Pending Payouts</div>
+      <div class="stat-card-value"><%= formatUSD(pendingPayouts) %></div>
+      <div class="stat-card-sub"><%= pendingPayoutRequests.length %> request<%= pendingPayoutRequests.length!==1?'s':'' %> awaiting</div>
+    </div>
+    <div class="stat-card-icon" style="background:#FFF7ED;color:#F97316"><i class="fa-solid fa-clock"></i></div>
+  </div>
+</div>
+
+<div class="grid-3" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+
+  <!-- Platform Settings -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title"><i class="fa-solid fa-gear"></i> Platform Settings</div>
+    </div>
+    <div style="padding:1.25rem">
+      <form action="/admin/settings/commission" method="POST" style="display:flex;flex-direction:column;gap:1rem">
+        <div>
+          <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.04em">Commission %</label>
+          <div style="display:flex;gap:.5rem">
+            <input type="number" name="commission_pct" value="<%= commissionPct %>" min="0" max="50" step="0.1"
+                   style="flex:1;padding:.5rem .75rem;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem" />
+            <span style="display:flex;align-items:center;font-size:.85rem;color:var(--text-muted)">%</span>
+          </div>
+          <p style="font-size:.72rem;color:var(--text-muted);margin-top:.25rem">Platform fee deducted from each payment</p>
+        </div>
+        <div>
+          <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.04em">Minimum Payout</label>
+          <div style="display:flex;gap:.5rem">
+            <span style="display:flex;align-items:center;color:#94A3B8;font-weight:600;padding:0 .4rem">$</span>
+            <input type="number" name="min_payout" value="<%= minPayout %>" min="0" step="0.01"
+                   style="flex:1;padding:.5rem .75rem;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem" />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Save Settings</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Top Communities -->
+  <div class="panel">
+    <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-trophy"></i> Top Communities</div></div>
+    <div class="panel-body-flush">
+      <% if (topCommunities.length === 0) { %>
+        <div style="padding:1.5rem;text-align:center;color:var(--text-muted);font-size:.85rem">No revenue yet</div>
+      <% } else { %>
+        <% topCommunities.forEach((c,i) => { %>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.25rem;border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:.65rem">
+              <span style="width:22px;text-align:center;font-weight:700;font-size:.8rem;color:var(--text-muted)"><%= i+1 %></span>
+              <a href="/communities/<%= c.slug %>" style="font-size:.88rem;font-weight:600;color:var(--body)"><%= c.name %></a>
+            </div>
+            <span style="font-weight:700;color:var(--success);font-size:.88rem"><%= formatUSD(c.revenue) %></span>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Top Creators -->
+  <div class="panel">
+    <div class="panel-header"><div class="panel-title"><i class="fa-solid fa-star"></i> Top Creators</div></div>
+    <div class="panel-body-flush">
+      <% if (topCreators.length === 0) { %>
+        <div style="padding:1.5rem;text-align:center;color:var(--text-muted);font-size:.85rem">No revenue yet</div>
+      <% } else { %>
+        <% topCreators.forEach((c,i) => { %>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.25rem;border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:.65rem">
+              <% if (c.avatar) { %><img src="<%= c.avatar %>" style="width:28px;height:28px;border-radius:50%;object-fit:cover" />
+              <% } else { %><div style="width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700"><%= c.name.charAt(0) %></div><% } %>
+              <span style="font-size:.88rem;font-weight:600"><%= c.name %></span>
+            </div>
+            <span style="font-weight:700;color:var(--success);font-size:.88rem"><%= formatUSD(c.revenue) %></span>
+          </div>
+        <% }) %>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- Pending Payout Requests -->
+<% if (pendingPayoutRequests.length > 0) { %>
+<div class="panel" style="margin-bottom:1.5rem">
+  <div class="panel-header">
+    <div class="panel-title"><i class="fa-solid fa-money-bill-transfer"></i> Pending Payout Requests</div>
+  </div>
+  <div class="panel-body-flush">
+    <table class="data-table">
+      <thead><tr>
+        <th>Creator</th>
+        <th>Amount</th>
+        <th>Method</th>
+        <th>Account</th>
+        <th>Requested</th>
+        <th>Actions</th>
+      </tr></thead>
+      <tbody>
+        <% pendingPayoutRequests.forEach(pr => { %>
+          <tr>
+            <td><strong><%= pr.user_name %></strong><br><span style="font-size:.75rem;color:var(--text-muted)"><%= pr.user_email %></span></td>
+            <td style="font-weight:700;color:var(--success)"><%= formatUSD(pr.amount) %></td>
+            <td><%= pr.payout_method %></td>
+            <td style="font-size:.8rem">
+              <%= pr.account_name || '—' %><br>
+              <span style="color:var(--text-muted)"><%= pr.account_email || '' %></span>
+              <% if (pr.account_details) { %><br><span style="color:var(--text-muted);word-break:break-word"><%= pr.account_details.substring(0,60) %>...</span><% } %>
+            </td>
+            <td style="font-size:.8rem;color:var(--text-muted)"><%= new Date(pr.requested_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) %></td>
+            <td>
+              <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+                <form action="/admin/payouts/<%= pr.id %>/approve" method="POST" style="display:inline">
+                  <input type="hidden" name="admin_note" value="Approved" />
+                  <button class="btn btn-sm" style="background:#DCFCE7;color:#16A34A;border:1px solid #86EFAC;font-size:.75rem" onclick="return confirm('Approve payout of <%= formatUSD(pr.amount) %> to <%= pr.user_name %>?')">
+                    <i class="fa-solid fa-check"></i> Approve
+                  </button>
+                </form>
+                <button class="btn btn-sm" style="background:#FEE2E2;color:#DC2626;border:1px solid #FECACA;font-size:.75rem"
+                        onclick="rejectPayout(<%= pr.id %>)">
+                  <i class="fa-solid fa-xmark"></i> Reject
+                </button>
+              </div>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<% } %>
+
+<!-- Recent Payments -->
+<div class="panel">
+  <div class="panel-header">
+    <div class="panel-title"><i class="fa-solid fa-receipt"></i> Recent Payments</div>
+  </div>
+  <div class="panel-body-flush">
+    <% if (recentPayments.length === 0) { %>
+      <div style="padding:2rem;text-align:center;color:var(--text-muted)">No payments yet.</div>
+    <% } else { %>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead><tr>
+            <th>Ref</th>
+            <th>Member</th>
+            <th>Community</th>
+            <th>Plan</th>
+            <th>Amount</th>
+            <th>Platform Fee</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Action</th>
+          </tr></thead>
+          <tbody>
+            <% recentPayments.forEach(p => { %>
+              <tr>
+                <td><code style="font-size:.75rem"><%= p.payment_ref.substring(0,15) %>…</code></td>
+                <td><%= p.user_name %></td>
+                <td><%= p.community_name || '—' %></td>
+                <td style="font-size:.8rem"><%= p.plan_name || p.payment_type.replace('_',' ') %></td>
+                <td style="font-weight:700"><%= formatUSD(p.amount) %></td>
+                <td style="color:var(--primary)"><%= formatUSD(p.platform_fee) %></td>
+                <td>
+                  <span class="badge" style="
+                    background:<%= p.status==='successful'?'#DCFCE7':p.status==='pending'?'#FFF7ED':'#FEE2E2' %>;
+                    color:<%= p.status==='successful'?'#16A34A':p.status==='pending'?'#C2410C':'#DC2626' %>">
+                    <%= p.status.charAt(0).toUpperCase()+p.status.slice(1) %>
+                  </span>
+                </td>
+                <td style="font-size:.78rem;color:var(--text-muted)"><%= new Date(p.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) %></td>
+                <td>
+                  <% if (p.status === 'pending') { %>
+                    <form action="/admin/payments/<%= p.id %>/approve" method="POST" style="display:inline">
+                      <button class="btn btn-sm" style="background:#DCFCE7;color:#16A34A;border:1px solid #86EFAC;font-size:.72rem" onclick="return confirm('Approve this payment and grant access?')">
+                        <i class="fa-solid fa-check"></i> Grant
+                      </button>
+                    </form>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<!-- Reject Payout Modal -->
+<div class="modal-overlay" id="rejectModal">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-head">
+      <h2 class="modal-title">Reject Payout</h2>
+      <button type="button" class="modal-close" onclick="document.getElementById('rejectModal').classList.remove('open')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="rejectForm" method="POST" style="display:flex;flex-direction:column;gap:1rem">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Reason for rejection</label>
+        <textarea name="admin_note" class="form-input" rows="3" placeholder="Explain why this payout is being rejected…"></textarea>
+      </div>
+      <div class="modal-footer-btns">
+        <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('rejectModal').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn btn-danger btn-sm">Reject Payout</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function rejectPayout(id) {
+  document.getElementById('rejectForm').action = `/admin/payouts/${id}/reject`;
+  document.getElementById('rejectModal').classList.add('open');
+}
+document.getElementById('rejectModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('rejectModal')) document.getElementById('rejectModal').classList.remove('open');
+});
+</script>

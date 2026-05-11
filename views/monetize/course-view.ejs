@@ -1,0 +1,114 @@
+<div class="container" style="max-width:960px;padding:2rem 1.25rem">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:flex-start;gap:1.5rem;margin-bottom:2rem;flex-wrap:wrap">
+    <% if (course.thumbnail) { %>
+      <img src="<%= course.thumbnail %>" style="width:120px;height:80px;border-radius:10px;object-fit:cover;flex-shrink:0" />
+    <% } %>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.35rem">
+        <a href="/communities/<%= community.slug %>/courses" style="color:var(--text-muted);font-size:.85rem"><i class="fa-solid fa-arrow-left"></i> Back</a>
+      </div>
+      <h1 style="font-size:1.5rem;font-weight:800;margin-bottom:.35rem"><%= course.title %></h1>
+      <% if (course.description) { %><p style="color:var(--text-muted);font-size:.9rem"><%= course.description %></p><% } %>
+      <div style="display:flex;gap:1rem;margin-top:.5rem;font-size:.82rem;color:var(--text-muted)">
+        <span><i class="fa-solid fa-layer-group"></i> <%= modules.length %> modules</span>
+        <span><i class="fa-solid fa-play-circle"></i> <%= modules.reduce((acc,m)=>acc+m.lessons.length,0) %> lessons</span>
+        <% if (course.billing_type === 'included') { %><span style="color:var(--success);font-weight:600"><i class="fa-solid fa-check-circle"></i> Included in membership</span><% } %>
+      </div>
+    </div>
+    <% if (isOwner) { %>
+      <a href="/communities/<%= community.slug %>/courses/<%= course.id %>/edit" class="btn btn-outline btn-sm"><i class="fa-solid fa-pen"></i> Edit</a>
+    <% } %>
+  </div>
+
+  <% if (!hasAccess && !isOwner) { %>
+    <!-- Locked Content -->
+    <div class="card" style="padding:3rem;text-align:center;border:2px dashed var(--border)">
+      <i class="fa-solid fa-lock" style="font-size:2.5rem;color:#CBD5E1;display:block;margin-bottom:.75rem"></i>
+      <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:.5rem">This course requires membership</h2>
+      <p style="color:var(--text-muted);font-size:.9rem;margin-bottom:1.25rem">Join the community to access this course and all other member content.</p>
+      <a href="/communities/<%= community.slug %>" class="btn btn-primary">View Membership Plans</a>
+    </div>
+  <% } else { %>
+    <!-- Course Content -->
+    <div style="display:flex;flex-direction:column;gap:1rem">
+      <% modules.forEach((mod, mi) => { %>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div style="padding:1rem 1.5rem;background:#F8FAFC;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem">
+            <span style="width:28px;height:28px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0"><%= mi+1 %></span>
+            <span style="font-weight:700"><%= mod.title %></span>
+            <span style="font-size:.78rem;color:var(--text-muted);margin-left:auto"><%= mod.lessons.length %> lessons</span>
+          </div>
+          <% mod.lessons.forEach((lesson, li) => { %>
+            <div class="lesson-row" data-lesson-id="<%= lesson.id %>" style="padding:.9rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem;cursor:pointer;transition:background .1s" onclick="toggleLesson(this)">
+              <div style="width:28px;height:28px;border-radius:50%;border:2px solid <%= lesson.completed ? 'var(--success)' : 'var(--border)' %>;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:<%= lesson.completed ? '#F0FDF4' : '#fff' %>">
+                <% if (lesson.completed) { %><i class="fa-solid fa-check" style="font-size:.65rem;color:var(--success)"></i>
+                <% } else { %><span style="font-size:.7rem;color:var(--text-muted)"><%= li+1 %></span><% } %>
+              </div>
+              <i class="fa-solid fa-<%= lesson.lesson_type==='video'?'play-circle':lesson.lesson_type==='download'?'file-arrow-down':'file-lines' %>"
+                 style="color:var(--text-muted);font-size:.88rem;flex-shrink:0"></i>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:.9rem;font-weight:600"><%= lesson.title %></div>
+                <% if (lesson.duration_mins > 0) { %><span style="font-size:.75rem;color:var(--text-muted)"><%= lesson.duration_mins %> min</span><% } %>
+              </div>
+              <i class="fa-solid fa-chevron-down lesson-chevron" style="color:var(--text-muted);font-size:.75rem;transition:transform .2s"></i>
+            </div>
+            <div class="lesson-content" data-lesson="<%= lesson.id %>" style="display:none;padding:1.25rem 1.5rem;background:#FAFAFE;border-bottom:1px solid var(--border)">
+              <% if (lesson.video_url) { %>
+                <div style="aspect-ratio:16/9;margin-bottom:1rem;border-radius:8px;overflow:hidden;background:#000">
+                  <iframe src="<%= lesson.video_url %>" style="width:100%;height:100%;border:none" allowfullscreen></iframe>
+                </div>
+              <% } %>
+              <% if (lesson.content) { %>
+                <div style="font-size:.9rem;line-height:1.7;color:var(--body)"><%- lesson.content.replace(/\n/g,'<br>') %></div>
+              <% } %>
+              <% if (lesson.file_url) { %>
+                <a href="<%= lesson.file_url %>" download class="btn btn-outline btn-sm" style="margin-top:.75rem">
+                  <i class="fa-solid fa-download"></i> Download Resource
+                </a>
+              <% } %>
+              <% if (currentUser) { %>
+                <button onclick="markComplete(<%= lesson.id %>, this)" class="btn btn-sm <%= lesson.completed ? 'btn-success' : 'btn-outline' %>" style="margin-top:.75rem;background:<%= lesson.completed?'var(--success)':'transparent' %>;color:<%= lesson.completed?'#fff':'var(--primary)' %>">
+                  <i class="fa-solid fa-<%= lesson.completed ? 'check-circle' : 'circle' %>"></i>
+                  <%= lesson.completed ? 'Completed' : 'Mark Complete' %>
+                </button>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
+
+<script>
+function toggleLesson(row) {
+  const lessonId = row.dataset.lessonId;
+  const content = document.querySelector(`.lesson-content[data-lesson="${lessonId}"]`);
+  const chevron = row.querySelector('.lesson-chevron');
+  const isOpen  = content.style.display !== 'none';
+  content.style.display = isOpen ? 'none' : 'block';
+  chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+async function markComplete(lessonId, btn) {
+  try {
+    const r = await fetch(`/communities/<%= community.slug %>/courses/<%= course.id %>/lessons/${lessonId}/complete`, {
+      method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+    const d = await r.json();
+    if (d.success) {
+      btn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Completed';
+      btn.style.background = 'var(--success)';
+      btn.style.color = '#fff';
+      const indicator = btn.closest('.lesson-content').previousElementSibling.querySelector('div[style*="border-radius:50%"]');
+      if (indicator) {
+        indicator.style.borderColor = 'var(--success)';
+        indicator.style.background = '#F0FDF4';
+        indicator.innerHTML = '<i class="fa-solid fa-check" style="font-size:.65rem;color:var(--success)"></i>';
+      }
+    }
+  } catch(e) {}
+}
+</script>

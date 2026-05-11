@@ -143,6 +143,7 @@ app.use('/admin',       require('./routes/admin'));
 app.use('/users',       require('./routes/users'));
 app.use('/messages',    require('./routes/messages'));
 app.use('/communities', require('./routes/communities'));
+app.use('/',            require('./routes/monetize'));
 
 // Vote endpoint at root level
 const postCtrl = require('./controllers/postController');
@@ -295,6 +296,250 @@ async function runMigrations() {
     for (const sql of columnMigrations) {
       try { await pool.execute(sql); } catch (e) { /* column already exists */ }
     }
+
+    // ── Monetization tables ───────────────────────────────────────────────
+    const monetizeMigrations = [
+      `CREATE TABLE IF NOT EXISTS platform_settings (
+        id            INT AUTO_INCREMENT PRIMARY KEY,
+        setting_key   VARCHAR(100) UNIQUE NOT NULL,
+        setting_value TEXT NOT NULL,
+        updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS membership_plans (
+        id           INT AUTO_INCREMENT PRIMARY KEY,
+        community_id INT NOT NULL,
+        name         VARCHAR(100) NOT NULL,
+        description  TEXT,
+        price        DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        currency     VARCHAR(3) DEFAULT 'USD',
+        billing_type ENUM('free','one_time','monthly','yearly','lifetime') DEFAULT 'free',
+        trial_days   INT DEFAULT 0,
+        is_active    TINYINT(1) DEFAULT 1,
+        sort_order   INT DEFAULT 0,
+        created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS payments (
+        id              INT AUTO_INCREMENT PRIMARY KEY,
+        payment_ref     VARCHAR(100) UNIQUE NOT NULL,
+        user_id         INT NOT NULL,
+        community_id    INT DEFAULT NULL,
+        plan_id         INT DEFAULT NULL,
+        course_id       INT DEFAULT NULL,
+        event_id        INT DEFAULT NULL,
+        product_id      INT DEFAULT NULL,
+        payment_type    ENUM('community_plan','course','event','digital_product') DEFAULT 'community_plan',
+        billing_type    ENUM('free','one_time','monthly','yearly','lifetime') DEFAULT 'one_time',
+        amount          DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        currency        VARCHAR(3) DEFAULT 'USD',
+        platform_fee    DECIMAL(10,2) DEFAULT 0.00,
+        creator_earning DECIMAL(10,2) DEFAULT 0.00,
+        status          ENUM('pending','successful','failed','refunded','cancelled') DEFAULT 'pending',
+        coupon_code     VARCHAR(50) DEFAULT NULL,
+        discount_amount DECIMAL(10,2) DEFAULT 0.00,
+        gateway         VARCHAR(50) DEFAULT 'manual',
+        gateway_ref     VARCHAR(255) DEFAULT NULL,
+        notes           TEXT,
+        created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS member_subscriptions (
+        id                      INT AUTO_INCREMENT PRIMARY KEY,
+        user_id                 INT NOT NULL,
+        community_id            INT NOT NULL,
+        plan_id                 INT NOT NULL,
+        payment_id              INT DEFAULT NULL,
+        status                  ENUM('active','trialing','past_due','cancelled','expired') DEFAULT 'active',
+        started_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        trial_ends_at           TIMESTAMP NULL DEFAULT NULL,
+        current_period_ends_at  TIMESTAMP NULL DEFAULT NULL,
+        cancelled_at            TIMESTAMP NULL DEFAULT NULL,
+        created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_sub (user_id, community_id),
+        FOREIGN KEY (user_id)      REFERENCES users(id)             ON DELETE CASCADE,
+        FOREIGN KEY (community_id) REFERENCES communities(id)       ON DELETE CASCADE,
+        FOREIGN KEY (plan_id)      REFERENCES membership_plans(id)  ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS creator_wallets (
+        id                INT AUTO_INCREMENT PRIMARY KEY,
+        user_id           INT UNIQUE NOT NULL,
+        total_earned      DECIMAL(12,2) DEFAULT 0.00,
+        available_balance DECIMAL(12,2) DEFAULT 0.00,
+        pending_balance   DECIMAL(12,2) DEFAULT 0.00,
+        withdrawn_balance DECIMAL(12,2) DEFAULT 0.00,
+        currency          VARCHAR(3) DEFAULT 'USD',
+        created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS wallet_transactions (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        wallet_id   INT NOT NULL,
+        payment_id  INT DEFAULT NULL,
+        payout_id   INT DEFAULT NULL,
+        type        ENUM('credit','debit','fee','refund') DEFAULT 'credit',
+        amount      DECIMAL(10,2) NOT NULL,
+        description VARCHAR(255),
+        created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (wallet_id) REFERENCES creator_wallets(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS payout_requests (
+        id              INT AUTO_INCREMENT PRIMARY KEY,
+        user_id         INT NOT NULL,
+        amount          DECIMAL(10,2) NOT NULL,
+        currency        VARCHAR(3) DEFAULT 'USD',
+        payout_method   VARCHAR(50) DEFAULT 'bank_transfer',
+        account_name    VARCHAR(150),
+        account_email   VARCHAR(200),
+        account_details TEXT,
+        status          ENUM('pending','approved','paid','rejected') DEFAULT 'pending',
+        admin_note      TEXT,
+        requested_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        processed_at    TIMESTAMP NULL DEFAULT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS coupons (
+        id             INT AUTO_INCREMENT PRIMARY KEY,
+        community_id   INT NOT NULL,
+        code           VARCHAR(50) NOT NULL,
+        discount_type  ENUM('percentage','fixed') DEFAULT 'percentage',
+        discount_value DECIMAL(10,2) NOT NULL,
+        applies_to     ENUM('all','plan','course','event','product') DEFAULT 'all',
+        applies_to_id  INT DEFAULT NULL,
+        max_uses       INT DEFAULT 0,
+        used_count     INT DEFAULT 0,
+        expires_at     TIMESTAMP NULL DEFAULT NULL,
+        is_active      TINYINT(1) DEFAULT 1,
+        created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_community_code (community_id, code),
+        FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS courses (
+        id           INT AUTO_INCREMENT PRIMARY KEY,
+        community_id INT NOT NULL,
+        plan_id      INT DEFAULT NULL,
+        title        VARCHAR(200) NOT NULL,
+        slug         VARCHAR(220) NOT NULL,
+        description  TEXT,
+        thumbnail    VARCHAR(255),
+        price        DECIMAL(10,2) DEFAULT 0.00,
+        billing_type ENUM('free','one_time','included') DEFAULT 'included',
+        is_published TINYINT(1) DEFAULT 0,
+        sort_order   INT DEFAULT 0,
+        created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS course_modules (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        course_id  INT NOT NULL,
+        title      VARCHAR(200) NOT NULL,
+        sort_order INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS course_lessons (
+        id              INT AUTO_INCREMENT PRIMARY KEY,
+        module_id       INT NOT NULL,
+        title           VARCHAR(200) NOT NULL,
+        content         LONGTEXT,
+        video_url       VARCHAR(500),
+        lesson_type     ENUM('video','text','download') DEFAULT 'text',
+        file_url        VARCHAR(255),
+        is_free_preview TINYINT(1) DEFAULT 0,
+        duration_mins   INT DEFAULT 0,
+        sort_order      INT DEFAULT 0,
+        created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (module_id) REFERENCES course_modules(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS lesson_completions (
+        id           INT AUTO_INCREMENT PRIMARY KEY,
+        user_id      INT NOT NULL,
+        lesson_id    INT NOT NULL,
+        completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_completion (user_id, lesson_id),
+        FOREIGN KEY (user_id)   REFERENCES users(id)          ON DELETE CASCADE,
+        FOREIGN KEY (lesson_id) REFERENCES course_lessons(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS community_events (
+        id            INT AUTO_INCREMENT PRIMARY KEY,
+        community_id  INT NOT NULL,
+        plan_id       INT DEFAULT NULL,
+        title         VARCHAR(200) NOT NULL,
+        description   TEXT,
+        event_type    ENUM('webinar','workshop','coaching','group_call','masterclass','live_class') DEFAULT 'webinar',
+        starts_at     TIMESTAMP NOT NULL,
+        ends_at       TIMESTAMP NULL DEFAULT NULL,
+        location      VARCHAR(255),
+        online_link   VARCHAR(500),
+        is_online     TINYINT(1) DEFAULT 1,
+        price         DECIMAL(10,2) DEFAULT 0.00,
+        is_free       TINYINT(1) DEFAULT 1,
+        max_attendees INT DEFAULT 0,
+        status        ENUM('scheduled','live','ended','cancelled') DEFAULT 'scheduled',
+        created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS event_attendees (
+        id            INT AUTO_INCREMENT PRIMARY KEY,
+        event_id      INT NOT NULL,
+        user_id       INT NOT NULL,
+        payment_id    INT DEFAULT NULL,
+        status        ENUM('registered','attended','cancelled') DEFAULT 'registered',
+        registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_attendee (event_id, user_id),
+        FOREIGN KEY (event_id) REFERENCES community_events(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id)  REFERENCES users(id)            ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS digital_products (
+        id            INT AUTO_INCREMENT PRIMARY KEY,
+        community_id  INT NOT NULL,
+        title         VARCHAR(200) NOT NULL,
+        description   TEXT,
+        price         DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        file_url      VARCHAR(500),
+        preview_image VARCHAR(255),
+        access_type   ENUM('anyone','members_only','plan_only') DEFAULT 'anyone',
+        plan_id       INT DEFAULT NULL,
+        is_active     TINYINT(1) DEFAULT 1,
+        created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (community_id) REFERENCES communities(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS product_purchases (
+        id         INT AUTO_INCREMENT PRIMARY KEY,
+        user_id    INT NOT NULL,
+        product_id INT NOT NULL,
+        payment_id INT DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_purchase (user_id, product_id),
+        FOREIGN KEY (user_id)    REFERENCES users(id)              ON DELETE CASCADE,
+        FOREIGN KEY (product_id) REFERENCES digital_products(id)   ON DELETE CASCADE
+      )`,
+    ];
+    for (const sql of monetizeMigrations) {
+      try { await pool.execute(sql); } catch (e) { console.error('Monetize migration error:', e.message); }
+    }
+
+    // Monetization column additions on communities table
+    const communityColMigrations = [
+      `ALTER TABLE communities ADD COLUMN pricing_type ENUM('free','paid','private_paid','invite_only') DEFAULT 'free'`,
+      `ALTER TABLE communities ADD COLUMN is_visible TINYINT(1) DEFAULT 1`,
+      `ALTER TABLE communities ADD COLUMN require_approval TINYINT(1) DEFAULT 0`,
+      `ALTER TABLE communities ADD COLUMN trial_enabled TINYINT(1) DEFAULT 0`,
+      `ALTER TABLE communities ADD COLUMN trial_days INT DEFAULT 0`,
+    ];
+    for (const sql of communityColMigrations) {
+      try { await pool.execute(sql); } catch (e) { /* column already exists */ }
+    }
+
+    // Seed default platform settings
+    try {
+      await pool.execute("INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES ('commission_pct', '10')");
+      await pool.execute("INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES ('min_payout', '50')");
+    } catch(e) {}
 
     console.log('✅ Migrations complete');
   } catch (err) {

@@ -1,0 +1,106 @@
+<div class="container" style="max-width:800px;padding:2rem 1.25rem">
+  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem">
+    <a href="/communities/<%= community.slug %>/plans" style="color:var(--text-muted)"><i class="fa-solid fa-arrow-left"></i></a>
+    <div>
+      <h1 style="font-size:1.5rem;font-weight:800">Coupon Codes</h1>
+      <p style="color:var(--text-muted);font-size:.88rem"><%= community.name %></p>
+    </div>
+  </div>
+
+  <!-- Create Coupon -->
+  <div class="card" style="padding:2rem;margin-bottom:1.5rem">
+    <h2 style="font-size:1.05rem;font-weight:700;margin-bottom:1.25rem"><i class="fa-solid fa-plus" style="color:var(--primary)"></i> Create Coupon</h2>
+    <form action="/communities/<%= community.slug %>/coupons" method="POST" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Coupon Code *</label>
+        <input type="text" name="code" class="form-input" placeholder="LAUNCH50" maxlength="30" required
+               style="font-family:monospace;text-transform:uppercase;font-weight:700" />
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Discount Type *</label>
+        <select name="discount_type" class="form-input">
+          <option value="percentage">Percentage (%)</option>
+          <option value="fixed">Fixed Amount ($)</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Discount Value *</label>
+        <input type="number" name="discount_value" class="form-input" placeholder="e.g. 20 for 20% or $20" min="0" step="0.01" required />
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Max Uses (0 = unlimited)</label>
+        <input type="number" name="max_uses" class="form-input" placeholder="0" min="0" value="0" />
+      </div>
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Expires On</label>
+        <input type="datetime-local" name="expires_at" class="form-input" />
+      </div>
+      <div class="form-group" style="margin:0;display:flex;align-items:flex-end">
+        <button type="submit" class="btn btn-primary" style="width:100%"><i class="fa-solid fa-ticket"></i> Create Coupon</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Existing Coupons -->
+  <% if (coupons.length === 0) { %>
+    <div class="card" style="padding:2.5rem;text-align:center">
+      <i class="fa-solid fa-ticket" style="font-size:2.5rem;color:#CBD5E1;display:block;margin-bottom:.75rem"></i>
+      <p style="color:var(--text-muted)">No coupons yet. Create one above to offer discounts to your members.</p>
+    </div>
+  <% } else { %>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:.88rem">
+        <thead>
+          <tr style="background:#F8FAFC;border-bottom:2px solid var(--border)">
+            <th style="padding:.75rem 1.25rem;text-align:left;font-size:.78rem;color:var(--text-muted);text-transform:uppercase">Code</th>
+            <th style="padding:.75rem 1rem;text-align:left;font-size:.78rem;color:var(--text-muted);text-transform:uppercase">Discount</th>
+            <th style="padding:.75rem 1rem;text-align:center;font-size:.78rem;color:var(--text-muted);text-transform:uppercase">Uses</th>
+            <th style="padding:.75rem 1rem;text-align:left;font-size:.78rem;color:var(--text-muted);text-transform:uppercase">Expires</th>
+            <th style="padding:.75rem 1rem;text-align:center;font-size:.78rem;color:var(--text-muted);text-transform:uppercase">Status</th>
+            <th style="padding:.75rem 1.25rem;text-align:right;font-size:.78rem;color:var(--text-muted);text-transform:uppercase">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% coupons.forEach(c => { %>
+            <tr style="border-bottom:1px solid var(--border)">
+              <td style="padding:.85rem 1.25rem"><code style="font-weight:700;font-size:.9rem;color:var(--primary)"><%= c.code %></code></td>
+              <td style="padding:.85rem 1rem">
+                <% if (c.discount_type === 'percentage') { %>
+                  <span style="font-weight:600"><%= c.discount_value %>% off</span>
+                <% } else { %>
+                  <span style="font-weight:600">$<%= parseFloat(c.discount_value).toFixed(2) %> off</span>
+                <% } %>
+              </td>
+              <td style="padding:.85rem 1rem;text-align:center">
+                <span style="font-weight:600"><%= c.used_count %><% if (c.max_uses > 0) { %>/<%= c.max_uses %><% } %></span>
+              </td>
+              <td style="padding:.85rem 1rem;color:var(--text-muted);font-size:.82rem">
+                <%= c.expires_at ? new Date(c.expires_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : 'Never' %>
+              </td>
+              <td style="padding:.85rem 1rem;text-align:center">
+                <span class="badge" style="background:<%= c.is_active?'#DCFCE7':'#F1F5F9' %>;color:<%= c.is_active?'#16A34A':'#64748B' %>">
+                  <%= c.is_active ? 'Active' : 'Inactive' %>
+                </span>
+              </td>
+              <td style="padding:.85rem 1.25rem;text-align:right">
+                <div style="display:flex;gap:.4rem;justify-content:flex-end">
+                  <form action="/communities/<%= community.slug %>/coupons/<%= c.id %>/toggle" method="POST">
+                    <button class="btn btn-sm btn-outline" style="font-size:.75rem">
+                      <%= c.is_active ? 'Disable' : 'Enable' %>
+                    </button>
+                  </form>
+                  <form action="/communities/<%= community.slug %>/coupons/<%= c.id %>/delete" method="POST"
+                        onsubmit="return confirm('Delete coupon <%= c.code %>?')">
+                    <button class="btn btn-sm" style="background:#FEE2E2;color:#DC2626;border:1px solid #FECACA;font-size:.75rem">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>

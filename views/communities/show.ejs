@@ -221,6 +221,60 @@
         </button>
       </div>
 
+      <!-- Membership Plans (if any) -->
+      <% if (typeof plans !== 'undefined' && plans && plans.length > 0 && !membership && !isOwner) { %>
+        <div class="card comm-sidebar-card" style="border:2px solid var(--primary)">
+          <h3 class="comm-sidebar-heading" style="color:var(--primary)"><i class="fa-solid fa-layer-group"></i> Membership Plans</h3>
+          <% plans.forEach(plan => { %>
+            <div style="border:1px solid var(--border);border-radius:10px;padding:.85rem;margin-bottom:.6rem">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.2rem">
+                <span style="font-weight:700;font-size:.92rem"><%= plan.name %></span>
+                <span style="font-weight:800;color:var(--primary)">
+                  <%= plan.billing_type === 'free' ? 'Free' : '$' + parseFloat(plan.price).toFixed(2) %>
+                  <span style="font-size:.72rem;color:var(--text-muted);font-weight:400">
+                    <% if (plan.billing_type === 'monthly') { %>/mo<% } else if (plan.billing_type === 'yearly') { %>/yr<% } else if (plan.billing_type === 'lifetime') { %> lifetime<% } %>
+                  </span>
+                </span>
+              </div>
+              <% if (plan.description) { %><p style="font-size:.78rem;color:var(--text-muted);margin-bottom:.5rem"><%= plan.description %></p><% } %>
+              <% if (plan.billing_type === 'free') { %>
+                <% if (currentUser) { %>
+                  <form action="/communities/<%= community.slug %>/join" method="POST">
+                    <button class="btn btn-primary btn-sm" style="width:100%"><i class="fa-solid fa-plus"></i> Join Free</button>
+                  </form>
+                <% } else { %>
+                  <a href="/auth/login" class="btn btn-primary btn-sm" style="width:100%;text-align:center;display:block">Join Free</a>
+                <% } %>
+              <% } else { %>
+                <% if (currentUser) { %>
+                  <a href="/checkout/plan/<%= plan.id %>" class="btn btn-primary btn-sm" style="width:100%;text-align:center;display:block">
+                    <i class="fa-solid fa-arrow-right"></i> Get Access
+                  </a>
+                <% } else { %>
+                  <a href="/auth/login" class="btn btn-primary btn-sm" style="width:100%;text-align:center;display:block">Sign in to Join</a>
+                <% } %>
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+      <% } %>
+
+      <!-- Community Navigation (Courses, Events, Products) -->
+      <div class="card comm-sidebar-card">
+        <h3 class="comm-sidebar-heading">Explore</h3>
+        <div style="display:flex;flex-direction:column;gap:.3rem">
+          <a href="/communities/<%= community.slug %>/courses" style="display:flex;align-items:center;gap:.65rem;padding:.55rem .4rem;border-radius:8px;font-size:.88rem;font-weight:500;color:var(--body);transition:background .1s" onmouseover="this.style.background='var(--bg-light)'" onmouseout="this.style.background=''">
+            <i class="fa-solid fa-graduation-cap" style="color:var(--primary);width:16px;text-align:center"></i> Courses
+          </a>
+          <a href="/communities/<%= community.slug %>/events" style="display:flex;align-items:center;gap:.65rem;padding:.55rem .4rem;border-radius:8px;font-size:.88rem;font-weight:500;color:var(--body);transition:background .1s" onmouseover="this.style.background='var(--bg-light)'" onmouseout="this.style.background=''">
+            <i class="fa-solid fa-calendar-days" style="color:var(--warning);width:16px;text-align:center"></i> Events
+          </a>
+          <a href="/communities/<%= community.slug %>/products" style="display:flex;align-items:center;gap:.65rem;padding:.55rem .4rem;border-radius:8px;font-size:.88rem;font-weight:500;color:var(--body);transition:background .1s" onmouseover="this.style.background='var(--bg-light)'" onmouseout="this.style.background=''">
+            <i class="fa-solid fa-box-open" style="color:var(--success);width:16px;text-align:center"></i> Products
+          </a>
+        </div>
+      </div>
+
       <!-- Members -->
       <div class="card comm-sidebar-card">
         <h3 class="comm-sidebar-heading">Members <span style="color:var(--text-muted);font-weight:400;font-size:.85rem">(<%= community.member_count %>)</span></h3>

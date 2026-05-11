@@ -1,0 +1,153 @@
+<div class="container" style="max-width:900px;padding:2rem 1.25rem">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:1rem">
+    <div>
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.25rem">
+        <a href="/communities/<%= community.slug %>/courses" style="color:var(--text-muted)"><i class="fa-solid fa-arrow-left"></i></a>
+        <h1 style="font-size:1.3rem;font-weight:800">Course Builder</h1>
+      </div>
+      <p style="color:var(--text-muted);font-size:.85rem;padding-left:1.75rem"><%= course.title %></p>
+    </div>
+    <div style="display:flex;gap:.5rem">
+      <a href="/communities/<%= community.slug %>/courses/<%= course.id %>" class="btn btn-outline btn-sm">Preview</a>
+      <span class="badge" style="background:<%= course.is_published?'#DCFCE7':'#FFF7ED' %>;color:<%= course.is_published?'#16A34A':'#C2410C' %>;padding:.35rem .75rem;font-size:.8rem">
+        <%= course.is_published ? 'Published' : 'Draft' %>
+      </span>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 300px;gap:1.5rem;align-items:start">
+
+    <!-- Modules & Lessons -->
+    <div>
+      <!-- Existing modules -->
+      <% if (modules.length > 0) { %>
+        <% modules.forEach((mod, mi) => { %>
+          <div class="card" style="padding:0;overflow:hidden;margin-bottom:1rem">
+            <div style="padding:1rem 1.25rem;background:#F8FAFC;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+              <div style="display:flex;align-items:center;gap:.6rem">
+                <span style="width:24px;height:24px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0"><%= mi+1 %></span>
+                <span style="font-weight:700;font-size:.95rem"><%= mod.title %></span>
+              </div>
+              <span style="font-size:.78rem;color:var(--text-muted)"><%= mod.lesson_count %> lesson<%= mod.lesson_count!==1?'s':'' %></span>
+            </div>
+
+            <!-- Lessons -->
+            <% if (mod.lessons.length > 0) { %>
+              <% mod.lessons.forEach((lesson, li) => { %>
+                <div style="padding:.75rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem">
+                  <i class="fa-solid fa-<%= lesson.lesson_type==='video'?'play-circle':lesson.lesson_type==='download'?'file-arrow-down':'file-lines' %>"
+                     style="color:<%= lesson.lesson_type==='video'?'var(--primary)':lesson.lesson_type==='download'?'var(--success)':'var(--text-muted)' %>;font-size:.9rem;flex-shrink:0"></i>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:.88rem;font-weight:600"><%= lesson.title %></div>
+                    <div style="font-size:.72rem;color:var(--text-muted)">
+                      <%= lesson.duration_mins > 0 ? lesson.duration_mins + ' min' : '' %>
+                      <% if (lesson.is_free_preview) { %><span style="color:var(--success);margin-left:.35rem"><i class="fa-solid fa-unlock"></i> Free preview</span><% } %>
+                    </div>
+                  </div>
+                </div>
+              <% }) %>
+            <% } %>
+
+            <!-- Add Lesson Form -->
+            <div style="padding:1rem 1.25rem;background:#FAFAFA">
+              <details>
+                <summary style="font-size:.82rem;font-weight:600;color:var(--primary);cursor:pointer;list-style:none">
+                  <i class="fa-solid fa-plus"></i> Add Lesson to this Module
+                </summary>
+                <form action="/communities/<%= community.slug %>/courses/<%= course.id %>/modules/<%= mod.id %>/lessons"
+                      method="POST" enctype="multipart/form-data"
+                      style="display:flex;flex-direction:column;gap:.75rem;margin-top:.75rem">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+                    <div class="form-group" style="margin:0">
+                      <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Lesson Title *</label>
+                      <input type="text" name="title" class="form-input" placeholder="Lesson title" required style="font-size:.85rem" />
+                    </div>
+                    <div class="form-group" style="margin:0">
+                      <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Type</label>
+                      <select name="lesson_type" class="form-input" style="font-size:.85rem">
+                        <option value="text">Text</option>
+                        <option value="video">Video</option>
+                        <option value="download">Download</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Video URL (YouTube/Vimeo embed)</label>
+                    <input type="url" name="video_url" class="form-input" placeholder="https://..." style="font-size:.85rem" />
+                  </div>
+                  <div class="form-group" style="margin:0">
+                    <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Content</label>
+                    <textarea name="content" class="form-input" rows="3" placeholder="Lesson text content..." style="font-size:.85rem"></textarea>
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem">
+                    <div class="form-group" style="margin:0">
+                      <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Duration (mins)</label>
+                      <input type="number" name="duration_mins" class="form-input" placeholder="0" min="0" style="font-size:.85rem" />
+                    </div>
+                    <div class="form-group" style="margin:0">
+                      <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Downloadable File</label>
+                      <input type="file" name="lesson_file" class="form-input" style="font-size:.75rem" />
+                    </div>
+                    <div class="form-group" style="margin:0;display:flex;align-items:flex-end">
+                      <label style="display:flex;align-items:center;gap:.35rem;font-size:.8rem;cursor:pointer;padding-bottom:.4rem">
+                        <input type="checkbox" name="is_free_preview" value="1" /> Free preview
+                      </label>
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-primary btn-sm" style="align-self:flex-start">Add Lesson</button>
+                </form>
+              </details>
+            </div>
+          </div>
+        <% }) %>
+      <% } %>
+
+      <!-- Add Module -->
+      <div class="card" style="padding:1.5rem">
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:1rem"><i class="fa-solid fa-plus" style="color:var(--primary)"></i> Add Module</h3>
+        <form action="/communities/<%= community.slug %>/courses/<%= course.id %>/modules" method="POST" style="display:flex;gap:.75rem">
+          <input type="text" name="title" class="form-input" placeholder="Module title e.g. Getting Started" required style="flex:1" />
+          <button type="submit" class="btn btn-primary btn-sm">Add Module</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div style="position:sticky;top:80px">
+      <div class="card" style="padding:1.5rem">
+        <h3 style="font-size:.95rem;font-weight:700;margin-bottom:1.25rem">Course Settings</h3>
+        <form action="/communities/<%= community.slug %>/courses/<%= course.id %>/update" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:1rem">
+          <div class="form-group" style="margin:0">
+            <label class="form-label" style="font-size:.8rem">Title *</label>
+            <input type="text" name="title" class="form-input" value="<%= course.title %>" required style="font-size:.88rem" />
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label" style="font-size:.8rem">Description</label>
+            <textarea name="description" class="form-input" rows="3" style="font-size:.88rem"><%= course.description || '' %></textarea>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label" style="font-size:.8rem">Access Type</label>
+            <select name="billing_type" class="form-input" style="font-size:.88rem">
+              <option value="included" <%= course.billing_type==='included'?'selected':'' %>>Included in membership</option>
+              <option value="free" <%= course.billing_type==='free'?'selected':'' %>>Free for all</option>
+              <option value="one_time" <%= course.billing_type==='one_time'?'selected':'' %>>Separate purchase</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label" style="font-size:.8rem">Price (USD)</label>
+            <input type="number" name="price" class="form-input" value="<%= course.price %>" min="0" step="0.01" style="font-size:.88rem" />
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label" style="font-size:.8rem">Thumbnail</label>
+            <input type="file" name="thumbnail" class="form-input" accept="image/*" style="font-size:.78rem" />
+            <% if (course.thumbnail) { %><img src="<%= course.thumbnail %>" style="width:100%;border-radius:6px;margin-top:.4rem" /><% } %>
+          </div>
+          <label style="display:flex;align-items:center;gap:.5rem;font-size:.85rem;cursor:pointer">
+            <input type="checkbox" name="is_published" value="1" <%= course.is_published?'checked':'' %> /> Published
+          </label>
+          <button type="submit" class="btn btn-primary btn-sm">Save Settings</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

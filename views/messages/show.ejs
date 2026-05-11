@@ -225,6 +225,10 @@
   </main>
 </div>
 
+<!-- Mobile long-press action bottom sheet -->
+<div id="mobileActionOverlay"></div>
+<div id="mobileActionPanel"></div>
+
 <script>
 (function () {
   const CONV_ID      = <%= conversation.id %>;
@@ -436,11 +440,7 @@
   /* ─────────────────────────────────────────────────────── action bar click handler */
   area.addEventListener('click', async (e) => {
     const btn = e.target.closest('.msg-action-btn');
-    if (!btn) {
-      // Tap elsewhere on mobile dismisses open action bar
-      area.querySelectorAll('.msg-bubble-row--active').forEach(r => r.classList.remove('msg-bubble-row--active'));
-      return;
-    }
+    if (!btn) return;
 
     const row    = btn.closest('.msg-bubble-row');
     const msgId  = row?.dataset.id;
@@ -513,28 +513,138 @@
     }
   });
 
+  /* ─────────────────────────────────────────────────────── mobile bottom-sheet */
+  const mobileOverlay = document.getElementById('mobileActionOverlay');
+  const mobilePanel   = document.getElementById('mobileActionPanel');
+
+  function closeMobileSheet() {
+    mobilePanel.classList.remove('open');
+    mobileOverlay.classList.remove('open');
+    area.querySelectorAll('.msg-bubble-row--active').forEach(r => r.classList.remove('msg-bubble-row--active'));
+  }
+  mobileOverlay.addEventListener('click', closeMobileSheet);
+
+  function openMobileSheet(row) {
+    const msgId  = row.dataset.id;
+    const isMine = row.dataset.isMine === '1';
+
+    // Collect state from the hidden desktop action buttons
+    const replyBtn   = row.querySelector('.msg-action-reply');
+    const likeBtn    = row.querySelector('.msg-action-like');
+    const dislikeBtn = row.querySelector('.msg-action-dislike');
+    const rContent = replyBtn?.dataset.content || '';
+    const rName    = replyBtn?.dataset.name    || 'Someone';
+    const liked    = likeBtn?.classList.contains('active')    || false;
+    const disliked = dislikeBtn?.classList.contains('active') || false;
+
+    let html = `
+      <button class="mob-act-btn" data-action="reply"
+              data-msg-id="${msgId}"
+              data-content="${esc(rContent)}"
+              data-name="${esc(rName)}">
+        <span class="mob-act-icon"><i class="fa-solid fa-reply"></i></span>Reply
+      </button>
+      <button class="mob-act-btn ${liked ? 'like-active' : ''}" data-action="like" data-msg-id="${msgId}">
+        <span class="mob-act-icon"><i class="fa-solid fa-heart"></i></span>${liked ? 'Liked' : 'Like'}
+      </button>
+      <button class="mob-act-btn ${disliked ? 'dislike-active' : ''}" data-action="dislike" data-msg-id="${msgId}">
+        <span class="mob-act-icon"><i class="fa-solid fa-thumbs-down"></i></span>${disliked ? 'Disliked' : 'Dislike'}
+      </button>`;
+    if (isMine) {
+      html += `
+      <button class="mob-act-btn" data-action="delete" data-msg-id="${msgId}">
+        <span class="mob-act-icon"><i class="fa-solid fa-trash-can"></i></span>Delete
+      </button>`;
+    }
+
+    mobilePanel.innerHTML = html;
+    mobilePanel.classList.add('open');
+    mobileOverlay.classList.add('open');
+  }
+
+  mobilePanel.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.mob-act-btn');
+    if (!btn) return;
+
+    const action = btn.dataset.action;
+    const msgId  = btn.dataset.msgId;
+    const row    = area.querySelector(`.msg-bubble-row[data-id="${msgId}"]`);
+    const isMine = row?.dataset.isMine === '1';
+
+    if (action === 'reply') {
+      replyingToId      = msgId;
+      replyingToContent = btn.dataset.content || '';
+      replyingToName    = btn.dataset.name    || 'Someone';
+      replyToName.textContent = replyingToName;
+      replyToText.textContent = replyingToContent.length > 60
+        ? replyingToContent.substring(0,60) + '…'
+        : replyingToContent;
+      replyStrip.style.display = 'flex';
+      closeMobileSheet();
+      input.focus();
+      return;
+    }
+
+    if (action === 'like' || action === 'dislike') {
+      try {
+        const r = await fetch(`/messages/${CONV_ID}/messages/${msgId}/react`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+          body: JSON.stringify({ reaction: action }),
+        });
+        const d = await r.json();
+        if (d.success && row) {
+          const lb = row.querySelector('.msg-action-like');
+          const db = row.querySelector('.msg-action-dislike');
+          lb?.classList.toggle('active', d.myReaction === 'like');
+          db?.classList.toggle('active', d.myReaction === 'dislike');
+          const rxnEl = document.getElementById(`rxn-${msgId}`);
+          if (rxnEl) rxnEl.innerHTML = buildReactionBar(d.likes, d.dislikes);
+        }
+      } catch (err) { console.error(err); }
+      closeMobileSheet();
+      return;
+    }
+
+    if (action === 'delete' && isMine) {
+      closeMobileSheet();
+      if (!confirm('Delete this message? This cannot be undone.')) return;
+      try {
+        const r = await fetch(`/messages/${CONV_ID}/messages/${msgId}`, {
+          method: 'DELETE',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        const d = await r.json();
+        if (d.success && row) {
+          row.style.transition = 'opacity .25s, transform .25s';
+          row.style.opacity = '0'; row.style.transform = 'scale(.95)';
+          setTimeout(() => row.remove(), 260);
+        }
+      } catch (err) { console.error(err); }
+      return;
+    }
+  });
+
   /* ─────────────────────────────────────────────────────── long press (mobile) */
   let pressTimer = null;
   area.addEventListener('touchstart', (e) => {
     const row = e.target.closest('.msg-bubble-row');
-    if (!row || e.target.closest('.msg-actions') || e.target.closest('a, button, video')) return;
+    if (!row || e.target.closest('a, button, video')) return;
     pressTimer = setTimeout(() => {
       area.querySelectorAll('.msg-bubble-row--active').forEach(r => r !== row && r.classList.remove('msg-bubble-row--active'));
-      row.classList.toggle('msg-bubble-row--active');
-      // Haptic feedback if available
+      row.classList.add('msg-bubble-row--active');
+      openMobileSheet(row);
       if (navigator.vibrate) navigator.vibrate(40);
     }, 450);
   }, { passive: true });
 
-  const clearPress = () => clearTimeout(pressTimer);
-  area.addEventListener('touchend',   clearPress, { passive: true });
-  area.addEventListener('touchmove',  clearPress, { passive: true });
-  area.addEventListener('touchcancel',clearPress, { passive: true });
-
-  // Dismiss on scroll
-  area.addEventListener('scroll', () => {
-    area.querySelectorAll('.msg-bubble-row--active').forEach(r => r.classList.remove('msg-bubble-row--active'));
-  }, { passive: true });
+  const clearPress = (e) => {
+    clearTimeout(pressTimer);
+    pressTimer = null;
+  };
+  area.addEventListener('touchend',    clearPress, { passive: true });
+  area.addEventListener('touchmove',   clearPress, { passive: true });
+  area.addEventListener('touchcancel', clearPress, { passive: true });
 
   /* ─────────────────────────────────────────────────────── poll */
   async function poll() {

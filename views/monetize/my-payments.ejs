@@ -1,0 +1,57 @@
+<div class="container" style="max-width:880px;padding:2rem 1.25rem">
+  <div style="margin-bottom:2rem">
+    <h1 style="font-size:1.5rem;font-weight:800">Payment History</h1>
+    <p style="color:var(--text-muted);font-size:.88rem">All your payments and subscriptions</p>
+  </div>
+
+  <% if (payments.length === 0) { %>
+    <div class="card" style="padding:3rem;text-align:center">
+      <i class="fa-solid fa-receipt" style="font-size:2.5rem;color:#CBD5E1;display:block;margin-bottom:.75rem"></i>
+      <h3 style="font-size:1rem;color:var(--text-muted);font-weight:500">No payments yet</h3>
+      <p style="color:var(--text-muted);font-size:.85rem;margin-top:.35rem">Join a paid community or purchase a product to see your history here.</p>
+      <a href="/communities" class="btn btn-primary btn-sm" style="margin-top:1rem">Explore Communities</a>
+    </div>
+  <% } else { %>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:.88rem">
+          <thead>
+            <tr style="background:#F8FAFC;border-bottom:2px solid var(--border)">
+              <th style="padding:.85rem 1.25rem;text-align:left;font-weight:600;color:var(--text-muted);font-size:.78rem;text-transform:uppercase">Ref</th>
+              <th style="padding:.85rem 1rem;text-align:left;font-weight:600;color:var(--text-muted);font-size:.78rem;text-transform:uppercase">Community / Plan</th>
+              <th style="padding:.85rem 1rem;text-align:left;font-weight:600;color:var(--text-muted);font-size:.78rem;text-transform:uppercase">Type</th>
+              <th style="padding:.85rem 1rem;text-align:right;font-weight:600;color:var(--text-muted);font-size:.78rem;text-transform:uppercase">Amount</th>
+              <th style="padding:.85rem 1rem;text-align:left;font-weight:600;color:var(--text-muted);font-size:.78rem;text-transform:uppercase">Status</th>
+              <th style="padding:.85rem 1.25rem;text-align:left;font-weight:600;color:var(--text-muted);font-size:.78rem;text-transform:uppercase">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% payments.forEach(p => { %>
+              <tr style="border-bottom:1px solid var(--border);transition:background .1s" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background=''">
+                <td style="padding:.85rem 1.25rem"><code style="font-size:.78rem;color:var(--text-muted)"><%= p.payment_ref %></code></td>
+                <td style="padding:.85rem 1rem">
+                  <div style="font-weight:600"><%= p.community_name || '—' %></div>
+                  <div style="font-size:.78rem;color:var(--text-muted)"><%= p.plan_name || p.payment_type.replace('_',' ') %></div>
+                </td>
+                <td style="padding:.85rem 1rem">
+                  <span style="font-size:.78rem;font-weight:600;color:var(--text-muted)"><%= p.billing_type.replace('_',' ') %></span>
+                </td>
+                <td style="padding:.85rem 1rem;text-align:right;font-weight:700"><%= formatUSD(p.amount) %></td>
+                <td style="padding:.85rem 1rem">
+                  <span class="badge" style="
+                    background:<%= p.status==='successful'?'#DCFCE7':p.status==='pending'?'#FFF7ED':p.status==='refunded'?'#EFF6FF':'#FEE2E2' %>;
+                    color:<%= p.status==='successful'?'#16A34A':p.status==='pending'?'#C2410C':p.status==='refunded'?'#1D4ED8':'#DC2626' %>">
+                    <%= p.status.charAt(0).toUpperCase()+p.status.slice(1) %>
+                  </span>
+                </td>
+                <td style="padding:.85rem 1.25rem;color:var(--text-muted);white-space:nowrap">
+                  <%= new Date(p.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% } %>
+</div>

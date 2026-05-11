@@ -193,6 +193,12 @@ exports.show = async (req, res) => {
       excerpt: truncate(stripHtml(p.content), 220),
     }));
 
+    // Fetch active membership plans for sidebar display
+    const plans = await query(
+      'SELECT * FROM membership_plans WHERE community_id = ? AND is_active = 1 ORDER BY price ASC',
+      [community.id]
+    );
+
     res.render('communities/show', {
       title: community.name,
       community,
@@ -200,6 +206,7 @@ exports.show = async (req, res) => {
       members,
       membership,
       isOwner,
+      plans,
       page,
       totalPages,
       hasPrev: page > 1,
@@ -225,14 +232,48 @@ exports.join = async (req, res) => {
       'SELECT id FROM community_members WHERE community_id = ? AND user_id = ?',
       [community.id, req.session.user.id]
     );
-    if (!existing) {
-      await insert('community_members', {
-        community_id: community.id,
-        user_id: req.session.user.id,
-        role: 'member',
-      });
-      req.flash('success', `You joined "${community.name}"!`);
+
+    if (existing) {
+      return res.redirect(`/communities/${community.slug}`);
     }
+
+    // Check if the community has any active paid plans
+    const paidPlans = await query(
+      "SELECT * FROM membership_plans WHERE community_id = ? AND billing_type != 'free' AND is_active = 1 ORDER BY price ASC",
+      [community.id]
+    );
+
+    if (paidPlans.length > 0) {
+      // Redirect to the cheapest paid plan's checkout page
+      return res.redirect(`/checkout/plan/${paidPlans[0].id}`);
+    }
+
+    // Check for a free plan and link membership to it
+    const freePlan = await queryOne(
+      "SELECT * FROM membership_plans WHERE community_id = ? AND billing_type = 'free' AND is_active = 1",
+      [community.id]
+    );
+
+    await insert('community_members', {
+      community_id: community.id,
+      user_id: req.session.user.id,
+      role: 'member',
+    });
+
+    if (freePlan) {
+      // Record a $0 subscription for the free plan
+      const { createPaymentRecord } = require('../services/paymentService');
+      await createPaymentRecord({
+        userId: req.session.user.id,
+        communityId: community.id,
+        planId: freePlan.id,
+        paymentType: 'membership',
+        billingType: freePlan.billing_type,
+        amount: 0,
+      });
+    }
+
+    req.flash('success', `You joined "${community.name}"!`);
     res.redirect(`/communities/${community.slug}`);
   } catch (err) {
     console.error(err);

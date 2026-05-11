@@ -537,6 +537,11 @@
       <i class="fa-solid fa-tags"></i> Categories
     </a>
 
+    <span class="nav-section-label" style="margin-top:.5rem">Revenue</span>
+    <a href="/admin/monetize" class="nav-link <%= title === 'Revenue Dashboard' ? 'active' : '' %>">
+      <i class="fa-solid fa-dollar-sign"></i> Monetize
+    </a>
+
     <% if (currentUser && currentUser.role === 'admin') { %>
     <span class="nav-section-label" style="margin-top:.5rem">System</span>
     <a href="/admin/settings" class="nav-link <%= title === 'Site Settings' ? 'active' : '' %>">

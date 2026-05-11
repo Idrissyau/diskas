@@ -718,6 +718,10 @@ textarea { resize: vertical; }
   opacity: 0; transition: opacity .15s; pointer-events: none;
 }
 label:hover .tw-avatar-cam { opacity: 1; }
+/* On touch devices the camera hint is always visible so users know they can tap */
+@media (hover: none) {
+  .tw-avatar-cam { opacity: 1; }
+}
 
 .tw-actions {
   display: flex; gap: .55rem; flex-shrink: 0;
@@ -1122,7 +1126,7 @@ label:hover .tw-avatar-cam { opacity: 1; }
 /* When bubble contains only media (no text), remove default padding issues */
 .msg-bubble:has(.msg-media-img-wrap:first-child) { padding-bottom: .45rem; }
 
-/* ── Action bar (hover / long-press) ─────────────────────────────────────── */
+/* ── Action bar (hover — desktop only) ───────────────────────────────────── */
 .msg-actions {
   display: flex;
   flex-direction: column;
@@ -1133,11 +1137,16 @@ label:hover .tw-avatar-cam { opacity: 1; }
   transition: opacity .18s;
   flex-shrink: 0;
 }
-/* Show on desktop hover OR mobile long-press (.msg-bubble-row--active) */
-.msg-bubble-row:hover .msg-actions,
-.msg-bubble-row--active .msg-actions {
-  opacity: 1;
-  pointer-events: auto;
+/* Show on hover (pointer devices only) */
+@media (hover: hover) {
+  .msg-bubble-row:hover .msg-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+/* Hide action column on touch devices — replaced by bottom-sheet panel */
+@media (hover: none) {
+  .msg-actions { display: none; }
 }
 
 .msg-action-btn {
@@ -1161,6 +1170,77 @@ label:hover .tw-avatar-cam { opacity: 1; }
 .msg-action-reply:hover  { color: var(--primary); background: #EFF6FF; }
 .msg-action-delete:hover { background: #FEE2E2; color: var(--danger); border-color: #FECACA; }
 .msg-action-btn:disabled { opacity: .5; cursor: default; transform: none; }
+
+/* ── Mobile long-press action bottom sheet ───────────────────────────────── */
+#mobileActionOverlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 490;
+  animation: fadeInOverlay .18s ease;
+}
+#mobileActionOverlay.open { display: block; }
+@keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+
+#mobileActionPanel {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: #fff;
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 -4px 32px rgba(0,0,0,.18);
+  padding: 1rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom));
+  z-index: 491;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: stretch;
+  transform: translateY(100%);
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+#mobileActionPanel.open {
+  display: flex;
+  transform: translateY(0);
+}
+/* Handle bar */
+#mobileActionPanel::before {
+  content: '';
+  position: absolute;
+  top: .55rem; left: 50%; transform: translateX(-50%);
+  width: 36px; height: 4px; border-radius: 2px;
+  background: #CBD5E1;
+}
+
+.mob-act-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .35rem;
+  flex: 1;
+  padding: .6rem .25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 14px;
+  font-size: .72rem;
+  font-weight: 600;
+  color: #475569;
+  transition: background .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.mob-act-btn:active { background: var(--bg-light); }
+.mob-act-icon {
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  background: #F1F5F9;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.15rem;
+  color: #334155;
+  transition: background .15s, color .15s;
+}
+.mob-act-btn[data-action="delete"] .mob-act-icon { background: #FEE2E2; color: #EF4444; }
+.mob-act-btn[data-action="delete"] { color: #EF4444; }
+.mob-act-btn.like-active .mob-act-icon  { background: #FFF1F2; color: #E11D48; }
+.mob-act-btn.dislike-active .mob-act-icon { background: #EFF6FF; color: var(--primary); }
 
 /* ── Reaction chips (shown under bubble) ─────────────────────────────────── */
 .msg-reactions { display: flex; gap: .3rem; flex-wrap: wrap; min-height: 0; }
