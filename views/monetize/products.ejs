@@ -1,6 +1,27 @@
-<div class="container" style="max-width:960px;padding:2rem 1.25rem">
+<style>
+/* ── Product card ── */
+.prod-card { display:flex;flex-direction:column;border-radius:14px;overflow:hidden;border:1.5px solid var(--border);background:var(--card);transition:box-shadow .18s,transform .18s;position:relative }
+.prod-card:hover { box-shadow:0 8px 32px rgba(0,0,0,.1);transform:translateY(-2px) }
+.prod-img { width:100%;height:160px;object-fit:cover;display:block }
+.prod-img-placeholder { height:130px;display:flex;align-items:center;justify-content:center;font-size:2.2rem }
+.prod-body { padding:1.1rem 1.1rem .85rem;flex:1;display:flex;flex-direction:column;gap:.35rem }
+.prod-foot { padding:.75rem 1.1rem;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap }
+.file-badge { display:inline-flex;align-items:center;gap:.3rem;font-size:.68rem;font-weight:700;padding:.2rem .55rem;border-radius:5px;letter-spacing:.04em }
+.prod-tag { font-size:.7rem;padding:.15rem .55rem;border-radius:20px;background:#F1F5F9;color:var(--text-muted);border:1px solid var(--border) }
+/* ── Owner table ── */
+.owner-table { width:100%;border-collapse:collapse }
+.owner-table th { font-size:.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;padding:.6rem 1rem;border-bottom:2px solid var(--border);text-align:left;background:#F8FAFC }
+.owner-table td { padding:.85rem 1rem;border-bottom:1px solid var(--border);vertical-align:middle;font-size:.85rem }
+.owner-table tr:last-child td { border-bottom:none }
+.owner-table tr:hover td { background:#FAFBFF }
+/* ── Status badge ── */
+.status-dot { display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:.35rem }
+</style>
 
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:1rem">
+<div class="container" style="max-width:1040px;padding:2rem 1.25rem">
+
+  <!-- ── Page header ── -->
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:1rem">
     <div>
       <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.25rem">
         <a href="/communities/<%= community.slug %>" style="color:var(--text-muted)"><i class="fa-solid fa-arrow-left"></i></a>
@@ -9,96 +30,303 @@
       <p style="color:var(--text-muted);font-size:.88rem;padding-left:1.75rem"><%= community.name %></p>
     </div>
     <% if (isOwner) { %>
-      <button class="btn btn-primary btn-sm" onclick="document.getElementById('createProductModal').classList.add('open')">
+      <button class="btn btn-primary btn-sm" onclick="openCreate()">
         <i class="fa-solid fa-plus"></i> New Product
       </button>
     <% } %>
   </div>
 
-  <% if (products.length === 0) { %>
-    <div class="card" style="padding:3rem;text-align:center">
-      <i class="fa-solid fa-box-open" style="font-size:2.5rem;color:#CBD5E1;display:block;margin-bottom:.75rem"></i>
-      <h3 style="font-size:1rem;color:var(--text-muted);font-weight:500">No products yet</h3>
-      <% if (isOwner) { %>
-        <p style="color:var(--text-muted);font-size:.85rem;margin-top:.35rem">Upload PDFs, templates, ebooks, or any digital download to sell here.</p>
-        <button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="document.getElementById('createProductModal').classList.add('open')">Add Product</button>
-      <% } %>
-    </div>
-  <% } else { %>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.25rem">
-      <% products.forEach(prod => { %>
-        <div class="card" style="padding:0;overflow:hidden;transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,.1)'" onmouseout="this.style.boxShadow=''">
-          <% if (prod.preview_image) { %>
-            <img src="<%= prod.preview_image %>" alt="<%= prod.title %>" style="width:100%;height:150px;object-fit:cover" />
-          <% } else { %>
-            <div style="height:100px;background:linear-gradient(135deg,#0F172A,#1E3A5F);display:flex;align-items:center;justify-content:center">
-              <i class="fa-solid fa-file-arrow-down" style="font-size:2rem;color:rgba(255,255,255,.6)"></i>
-            </div>
-          <% } %>
-          <div style="padding:1.25rem">
-            <h3 style="font-size:.95rem;font-weight:700;margin-bottom:.25rem"><%= prod.title %></h3>
-            <% if (prod.description) { %><p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.75rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden"><%= prod.description %></p><% } %>
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
-              <span style="font-weight:800;font-size:1.1rem;color:<%= prod.price>0?'var(--primary)':'var(--success)' %>">
-                <%= prod.price > 0 ? formatUSD(prod.price) : 'Free' %>
-              </span>
-              <div style="display:flex;gap:.4rem">
-                <% if (isOwner) { %>
-                  <form action="/communities/<%= community.slug %>/products/<%= prod.id %>/delete" method="POST"
-                        onsubmit="return confirm('Delete this product?')">
-                    <button class="btn btn-sm" style="background:#FEE2E2;color:#DC2626;border:1px solid #FECACA;font-size:.75rem"><i class="fa-solid fa-trash"></i></button>
-                  </form>
-                  <% if (prod.file_url) { %>
-                    <a href="/products/<%= prod.id %>/download" class="btn btn-outline btn-sm" style="font-size:.78rem"><i class="fa-solid fa-download"></i></a>
-                  <% } %>
-                <% } else if (prod.isPurchased || prod.price == 0) { %>
-                  <% if (prod.file_url) { %>
-                    <a href="/products/<%= prod.id %>/download" class="btn btn-sm" style="background:var(--success);color:#fff;font-size:.78rem"><i class="fa-solid fa-download"></i> Download</a>
-                  <% } %>
-                <% } else { %>
-                  <form action="/checkout/product/<%= prod.id %>" method="POST">
-                    <button class="btn btn-primary btn-sm" style="font-size:.78rem"><i class="fa-solid fa-shopping-cart"></i> Buy</button>
-                  </form>
-                <% } %>
-              </div>
-            </div>
-            <% if (prod.access_type !== 'anyone') { %>
-              <div style="margin-top:.5rem;font-size:.72rem;color:var(--text-muted)">
-                <i class="fa-solid fa-lock"></i>
-                <%= prod.access_type==='members_only' ? 'Members only' : 'Specific plan only' %>
-              </div>
-            <% } %>
+  <!-- ══════════════════════════════════════════════════
+       OWNER VIEW
+  ══════════════════════════════════════════════════ -->
+  <% if (isOwner) { %>
+
+    <!-- Summary stats -->
+    <% if (ownerStats) { %>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.75rem">
+      <% const stats = [
+        { label:'Products',       val: ownerStats.product_count,   icon:'fa-box',        color:'#6366F1', bg:'#EEF2FF' },
+        { label:'Total Sales',    val: ownerStats.total_sales,     icon:'fa-receipt',    color:'#10B981', bg:'#F0FDF4' },
+        { label:'Revenue',        val: formatUSD(ownerStats.total_revenue), icon:'fa-dollar-sign', color:'#0EA5E9', bg:'#EFF6FF', raw:true },
+        { label:'Downloads',      val: ownerStats.total_downloads, icon:'fa-download',   color:'#F59E0B', bg:'#FFFBEB' },
+      ]; %>
+      <% stats.forEach(s => { %>
+        <div class="card" style="padding:1rem 1.25rem;display:flex;align-items:center;gap:.85rem">
+          <div style="width:40px;height:40px;border-radius:10px;background:<%= s.bg %>;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="fa-solid <%= s.icon %>" style="color:<%= s.color %>"></i>
+          </div>
+          <div>
+            <div style="font-size:1.3rem;font-weight:800"><%= s.raw ? s.val : s.val %></div>
+            <div style="font-size:.72rem;color:var(--text-muted);font-weight:600"><%= s.label %></div>
           </div>
         </div>
       <% }) %>
     </div>
+    <% } %>
+
+    <!-- Products table -->
+    <% if (products.length === 0) { %>
+      <div class="card" style="padding:3rem;text-align:center">
+        <i class="fa-solid fa-box-open" style="font-size:2.5rem;color:#CBD5E1;display:block;margin-bottom:.75rem"></i>
+        <h3 style="font-size:1rem;color:var(--text-muted);font-weight:500">No products yet</h3>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-top:.35rem">Upload PDFs, templates, ebooks, or any digital download to sell.</p>
+        <button class="btn btn-primary btn-sm" style="margin-top:1rem" onclick="openCreate()">Add Your First Product</button>
+      </div>
+    <% } else { %>
+      <div class="card" style="padding:0;overflow:hidden;margin-bottom:1.5rem">
+        <div style="overflow-x:auto">
+          <table class="owner-table">
+            <thead><tr>
+              <th style="width:44px"></th>
+              <th>Product</th>
+              <th>Price</th>
+              <th>File</th>
+              <th>Sales</th>
+              <th>Downloads</th>
+              <th>Revenue</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr></thead>
+            <tbody>
+              <% products.forEach(prod => { %>
+                <tr>
+                  <!-- Thumbnail -->
+                  <td style="padding:.6rem .75rem">
+                    <% if (prod.preview_image) { %>
+                      <img src="<%= prod.preview_image %>" style="width:38px;height:38px;border-radius:7px;object-fit:cover" />
+                    <% } else { %>
+                      <div style="width:38px;height:38px;border-radius:7px;background:linear-gradient(135deg,#0F172A,#1E3A5F);display:flex;align-items:center;justify-content:center">
+                        <i class="fa-solid fa-<%= prod.file_type==='PDF'?'file-pdf':prod.file_type==='ZIP'?'file-zipper':'file-arrow-down' %>" style="font-size:.85rem;color:rgba(255,255,255,.7)"></i>
+                      </div>
+                    <% } %>
+                  </td>
+                  <!-- Title + tags -->
+                  <td style="max-width:220px">
+                    <div style="font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= prod.title %></div>
+                    <% if (prod.description) { %>
+                      <div style="font-size:.75rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"><%= prod.description %></div>
+                    <% } %>
+                    <% if (prod.tags) { %>
+                      <div style="margin-top:.25rem;display:flex;gap:.25rem;flex-wrap:wrap">
+                        <% prod.tags.split(',').slice(0,3).forEach(t => { %><span class="prod-tag"><%= t.trim() %></span><% }) %>
+                      </div>
+                    <% } %>
+                  </td>
+                  <!-- Price -->
+                  <td>
+                    <span style="font-weight:800;color:<%= prod.price>0?'var(--primary)':'var(--success)' %>">
+                      <%= prod.price > 0 ? formatUSD(prod.price) : 'Free' %>
+                    </span>
+                  </td>
+                  <!-- File info -->
+                  <td>
+                    <% if (prod.file_type) { %>
+                      <span class="file-badge" style="background:#EFF6FF;color:var(--primary)"><i class="fa-solid fa-file"></i> <%= prod.file_type %></span>
+                    <% } %>
+                    <% if (prod.file_size > 0) { %>
+                      <div style="font-size:.7rem;color:var(--text-muted);margin-top:.2rem"><%= (prod.file_size/1024/1024).toFixed(1) %> MB</div>
+                    <% } %>
+                    <% if (!prod.file_url) { %><span style="font-size:.75rem;color:#F59E0B">No file</span><% } %>
+                  </td>
+                  <!-- Sales -->
+                  <td style="font-weight:700"><%= prod.sale_count || 0 %></td>
+                  <!-- Downloads -->
+                  <td style="color:var(--text-muted)"><%= prod.download_count || 0 %></td>
+                  <!-- Revenue -->
+                  <td style="font-weight:700;color:var(--success)"><%= formatUSD(prod.total_revenue || 0) %></td>
+                  <!-- Status -->
+                  <td>
+                    <form action="/communities/<%= community.slug %>/products/<%= prod.id %>/toggle" method="POST" style="display:inline">
+                      <button type="submit" class="btn btn-sm" style="font-size:.72rem;padding:.3rem .7rem;background:<%= prod.is_active?'#F0FDF4':'#F8FAFC' %>;color:<%= prod.is_active?'#16A34A':'#94A3B8' %>;border:1px solid <%= prod.is_active?'#86EFAC':'var(--border)' %>">
+                        <span class="status-dot" style="background:<%= prod.is_active?'#16A34A':'#CBD5E1' %>"></span>
+                        <%= prod.is_active ? 'Active' : 'Hidden' %>
+                      </button>
+                    </form>
+                  </td>
+                  <!-- Actions -->
+                  <td>
+                    <div style="display:flex;gap:.35rem">
+                      <button class="btn btn-sm btn-outline" style="font-size:.72rem;padding:.3rem .65rem"
+                              onclick="openEdit(<%= JSON.stringify(prod) %>)" title="Edit">
+                        <i class="fa-solid fa-pen"></i>
+                      </button>
+                      <% if (prod.file_url) { %>
+                        <a href="/products/<%= prod.id %>/download" class="btn btn-sm btn-outline" style="font-size:.72rem;padding:.3rem .65rem" title="Download">
+                          <i class="fa-solid fa-download"></i>
+                        </a>
+                      <% } %>
+                      <form action="/communities/<%= community.slug %>/products/<%= prod.id %>/delete" method="POST"
+                            onsubmit="return confirm('Permanently delete \'<%= prod.title %>\'? This cannot be undone.')">
+                        <button class="btn btn-sm" style="font-size:.72rem;padding:.3rem .65rem;background:#FEE2E2;color:#DC2626;border:1px solid #FECACA" title="Delete">
+                          <i class="fa-solid fa-trash"></i>
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    <% } %>
+
+  <!-- ══════════════════════════════════════════════════
+       BUYER / PUBLIC VIEW
+  ══════════════════════════════════════════════════ -->
+  <% } else { %>
+
+    <!-- Search + filter bar -->
+    <div style="display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center">
+      <div style="position:relative;flex:1;min-width:200px">
+        <i class="fa-solid fa-magnifying-glass" style="position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:.82rem"></i>
+        <input type="text" id="prodSearch" placeholder="Search products…" oninput="filterProducts()"
+               class="form-input" style="padding-left:2.2rem;font-size:.88rem" />
+      </div>
+      <select id="prodFilter" onchange="filterProducts()" class="form-input" style="width:auto;font-size:.88rem">
+        <option value="all">All Products</option>
+        <option value="free">Free</option>
+        <option value="paid">Paid</option>
+        <option value="owned">My Downloads</option>
+      </select>
+    </div>
+
+    <% const visibleProducts = products.filter(p => p.is_active); %>
+    <% if (visibleProducts.length === 0) { %>
+      <div class="card" style="padding:3rem;text-align:center">
+        <i class="fa-solid fa-box-open" style="font-size:2.5rem;color:#CBD5E1;display:block;margin-bottom:.75rem"></i>
+        <h3 style="font-size:1rem;color:var(--text-muted);font-weight:500">No products available yet</h3>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-top:.35rem">Check back soon — the creator is working on something great.</p>
+      </div>
+    <% } else { %>
+      <div id="productGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:1.25rem">
+        <% visibleProducts.forEach(prod => { %>
+          <div class="prod-card"
+               data-title="<%= prod.title.toLowerCase() %>"
+               data-price="<%= prod.price > 0 ? 'paid' : 'free' %>"
+               data-owned="<%= prod.isPurchased || prod.price==0 ? 'yes' : 'no' %>">
+
+            <!-- Cover / placeholder -->
+            <% if (prod.preview_image) { %>
+              <img src="<%= prod.preview_image %>" alt="<%= prod.title %>" class="prod-img" />
+            <% } else { %>
+              <div class="prod-img-placeholder" style="background:<%
+                const gradients = ['linear-gradient(135deg,#0F172A,#1E3A5F)','linear-gradient(135deg,#1D4ED8,#7C3AED)','linear-gradient(135deg,#065F46,#0891B2)','linear-gradient(135deg,#92400E,#B45309)','linear-gradient(135deg,#1E1B4B,#4C1D95)'];
+                print(gradients[prod.id % gradients.length]);
+              %>">
+                <i class="fa-solid fa-<%= prod.file_type==='PDF'?'file-pdf':prod.file_type==='ZIP'?'file-zipper':prod.file_type==='DOCX'||prod.file_type==='DOC'?'file-word':'file-arrow-down' %>" style="color:rgba(255,255,255,.75)"></i>
+              </div>
+            <% } %>
+
+            <!-- Already purchased ribbon -->
+            <% if (prod.isPurchased) { %>
+              <div style="position:absolute;top:.65rem;right:.65rem;background:#10B981;color:#fff;font-size:.68rem;font-weight:700;padding:.2rem .6rem;border-radius:20px"><i class="fa-solid fa-check"></i> Owned</div>
+            <% } else if (prod.price == 0) { %>
+              <div style="position:absolute;top:.65rem;right:.65rem;background:#F0FDF4;color:#16A34A;font-size:.68rem;font-weight:700;padding:.2rem .6rem;border-radius:20px;border:1px solid #86EFAC">Free</div>
+            <% } %>
+
+            <div class="prod-body">
+              <!-- File type badge -->
+              <% if (prod.file_type) { %>
+                <span class="file-badge" style="background:#EFF6FF;color:var(--primary);align-self:flex-start">
+                  <i class="fa-solid fa-file"></i> <%= prod.file_type %>
+                  <% if (prod.file_size > 0) { %> · <%= (prod.file_size/1024/1024).toFixed(1) %>MB<% } %>
+                </span>
+              <% } %>
+
+              <h3 style="font-size:.97rem;font-weight:700;margin:0;line-height:1.3"><%= prod.title %></h3>
+
+              <% if (prod.description) { %>
+                <p style="font-size:.8rem;color:var(--text-muted);margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5"><%= prod.description %></p>
+              <% } %>
+
+              <!-- Tags -->
+              <% if (prod.tags) { %>
+                <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.1rem">
+                  <% prod.tags.split(',').slice(0,4).forEach(t => { %><span class="prod-tag"><%= t.trim() %></span><% }) %>
+                </div>
+              <% } %>
+
+              <!-- Access note -->
+              <% if (prod.access_type === 'members_only') { %>
+                <div style="font-size:.72rem;color:var(--text-muted);margin-top:auto"><i class="fa-solid fa-users"></i> Members only</div>
+              <% } else if (prod.access_type === 'plan_only') { %>
+                <div style="font-size:.72rem;color:var(--text-muted);margin-top:auto"><i class="fa-solid fa-lock"></i> Specific plan required</div>
+              <% } %>
+            </div>
+
+            <div class="prod-foot">
+              <span style="font-weight:800;font-size:1.1rem;color:<%= prod.price>0?'var(--primary)':'var(--success)' %>">
+                <%= prod.price > 0 ? formatUSD(prod.price) : 'Free' %>
+              </span>
+              <div style="display:flex;gap:.4rem">
+                <!-- Detail / preview button -->
+                <button class="btn btn-sm btn-outline" style="font-size:.78rem"
+                        onclick="openDetail(<%= JSON.stringify(prod) %>)">
+                  <i class="fa-solid fa-eye"></i> Details
+                </button>
+                <!-- Action button -->
+                <% if (prod.isPurchased || prod.price == 0) { %>
+                  <% if (prod.file_url) { %>
+                    <a href="/products/<%= prod.id %>/download" class="btn btn-sm" style="background:var(--success);color:#fff;font-size:.78rem">
+                      <i class="fa-solid fa-download"></i> Download
+                    </a>
+                  <% } %>
+                <% } else if (!currentUser) { %>
+                  <a href="/auth/login" class="btn btn-primary btn-sm" style="font-size:.78rem">Sign in to buy</a>
+                <% } else { %>
+                  <button class="btn btn-primary btn-sm" style="font-size:.78rem"
+                          onclick="openBuy(<%= JSON.stringify(prod) %>)">
+                    <i class="fa-solid fa-shopping-cart"></i> Buy
+                  </button>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+      <div id="noResults" style="display:none;padding:3rem;text-align:center;color:var(--text-muted)">
+        <i class="fa-solid fa-magnifying-glass" style="font-size:2rem;display:block;margin-bottom:.75rem;opacity:.3"></i>
+        No products match your search.
+      </div>
+    <% } %>
   <% } %>
 </div>
 
-<!-- Create Product Modal -->
+<!-- ══════════════════════════════════════════════════════════
+     CREATE PRODUCT MODAL (owner)
+══════════════════════════════════════════════════════════ -->
 <% if (isOwner) { %>
 <div class="modal-overlay" id="createProductModal">
-  <div class="modal-box" style="max-width:540px">
+  <div class="modal-box" style="max-width:580px;max-height:90vh;overflow-y:auto">
     <div class="modal-head">
-      <h2 class="modal-title">Add Digital Product</h2>
-      <button type="button" class="modal-close" onclick="document.getElementById('createProductModal').classList.remove('open')"><i class="fa-solid fa-xmark"></i></button>
+      <h2 class="modal-title"><i class="fa-solid fa-box" style="color:var(--primary)"></i> New Product</h2>
+      <button type="button" class="modal-close" onclick="closeCreate()"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <form action="/communities/<%= community.slug %>/products" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:1rem">
+    <form action="/communities/<%= community.slug %>/products" method="POST" enctype="multipart/form-data"
+          style="display:flex;flex-direction:column;gap:1.1rem;padding:0 1.5rem 1.5rem">
+
+      <!-- Title -->
       <div class="form-group" style="margin:0">
         <label class="form-label">Product Title *</label>
-        <input type="text" name="title" class="form-input" placeholder="e.g. Marketing Checklist PDF" required />
+        <input type="text" name="title" class="form-input" placeholder="e.g. Ultimate Marketing Checklist PDF" required />
       </div>
+
+      <!-- Description -->
       <div class="form-group" style="margin:0">
-        <label class="form-label">Description</label>
-        <textarea name="description" class="form-input" rows="3" placeholder="What's included in this product?"></textarea>
+        <label class="form-label">Description <span style="font-weight:400;color:var(--text-muted)">(what's inside?)</span></label>
+        <textarea name="description" class="form-input" rows="3" placeholder="Describe what buyers will get — what problems it solves, what's included…"></textarea>
       </div>
+
+      <!-- Price + Access -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
         <div class="form-group" style="margin:0">
           <label class="form-label">Price (USD)</label>
           <div style="position:relative">
-            <span style="position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:#94A3B8;font-weight:600">$</span>
+            <span style="position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:#94A3B8;font-weight:700">$</span>
             <input type="number" name="price" class="form-input" placeholder="0.00" min="0" step="0.01" style="padding-left:1.75rem" />
           </div>
+          <p style="font-size:.72rem;color:var(--text-muted);margin-top:.2rem">Leave at $0.00 for a free product</p>
         </div>
         <div class="form-group" style="margin:0">
           <label class="form-label">Who Can Buy</label>
@@ -109,24 +337,252 @@
           </select>
         </div>
       </div>
+
+      <!-- Tags -->
       <div class="form-group" style="margin:0">
-        <label class="form-label">Product File (PDF, ZIP, etc.)</label>
-        <input type="file" name="product_file" class="form-input" style="font-size:.85rem" />
+        <label class="form-label">Tags <span style="font-weight:400;color:var(--text-muted)">(comma separated)</span></label>
+        <input type="text" name="tags" class="form-input" placeholder="PDF, Template, Marketing, Checklist" />
       </div>
+
+      <!-- File upload -->
+      <div style="padding:1rem;border:2px dashed var(--border);border-radius:10px;background:#FAFBFF">
+        <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem">
+          <i class="fa-solid fa-file-arrow-up" style="color:var(--primary)"></i>
+          <span style="font-size:.85rem;font-weight:700">Product File</span>
+          <span style="font-size:.75rem;color:var(--text-muted)">(PDF, ZIP, DOCX, XLS, PPTX…)</span>
+        </div>
+        <input type="file" name="product_file" class="form-input" id="createFileInput" style="font-size:.82rem"
+               onchange="showFileInfo(this,'createFileInfo')" />
+        <div id="createFileInfo" style="margin-top:.5rem;font-size:.75rem;color:var(--success);display:none"></div>
+        <div class="file-block-warn" style="display:none;margin-top:.5rem;padding:.5rem .75rem;background:#FEF2F2;border-radius:7px;font-size:.75rem;color:#DC2626">
+          <i class="fa-solid fa-ban"></i> Video files cannot be uploaded as products. Use the <strong>Courses</strong> feature instead.
+        </div>
+      </div>
+
+      <!-- Preview image -->
       <div class="form-group" style="margin:0">
-        <label class="form-label">Preview Image (optional)</label>
-        <input type="file" name="preview_image" class="form-input" accept="image/*" style="font-size:.85rem" />
+        <label class="form-label">Cover / Preview Image <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
+        <input type="file" name="preview_image" class="form-input" accept="image/*" style="font-size:.82rem"
+               onchange="previewImg(this,'createImgPrev')" />
+        <img id="createImgPrev" src="" alt="" style="display:none;width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-top:.5rem" />
       </div>
+
       <div class="modal-footer-btns">
-        <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('createProductModal').classList.remove('open')">Cancel</button>
-        <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Add Product</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeCreate()">Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Create Product</button>
       </div>
     </form>
   </div>
 </div>
-<script>
-document.getElementById('createProductModal').addEventListener('click', e => {
-  if (e.target === document.getElementById('createProductModal')) document.getElementById('createProductModal').classList.remove('open');
-});
-</script>
+
+<!-- EDIT PRODUCT MODAL -->
+<div class="modal-overlay" id="editProductModal">
+  <div class="modal-box" style="max-width:580px;max-height:90vh;overflow-y:auto">
+    <div class="modal-head">
+      <h2 class="modal-title"><i class="fa-solid fa-pen" style="color:var(--primary)"></i> Edit Product</h2>
+      <button type="button" class="modal-close" onclick="closeEdit()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="editProductBody" style="padding:0 1.5rem 1.5rem"></div>
+  </div>
+</div>
 <% } %>
+
+<!-- ══════════════════════════════════════════════════════════
+     PRODUCT DETAIL MODAL (buyer)
+══════════════════════════════════════════════════════════ -->
+<% if (!isOwner) { %>
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-head">
+      <h2 class="modal-title" id="detailTitle">Product Details</h2>
+      <button type="button" class="modal-close" onclick="closeDetail()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="detailBody" style="padding:0"></div>
+  </div>
+</div>
+
+<!-- BUY MODAL -->
+<div class="modal-overlay" id="buyModal">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-head">
+      <h2 class="modal-title"><i class="fa-solid fa-shopping-cart" style="color:var(--primary)"></i> Purchase</h2>
+      <button type="button" class="modal-close" onclick="closeBuy()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="buyBody" style="padding:1.5rem"></div>
+  </div>
+</div>
+<% } %>
+
+<script>
+/* ─────────────── Shared helpers ─────────────── */
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function showFileInfo(input, infoId) {
+  const f = input.files[0]; if (!f) return;
+  const ext = f.name.split('.').pop().toLowerCase();
+  const blocked = ['mp4','mov','avi','mkv','webm','wmv','flv','m4v','3gp','ts'];
+  const warn = input.closest('div').querySelector('.file-block-warn');
+  const info = document.getElementById(infoId);
+  if (blocked.includes(ext)) {
+    input.value = '';
+    if (warn) warn.style.display = 'block';
+    if (info) info.style.display = 'none';
+    return;
+  }
+  if (warn) warn.style.display = 'none';
+  if (info) {
+    info.style.display = 'block';
+    info.innerHTML = `<i class="fa-solid fa-check"></i> ${esc(f.name)} (${(f.size/1024/1024).toFixed(2)} MB)`;
+  }
+}
+
+function previewImg(input, imgId) {
+  const f = input.files[0]; if (!f) return;
+  const reader = new FileReader();
+  reader.onload = e => { const img = document.getElementById(imgId); if(img){img.src=e.target.result;img.style.display='block';} };
+  reader.readAsDataURL(f);
+}
+
+/* ─────────────── Owner: Create ─────────────── */
+function openCreate() { document.getElementById('createProductModal').classList.add('open'); }
+function closeCreate() { document.getElementById('createProductModal').classList.remove('open'); }
+document.getElementById('createProductModal')?.addEventListener('click', e => { if(e.target===document.getElementById('createProductModal')) closeCreate(); });
+
+/* ─────────────── Owner: Edit ─────────────── */
+function openEdit(prod) {
+  const plans = <%- JSON.stringify(plans||[]) %>;
+  const planOpts = plans.map(p => `<option value="${p.id}" ${prod.plan_id==p.id?'selected':''}>${esc(p.name)}</option>`).join('');
+  const accessOpts = ['anyone','members_only','plan_only'].map(v =>
+    `<option value="${v}" ${prod.access_type===v?'selected':''}>${v==='anyone'?'Anyone':v==='members_only'?'Members Only':'Specific Plan Only'}</option>`
+  ).join('');
+
+  document.getElementById('editProductBody').innerHTML = `
+<form action="/communities/<%= community.slug %>/products/${prod.id}/update" method="POST" enctype="multipart/form-data"
+      style="display:flex;flex-direction:column;gap:1.1rem">
+  <div class="form-group" style="margin:0">
+    <label class="form-label">Product Title *</label>
+    <input type="text" name="title" class="form-input" value="${esc(prod.title)}" required />
+  </div>
+  <div class="form-group" style="margin:0">
+    <label class="form-label">Description</label>
+    <textarea name="description" class="form-input" rows="3">${esc(prod.description||'')}</textarea>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div class="form-group" style="margin:0">
+      <label class="form-label">Price (USD)</label>
+      <div style="position:relative">
+        <span style="position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:#94A3B8;font-weight:700">$</span>
+        <input type="number" name="price" class="form-input" value="${prod.price||0}" min="0" step="0.01" style="padding-left:1.75rem" />
+      </div>
+    </div>
+    <div class="form-group" style="margin:0">
+      <label class="form-label">Who Can Buy</label>
+      <select name="access_type" class="form-input">${accessOpts}</select>
+    </div>
+  </div>
+  <div class="form-group" style="margin:0">
+    <label class="form-label">Tags (comma separated)</label>
+    <input type="text" name="tags" class="form-input" value="${esc(prod.tags||'')}" placeholder="PDF, Template, Marketing" />
+  </div>
+  <div style="padding:1rem;border:2px dashed var(--border);border-radius:10px;background:#FAFBFF">
+    <div style="font-size:.82rem;font-weight:600;margin-bottom:.5rem"><i class="fa-solid fa-file-arrow-up" style="color:var(--primary)"></i> Replace Product File</div>
+    ${prod.file_url ? `<div style="font-size:.75rem;color:var(--text-muted);margin-bottom:.5rem"><i class="fa-solid fa-check" style="color:var(--success)"></i> Current: ${esc(prod.file_name||prod.file_url.split('/').pop())} ${prod.file_size>0?`(${(prod.file_size/1024/1024).toFixed(2)} MB)`:''}</div>` : ''}
+    <input type="file" name="product_file" class="form-input" style="font-size:.8rem" onchange="showFileInfo(this,'editFileInfo')" />
+    <div id="editFileInfo" style="margin-top:.4rem;font-size:.75rem;color:var(--success);display:none"></div>
+    <div class="file-block-warn" style="display:none;margin-top:.5rem;padding:.5rem .75rem;background:#FEF2F2;border-radius:7px;font-size:.75rem;color:#DC2626">
+      <i class="fa-solid fa-ban"></i> Video files cannot be uploaded. Use Courses instead.
+    </div>
+  </div>
+  <div class="form-group" style="margin:0">
+    <label class="form-label">Replace Cover Image</label>
+    <input type="file" name="preview_image" class="form-input" accept="image/*" style="font-size:.8rem" onchange="previewImg(this,'editImgPrev')" />
+    <img id="editImgPrev" src="${esc(prod.preview_image||'')}" alt="" style="${prod.preview_image?'display:block':'display:none'};width:100%;max-height:110px;object-fit:cover;border-radius:8px;margin-top:.5rem" />
+  </div>
+  <div class="modal-footer-btns">
+    <button type="button" class="btn btn-outline btn-sm" onclick="closeEdit()">Cancel</button>
+    <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+  </div>
+</form>`;
+  document.getElementById('editProductModal').classList.add('open');
+}
+function closeEdit() { document.getElementById('editProductModal').classList.remove('open'); }
+document.getElementById('editProductModal')?.addEventListener('click', e => { if(e.target===document.getElementById('editProductModal')) closeEdit(); });
+
+/* ─────────────── Buyer: Detail modal ─────────────── */
+function openDetail(prod) {
+  document.getElementById('detailTitle').textContent = prod.title;
+  const isOwned = prod.isPurchased || prod.price == 0;
+  const fileInfo = prod.file_type ? `<span style="font-size:.75rem;background:#EFF6FF;color:var(--primary);padding:.2rem .6rem;border-radius:5px;font-weight:700"><i class="fa-solid fa-file"></i> ${esc(prod.file_type)}${prod.file_size>0?` · ${(prod.file_size/1024/1024).toFixed(1)} MB`:''}</span>` : '';
+
+  document.getElementById('detailBody').innerHTML = `
+    ${prod.preview_image ? `<img src="${esc(prod.preview_image)}" style="width:100%;max-height:220px;object-fit:cover" />` : ''}
+    <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1rem">
+      <div style="display:flex;align-items:center;gap:.65rem;flex-wrap:wrap">
+        ${fileInfo}
+        ${prod.tags ? prod.tags.split(',').slice(0,5).map(t=>`<span style="font-size:.72rem;padding:.15rem .55rem;border-radius:20px;background:#F1F5F9;color:var(--text-muted)">${esc(t.trim())}</span>`).join('') : ''}
+      </div>
+      ${prod.description ? `<p style="font-size:.9rem;line-height:1.7;color:var(--body);margin:0">${esc(prod.description).replace(/\\n/g,'<br>')}</p>` : ''}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem;background:#F8FAFC;border-radius:10px;flex-wrap:wrap;gap:.75rem">
+        <div>
+          <div style="font-size:1.6rem;font-weight:800;color:${prod.price>0?'var(--primary)':'var(--success)'}">${prod.price>0?'$'+parseFloat(prod.price).toFixed(2):'Free'}</div>
+          ${prod.access_type!=='anyone'?`<div style="font-size:.75rem;color:var(--text-muted);margin-top:.2rem"><i class="fa-solid fa-lock"></i> ${prod.access_type==='members_only'?'Members only':'Plan required'}</div>`:''}
+        </div>
+        <div style="display:flex;gap:.5rem">
+          ${isOwned && prod.file_url ? `<a href="/products/${prod.id}/download" class="btn btn-primary" style="font-size:.85rem"><i class="fa-solid fa-download"></i> Download</a>` :
+            !isOwned ? `<button class="btn btn-primary" style="font-size:.85rem" onclick="closeDetail();openBuy(${JSON.stringify(prod).replace(/"/g,'&quot;')})"><i class="fa-solid fa-shopping-cart"></i> Buy Now</button>` : ''}
+          <button class="btn btn-outline" style="font-size:.85rem" onclick="closeDetail()">Close</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('detailModal').classList.add('open');
+}
+function closeDetail() { document.getElementById('detailModal').classList.remove('open'); }
+document.getElementById('detailModal')?.addEventListener('click', e => { if(e.target===document.getElementById('detailModal')) closeDetail(); });
+
+/* ─────────────── Buyer: Buy modal ─────────────── */
+function openBuy(prod) {
+  document.getElementById('buyBody').innerHTML = `
+    <div style="display:flex;align-items:center;gap:.85rem;margin-bottom:1.25rem">
+      ${prod.preview_image?`<img src="${esc(prod.preview_image)}" style="width:56px;height:56px;border-radius:8px;object-fit:cover;flex-shrink:0" />`:`<div style="width:56px;height:56px;border-radius:8px;background:linear-gradient(135deg,#0F172A,#1E3A5F);display:flex;align-items:center;justify-content:center"><i class="fa-solid fa-file-arrow-down" style="color:rgba(255,255,255,.7)"></i></div>`}
+      <div>
+        <div style="font-weight:700">${esc(prod.title)}</div>
+        <div style="font-size:1.3rem;font-weight:800;color:var(--primary)">$${parseFloat(prod.price).toFixed(2)}</div>
+      </div>
+    </div>
+    <form action="/checkout/product/${prod.id}" method="POST" style="display:flex;flex-direction:column;gap:1rem">
+      <div class="form-group" style="margin:0">
+        <label class="form-label" style="font-size:.8rem">Coupon Code <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
+        <input type="text" name="coupon_code" class="form-input" placeholder="DISCOUNT20" style="text-transform:uppercase;letter-spacing:.05em" />
+      </div>
+      <div style="padding:.85rem 1rem;background:#F0FDF4;border-radius:8px;font-size:.82rem;color:#065F46">
+        <i class="fa-solid fa-shield-halved"></i> Secure purchase · Instant download access after payment
+      </div>
+      <div class="modal-footer-btns">
+        <button type="button" class="btn btn-outline btn-sm" onclick="closeBuy()">Cancel</button>
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-lock"></i> Confirm Purchase — $${parseFloat(prod.price).toFixed(2)}</button>
+      </div>
+    </form>`;
+  document.getElementById('buyModal').classList.add('open');
+}
+function closeBuy() { document.getElementById('buyModal').classList.remove('open'); }
+document.getElementById('buyModal')?.addEventListener('click', e => { if(e.target===document.getElementById('buyModal')) closeBuy(); });
+
+/* ─────────────── Buyer: Search + filter ─────────────── */
+function filterProducts() {
+  const q      = (document.getElementById('prodSearch')?.value||'').toLowerCase();
+  const filter = document.getElementById('prodFilter')?.value || 'all';
+  const cards  = document.querySelectorAll('#productGrid .prod-card');
+  let visible  = 0;
+  cards.forEach(card => {
+    const title   = card.dataset.title || '';
+    const price   = card.dataset.price;
+    const owned   = card.dataset.owned;
+    const matchQ  = !q || title.includes(q);
+    const matchF  = filter==='all' || filter===price || (filter==='owned'&&owned==='yes');
+    card.style.display = (matchQ && matchF) ? '' : 'none';
+    if (matchQ && matchF) visible++;
+  });
+  const nr = document.getElementById('noResults');
+  if (nr) nr.style.display = visible===0 ? 'block' : 'none';
+}
+</script>

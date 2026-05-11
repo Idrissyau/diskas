@@ -535,6 +535,21 @@ async function runMigrations() {
       try { await pool.execute(sql); } catch (e) { /* column already exists */ }
     }
 
+    // Digital product column additions
+    const productColMigrations = [
+      `ALTER TABLE digital_products ADD COLUMN file_name      VARCHAR(255) DEFAULT NULL`,
+      `ALTER TABLE digital_products ADD COLUMN file_size      BIGINT       DEFAULT 0`,
+      `ALTER TABLE digital_products ADD COLUMN file_type      VARCHAR(50)  DEFAULT NULL`,
+      `ALTER TABLE digital_products ADD COLUMN download_count INT          DEFAULT 0`,
+      `ALTER TABLE digital_products ADD COLUMN buyer_count    INT          DEFAULT 0`,
+      `ALTER TABLE digital_products ADD COLUMN sort_order     INT          DEFAULT 0`,
+      `ALTER TABLE digital_products ADD COLUMN tags           VARCHAR(255) DEFAULT NULL`,
+      `ALTER TABLE digital_products ADD COLUMN plan_id        INT          DEFAULT NULL`,
+    ];
+    for (const sql of productColMigrations) {
+      try { await pool.execute(sql); } catch (e) { /* column already exists */ }
+    }
+
     // Video lesson column additions on course_lessons table
     const videoColMigrations = [
       `ALTER TABLE course_lessons MODIFY lesson_type ENUM('text','video','file','link','mixed') DEFAULT 'text'`,

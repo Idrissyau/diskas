@@ -1191,22 +1191,54 @@ exports.getProducts = async (req, res) => {
       : null;
     const isOwner = req.session.user && community.owner_id === req.session.user.id;
 
+    // For owner: include inactive products + per-product sales stats
     const products = await query(
-      'SELECT * FROM digital_products WHERE community_id = ? ORDER BY created_at DESC',
+      `SELECT dp.*,
+              COUNT(DISTINCT pp.id)   AS sale_count,
+              COALESCE(SUM(p.amount), 0) AS total_revenue
+       FROM digital_products dp
+       LEFT JOIN product_purchases pp ON pp.product_id = dp.id
+       LEFT JOIN payments p ON p.product_id = dp.id AND p.status = 'successful'
+       WHERE dp.community_id = ? ${isOwner ? '' : 'AND dp.is_active = 1'}
+       GROUP BY dp.id
+       ORDER BY dp.sort_order ASC, dp.created_at DESC`,
       [community.id]
     );
 
-    // Check ownership for each product
-    if (req.session.user) {
+    // Per-product: check if current user purchased
+    if (req.session.user && !isOwner) {
       for (const prod of products) {
         const purchase = await queryOne('SELECT id FROM product_purchases WHERE user_id = ? AND product_id = ?', [req.session.user.id, prod.id]);
         prod.isPurchased = !!purchase;
       }
     }
 
+    // Owner summary stats
+    let ownerStats = null;
+    if (isOwner) {
+      const statsRow = await queryOne(
+        `SELECT COUNT(DISTINCT dp.id) AS product_count,
+                COALESCE(SUM(p.amount), 0) AS total_revenue,
+                COUNT(DISTINCT pp.id) AS total_sales,
+                COALESCE(SUM(dp.download_count), 0) AS total_downloads
+         FROM digital_products dp
+         LEFT JOIN product_purchases pp ON pp.product_id = dp.id
+         LEFT JOIN payments p ON p.product_id = dp.id AND p.status = 'successful'
+         WHERE dp.community_id = ?`,
+        [community.id]
+      );
+      ownerStats = statsRow;
+    }
+
+    // Membership plans for access_type UI
+    const plans = await query(
+      'SELECT id, name, price, billing_type FROM membership_plans WHERE community_id = ? AND is_active = 1 ORDER BY price ASC',
+      [community.id]
+    );
+
     res.render('monetize/products', {
       title: `Products — ${community.name}`,
-      community, products, membership, isOwner,
+      community, products, membership, isOwner, ownerStats, plans,
       formatUSD: ps.formatUSD,
     });
   } catch (err) {
@@ -1215,53 +1247,141 @@ exports.getProducts = async (req, res) => {
   }
 };
 
+// Shared helper: save product file + preview image
+async function _saveProductFiles(req, existing = {}) {
+  let file_url      = existing.file_url      || null;
+  let preview_image = existing.preview_image || null;
+  let file_name     = existing.file_name     || null;
+  let file_size     = existing.file_size     || 0;
+  let file_type     = existing.file_type     || null;
+
+  if (req.files && req.files.product_file) {
+    const f   = req.files.product_file;
+    const ext = f.name.split('.').pop().toLowerCase();
+    // Block video uploads
+    const blockedExt = ['mp4','mov','avi','mkv','webm','wmv','flv','m4v'];
+    if (blockedExt.includes(ext)) {
+      return { error: 'Video files cannot be uploaded as products. Use the Courses feature instead.' };
+    }
+    const safeName = `product_${Date.now()}_${f.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+    await f.mv(`${UPLOAD_DIR}/${safeName}`);
+    file_url  = `/uploads/communities/${safeName}`;
+    file_name = f.name;
+    file_size = f.size;
+    file_type = ext.toUpperCase();
+  }
+
+  if (req.files && req.files.preview_image) {
+    const f   = req.files.preview_image;
+    const ext = f.name.split('.').pop().toLowerCase();
+    if (['jpg','jpeg','png','webp','gif'].includes(ext)) {
+      const fname = `prodprev_${Date.now()}.${ext}`;
+      await f.mv(`${UPLOAD_DIR}/${fname}`);
+      preview_image = `/uploads/communities/${fname}`;
+    }
+  }
+
+  return { file_url, preview_image, file_name, file_size, file_type };
+}
+
 // POST /communities/:slug/products
 exports.createProduct = async (req, res) => {
   try {
     const community = await queryOne('SELECT * FROM communities WHERE slug = ? AND owner_id = ?', [req.params.slug, req.session.user.id]);
     if (!community) return res.status(403).send('Forbidden');
 
-    const { title, description, price, access_type } = req.body;
+    const { title, description, price, access_type, plan_id, tags } = req.body;
     if (!title || !title.trim()) {
       req.flash('error', 'Product title is required.');
       return res.redirect(`/communities/${req.params.slug}/products`);
     }
 
-    let file_url = null;
-    let preview_image = null;
-
-    if (req.files && req.files.product_file) {
-      const f = req.files.product_file;
-      const fname = `product_${Date.now()}_${f.name.replace(/\s+/g,'_')}`;
-      await f.mv(`${UPLOAD_DIR}/${fname}`);
-      file_url = `/uploads/communities/${fname}`;
+    const files = await _saveProductFiles(req);
+    if (files.error) {
+      req.flash('error', files.error);
+      return res.redirect(`/communities/${req.params.slug}/products`);
     }
 
-    if (req.files && req.files.preview_image) {
-      const f = req.files.preview_image;
-      const ext = f.name.split('.').pop().toLowerCase();
-      if (['jpg','jpeg','png','webp'].includes(ext)) {
-        const fname = `prodprev_${Date.now()}.${ext}`;
-        await f.mv(`${UPLOAD_DIR}/${fname}`);
-        preview_image = `/uploads/communities/${fname}`;
-      }
-    }
+    // Count existing products for sort_order
+    const lastRow = await queryOne('SELECT MAX(sort_order) AS ms FROM digital_products WHERE community_id = ?', [community.id]);
 
     await insert('digital_products', {
       community_id:  community.id,
       title:         title.trim(),
-      description:   description || null,
+      description:   description ? description.trim() : null,
       price:         parseFloat(price) || 0,
-      file_url,
-      preview_image,
+      file_url:      files.file_url,
+      file_name:     files.file_name,
+      file_size:     files.file_size,
+      file_type:     files.file_type,
+      preview_image: files.preview_image,
       access_type:   access_type || 'anyone',
+      plan_id:       plan_id ? parseInt(plan_id) : null,
+      tags:          tags ? tags.trim() : null,
+      sort_order:    (lastRow?.ms || 0) + 1,
     });
 
-    req.flash('success', 'Product created!');
+    req.flash('success', `"${title.trim()}" created!`);
     res.redirect(`/communities/${req.params.slug}/products`);
   } catch (err) {
     console.error(err);
     req.flash('error', 'Failed to create product.');
+    res.redirect(`/communities/${req.params.slug}/products`);
+  }
+};
+
+// POST /communities/:slug/products/:productId/update
+exports.updateProduct = async (req, res) => {
+  try {
+    const community = await queryOne('SELECT * FROM communities WHERE slug = ? AND owner_id = ?', [req.params.slug, req.session.user.id]);
+    if (!community) return res.status(403).send('Forbidden');
+
+    const product = await queryOne('SELECT * FROM digital_products WHERE id = ? AND community_id = ?', [req.params.productId, community.id]);
+    if (!product) return res.status(404).send('Not found');
+
+    const { title, description, price, access_type, plan_id, tags } = req.body;
+
+    const files = await _saveProductFiles(req, product);
+    if (files.error) {
+      req.flash('error', files.error);
+      return res.redirect(`/communities/${req.params.slug}/products`);
+    }
+
+    await update('digital_products', {
+      title:         title       ? title.trim()       : product.title,
+      description:   description ? description.trim() : product.description,
+      price:         price !== undefined ? parseFloat(price) || 0 : product.price,
+      file_url:      files.file_url,
+      file_name:     files.file_name,
+      file_size:     files.file_size,
+      file_type:     files.file_type,
+      preview_image: files.preview_image,
+      access_type:   access_type || product.access_type,
+      plan_id:       plan_id ? parseInt(plan_id) : null,
+      tags:          tags !== undefined ? tags.trim() : product.tags,
+    }, 'id = ?', [product.id]);
+
+    req.flash('success', 'Product updated!');
+    res.redirect(`/communities/${req.params.slug}/products`);
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Failed to update product.');
+    res.redirect(`/communities/${req.params.slug}/products`);
+  }
+};
+
+// POST /communities/:slug/products/:productId/toggle
+exports.toggleProduct = async (req, res) => {
+  try {
+    const community = await queryOne('SELECT * FROM communities WHERE slug = ? AND owner_id = ?', [req.params.slug, req.session.user.id]);
+    if (!community) return res.status(403).send('Forbidden');
+
+    const product = await queryOne('SELECT id, is_active FROM digital_products WHERE id = ? AND community_id = ?', [req.params.productId, community.id]);
+    if (!product) return res.status(404).send('Not found');
+
+    await update('digital_products', { is_active: product.is_active ? 0 : 1 }, 'id = ?', [product.id]);
+    res.redirect(`/communities/${req.params.slug}/products`);
+  } catch (err) {
     res.redirect(`/communities/${req.params.slug}/products`);
   }
 };
@@ -1331,8 +1451,13 @@ exports.downloadProduct = async (req, res) => {
     }
 
     if (!product.file_url) return res.status(404).send('File not available');
+
+    // Increment download counter (fire-and-forget)
+    query('UPDATE digital_products SET download_count = download_count + 1 WHERE id = ?', [product.id]).catch(() => {});
+
     const filePath = path.join(__dirname, '..', 'public', product.file_url);
-    res.download(filePath);
+    const downloadName = product.file_name || path.basename(product.file_url);
+    res.download(filePath, downloadName);
   } catch (err) {
     console.error(err);
     res.status(500).send('Download failed');

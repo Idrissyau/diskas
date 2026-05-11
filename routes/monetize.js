@@ -53,10 +53,12 @@ router.post('/communities/:slug/events/:eventId/rsvp',  requireAuth, ctrl.rsvpEv
 router.post('/communities/:slug/events/:eventId/delete', requireAuth, ctrl.deleteEvent);
 
 /* ── Digital Products ───────────────────────────────────────────────────── */
-router.get( '/communities/:slug/products',                            ctrl.getProducts);
-router.post('/communities/:slug/products',              requireAuth, ctrl.createProduct);
-router.post('/communities/:slug/products/:productId/delete', requireAuth, ctrl.deleteProduct);
-router.get( '/products/:productId/download',            requireAuth, ctrl.downloadProduct);
+router.get( '/communities/:slug/products',                                   ctrl.getProducts);
+router.post('/communities/:slug/products',                    requireAuth,   ctrl.createProduct);
+router.post('/communities/:slug/products/:productId/update',  requireAuth,   ctrl.updateProduct);
+router.post('/communities/:slug/products/:productId/toggle',  requireAuth,   ctrl.toggleProduct);
+router.post('/communities/:slug/products/:productId/delete',  requireAuth,   ctrl.deleteProduct);
+router.get( '/products/:productId/download',                  requireAuth,   ctrl.downloadProduct);
 
 /* ── Admin ──────────────────────────────────────────────────────────────── */
 router.get( '/admin/monetize',                          requireAdmin, ctrl.adminMonetize);
