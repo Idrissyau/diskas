@@ -1290,7 +1290,7 @@ exports.createProduct = async (req, res) => {
     const community = await queryOne('SELECT * FROM communities WHERE slug = ? AND owner_id = ?', [req.params.slug, req.session.user.id]);
     if (!community) return res.status(403).send('Forbidden');
 
-    const { title, description, price, original_price, access_type, plan_id, tags } = req.body;
+    const { title, description, price, original_price, access_type, plan_id, tags, button_label, button_style } = req.body;
     if (!title || !title.trim()) {
       req.flash('error', 'Product title is required.');
       return res.redirect(`/communities/${req.params.slug}/products`);
@@ -1307,6 +1307,7 @@ exports.createProduct = async (req, res) => {
 
     const salePrice = parseFloat(price) || 0;
     const origPrice = original_price ? parseFloat(original_price) : null;
+    const validStyles = ['primary','success','dark','danger','ocean','sunset','purple'];
 
     await insert('digital_products', {
       community_id:   community.id,
@@ -1323,6 +1324,8 @@ exports.createProduct = async (req, res) => {
       plan_id:        plan_id ? parseInt(plan_id) : null,
       tags:           tags ? tags.trim() : null,
       sort_order:     (lastRow?.ms || 0) + 1,
+      button_label:   button_label ? button_label.trim().slice(0, 60) : 'Buy Now',
+      button_style:   validStyles.includes(button_style) ? button_style : 'primary',
     });
 
     req.flash('success', `"${title.trim()}" created!`);
@@ -1343,7 +1346,7 @@ exports.updateProduct = async (req, res) => {
     const product = await queryOne('SELECT * FROM digital_products WHERE id = ? AND community_id = ?', [req.params.productId, community.id]);
     if (!product) return res.status(404).send('Not found');
 
-    const { title, description, price, original_price, access_type, plan_id, tags } = req.body;
+    const { title, description, price, original_price, access_type, plan_id, tags, button_label, button_style } = req.body;
 
     const files = await _saveProductFiles(req, product);
     if (files.error) {
@@ -1355,6 +1358,7 @@ exports.updateProduct = async (req, res) => {
     const origPrice = original_price !== undefined
       ? (parseFloat(original_price) || null)
       : product.original_price;
+    const validStyles = ['primary','success','dark','danger','ocean','sunset','purple'];
 
     await update('digital_products', {
       title:          title       ? title.trim()       : product.title,
@@ -1369,6 +1373,8 @@ exports.updateProduct = async (req, res) => {
       access_type:    access_type || product.access_type,
       plan_id:        plan_id ? parseInt(plan_id) : null,
       tags:           tags !== undefined ? tags.trim() : product.tags,
+      button_label:   button_label ? button_label.trim().slice(0, 60) : (product.button_label || 'Buy Now'),
+      button_style:   validStyles.includes(button_style) ? button_style : (product.button_style || 'primary'),
     }, 'id = ?', [product.id]);
 
     req.flash('success', 'Product updated!');

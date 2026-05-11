@@ -2455,3 +2455,12 @@ label:hover .tw-avatar-cam { opacity: 1; }
 .dim-name { font-size: .78rem; font-weight: 700; color: var(--body); font-family: monospace; }
 .dim-desc { font-size: .65rem; color: var(--text-muted); white-space: nowrap; }
 .dim-hint { margin-top: .5rem; font-size: .75rem; color: var(--text-muted); padding: .4rem .65rem; background: #F8FAFC; border-radius: 6px; border-left: 3px solid var(--primary); }
+
+/* ── Buy button label picker ── */
+.lbl-chip { display: inline-flex; align-items: center; gap: .3rem; padding: .3rem .65rem; border: 1.5px solid var(--border); border-radius: 20px; background: var(--card); cursor: pointer; font-size: .76rem; font-weight: 600; color: var(--body); transition: border-color .12s, background .12s; white-space: nowrap; }
+.lbl-chip:hover { border-color: var(--primary); background: #EEF2FF; color: var(--primary); }
+.lbl-chip.active { border-color: var(--primary); background: #EEF2FF; color: var(--primary); }
+.style-swatch { width: 28px; height: 28px; border-radius: 50%; border: 2.5px solid transparent; cursor: pointer; transition: transform .12s, border-color .12s; flex-shrink: 0; }
+.style-swatch:hover { transform: scale(1.15); }
+.style-swatch.active { border-color: var(--body); transform: scale(1.15); box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--body); }
+.btn-preview { display: inline-flex; align-items: center; gap: .5rem; padding: .65rem 1.35rem; border-radius: 8px; font-weight: 700; font-size: .9rem; color: #fff; cursor: default; transition: background .2s; border: none; }

@@ -546,6 +546,8 @@ async function runMigrations() {
       `ALTER TABLE digital_products ADD COLUMN tags            VARCHAR(255)   DEFAULT NULL`,
       `ALTER TABLE digital_products ADD COLUMN plan_id         INT            DEFAULT NULL`,
       `ALTER TABLE digital_products ADD COLUMN original_price  DECIMAL(10,2)  DEFAULT NULL`,
+      `ALTER TABLE digital_products ADD COLUMN button_label    VARCHAR(60)    DEFAULT NULL`,
+      `ALTER TABLE digital_products ADD COLUMN button_style    VARCHAR(20)    DEFAULT 'primary'`,
     ];
     for (const sql of productColMigrations) {
       try { await pool.execute(sql); } catch (e) { /* column already exists */ }

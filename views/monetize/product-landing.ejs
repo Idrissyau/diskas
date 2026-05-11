@@ -64,8 +64,14 @@
         </a>
       <% } %>
     <% } else if (!isOwner) { %>
-      <button class="btn btn-primary btn-sm" onclick="scrollToBuy()">
-        <i class="fa-solid fa-shopping-cart"></i> Get It Now
+      <%
+        const _sbl = product.button_label || 'Buy Now';
+        const _sbs = product.button_style || 'primary';
+        const _sbgMap = {primary:'var(--primary)',success:'#10B981',dark:'#0F172A',danger:'#DC2626',ocean:'linear-gradient(135deg,#0EA5E9,#2563EB)',sunset:'linear-gradient(135deg,#F59E0B,#EF4444)',purple:'linear-gradient(135deg,#7C3AED,#6366F1)'};
+        const _sbg = _sbgMap[_sbs] || 'var(--primary)';
+      %>
+      <button class="btn btn-sm" style="background:<%= _sbg %>;color:#fff;border:none" onclick="scrollToBuy()">
+        <i class="fa-solid fa-arrow-down"></i> <%= _sbl %>
       </button>
     <% } %>
   </div>
@@ -232,6 +238,14 @@
           </div>
 
           <!-- CTA -->
+          <%
+            const _btnLabel = product.button_label || 'Buy Now';
+            const _btnStyle = product.button_style || 'primary';
+            const _bgMap = {primary:'var(--primary)',success:'#10B981',dark:'#0F172A',danger:'#DC2626',ocean:'linear-gradient(135deg,#0EA5E9,#2563EB)',sunset:'linear-gradient(135deg,#F59E0B,#EF4444)',purple:'linear-gradient(135deg,#7C3AED,#6366F1)'};
+            const _iconMap = {'Buy Now':'fa-shopping-cart','Get Instant Access':'fa-bolt','Get Access':'fa-unlock','Download Free':'fa-download','Claim Your Copy':'fa-hand-pointer','Get It Now':'fa-arrow-right','Unlock Now':'fa-lock-open','Start Learning':'fa-graduation-cap','Grab the Template':'fa-file-lines','Add to Cart':'fa-cart-plus'};
+            const _btnBg   = _bgMap[_btnStyle]   || 'var(--primary)';
+            const _btnIcon = _iconMap[_btnLabel]  || 'fa-shopping-cart';
+          %>
           <% if (isOwner) { %>
             <div style="padding:.85rem;background:#F8FAFC;border-radius:10px;text-align:center;font-size:.85rem;color:var(--text-muted);margin-bottom:1rem">
               <i class="fa-solid fa-eye"></i> You're the creator — this is how buyers see your page
@@ -255,8 +269,8 @@
           <% } else { %>
             <!-- Buy form with coupon -->
             <form action="/checkout/product/<%= product.id %>" method="POST" id="buyForm">
-              <button type="submit" class="btn btn-primary" style="width:100%;font-size:1rem;padding:.9rem;margin-bottom:.85rem">
-                <i class="fa-solid fa-shopping-cart"></i> Buy Now — <%= formatUSD(product.price) %>
+              <button type="submit" style="width:100%;display:flex;align-items:center;justify-content:center;gap:.6rem;font-size:1rem;padding:.9rem;margin-bottom:.85rem;border-radius:8px;font-weight:700;color:#fff;background:<%= _btnBg %>;border:none;cursor:pointer">
+                <i class="fa-solid <%= _btnIcon %>"></i> <%= _btnLabel %> — <%= formatUSD(product.price) %>
               </button>
               <details style="margin-bottom:.75rem">
                 <summary style="font-size:.8rem;color:var(--text-muted);cursor:pointer;list-style:none;display:flex;align-items:center;gap:.35rem">

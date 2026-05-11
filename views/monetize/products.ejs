@@ -299,9 +299,17 @@
                 <% } else if (!currentUser) { %>
                   <a href="/auth/login" class="btn btn-primary btn-sm" style="font-size:.78rem">Sign in to buy</a>
                 <% } else { %>
-                  <button class="btn btn-primary btn-sm" style="font-size:.78rem"
+                  <%
+                    const _bl = prod.button_label || 'Buy Now';
+                    const _bs = prod.button_style || 'primary';
+                    const _bgMap = {primary:'var(--primary)',success:'#10B981',dark:'#0F172A',danger:'#DC2626',ocean:'linear-gradient(135deg,#0EA5E9,#2563EB)',sunset:'linear-gradient(135deg,#F59E0B,#EF4444)',purple:'linear-gradient(135deg,#7C3AED,#6366F1)'};
+                    const _iconMap = {'Buy Now':'fa-shopping-cart','Get Instant Access':'fa-bolt','Get Access':'fa-unlock','Download Free':'fa-download','Claim Your Copy':'fa-hand-pointer','Get It Now':'fa-arrow-right','Unlock Now':'fa-lock-open','Start Learning':'fa-graduation-cap','Grab the Template':'fa-file-lines','Add to Cart':'fa-cart-plus'};
+                    const _cardBg = _bgMap[_bs] || 'var(--primary)';
+                    const _cardIcon = _iconMap[_bl] || 'fa-shopping-cart';
+                  %>
+                  <button class="btn btn-sm" style="font-size:.78rem;background:<%= _cardBg %>;color:#fff;border:none"
                           onclick="openBuy(<%= JSON.stringify(prod) %>)">
-                    <i class="fa-solid fa-shopping-cart"></i> Buy
+                    <i class="fa-solid <%= _cardIcon %>"></i> <%= _bl %>
                   </button>
                 <% } %>
               </div>
@@ -360,6 +368,57 @@
             <input type="number" name="original_price" class="form-input" placeholder="0.00" min="0" step="0.01" style="padding-left:1.75rem" />
           </div>
           <p style="font-size:.72rem;color:var(--text-muted);margin-top:.2rem">Shows as strikethrough if &gt; Sale Price</p>
+        </div>
+      </div>
+
+      <!-- Buy Button Customizer -->
+      <div class="form-group" style="margin:0">
+        <label class="form-label">Buy Button <span style="font-weight:400;color:var(--text-muted)">— customise how it looks to buyers</span></label>
+        <input type="hidden" name="button_label" id="createBtnLabel" value="Buy Now" />
+        <input type="hidden" name="button_style" id="createBtnStyle" value="primary" />
+        <div style="background:#F8FAFC;border:1px solid var(--border);border-radius:10px;padding:1rem;display:flex;flex-direction:column;gap:.75rem">
+          <!-- Label presets -->
+          <div>
+            <div style="font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.45rem">Button Label</div>
+            <div style="display:flex;flex-wrap:wrap;gap:.3rem" id="createLabelChips">
+              <button type="button" class="lbl-chip active" data-label="Buy Now"            data-icon="fa-shopping-cart"  onclick="pickLabel(this,'create')"><i class="fa-solid fa-shopping-cart fa-xs"></i> Buy Now</button>
+              <button type="button" class="lbl-chip"        data-label="Get Instant Access" data-icon="fa-bolt"           onclick="pickLabel(this,'create')"><i class="fa-solid fa-bolt fa-xs"></i> Get Instant Access</button>
+              <button type="button" class="lbl-chip"        data-label="Get Access"         data-icon="fa-unlock"         onclick="pickLabel(this,'create')"><i class="fa-solid fa-unlock fa-xs"></i> Get Access</button>
+              <button type="button" class="lbl-chip"        data-label="Download Free"      data-icon="fa-download"       onclick="pickLabel(this,'create')"><i class="fa-solid fa-download fa-xs"></i> Download Free</button>
+              <button type="button" class="lbl-chip"        data-label="Claim Your Copy"    data-icon="fa-hand-pointer"   onclick="pickLabel(this,'create')"><i class="fa-solid fa-hand-pointer fa-xs"></i> Claim Your Copy</button>
+              <button type="button" class="lbl-chip"        data-label="Get It Now"         data-icon="fa-arrow-right"    onclick="pickLabel(this,'create')"><i class="fa-solid fa-arrow-right fa-xs"></i> Get It Now</button>
+              <button type="button" class="lbl-chip"        data-label="Unlock Now"         data-icon="fa-lock-open"      onclick="pickLabel(this,'create')"><i class="fa-solid fa-lock-open fa-xs"></i> Unlock Now</button>
+              <button type="button" class="lbl-chip"        data-label="Start Learning"     data-icon="fa-graduation-cap" onclick="pickLabel(this,'create')"><i class="fa-solid fa-graduation-cap fa-xs"></i> Start Learning</button>
+              <button type="button" class="lbl-chip"        data-label="Grab the Template"  data-icon="fa-file-lines"     onclick="pickLabel(this,'create')"><i class="fa-solid fa-file-lines fa-xs"></i> Grab the Template</button>
+              <button type="button" class="lbl-chip"        data-label="Add to Cart"        data-icon="fa-cart-plus"      onclick="pickLabel(this,'create')"><i class="fa-solid fa-cart-plus fa-xs"></i> Add to Cart</button>
+              <button type="button" class="lbl-chip"        data-label=""                   data-icon="fa-pen"            onclick="pickCustomLabel(this,'create')"><i class="fa-solid fa-pen fa-xs"></i> Custom…</button>
+            </div>
+            <input type="text" id="createCustomInput" class="form-input" style="display:none;font-size:.82rem;margin-top:.5rem"
+                   placeholder="e.g. Start Reading, Get the Guide…" maxlength="60"
+                   oninput="syncLabel(this,'create')" />
+          </div>
+          <!-- Style swatches -->
+          <div>
+            <div style="font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.45rem">Button Color</div>
+            <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center">
+              <button type="button" class="style-swatch active" data-style="primary" title="Indigo (default)" style="background:var(--primary)"                                       onclick="pickStyle(this,'create')"></button>
+              <button type="button" class="style-swatch"        data-style="success" title="Green"            style="background:#10B981"                                              onclick="pickStyle(this,'create')"></button>
+              <button type="button" class="style-swatch"        data-style="dark"    title="Dark"             style="background:#0F172A"                                              onclick="pickStyle(this,'create')"></button>
+              <button type="button" class="style-swatch"        data-style="danger"  title="Red"              style="background:#DC2626"                                              onclick="pickStyle(this,'create')"></button>
+              <button type="button" class="style-swatch"        data-style="ocean"   title="Ocean Blue"       style="background:linear-gradient(135deg,#0EA5E9,#2563EB)"              onclick="pickStyle(this,'create')"></button>
+              <button type="button" class="style-swatch"        data-style="sunset"  title="Sunset"           style="background:linear-gradient(135deg,#F59E0B,#EF4444)"              onclick="pickStyle(this,'create')"></button>
+              <button type="button" class="style-swatch"        data-style="purple"  title="Purple"           style="background:linear-gradient(135deg,#7C3AED,#6366F1)"              onclick="pickStyle(this,'create')"></button>
+              <span style="font-size:.72rem;color:var(--text-muted);margin-left:.25rem">Hover for name</span>
+            </div>
+          </div>
+          <!-- Live preview -->
+          <div>
+            <div style="font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.45rem">Live Preview</div>
+            <button type="button" class="btn-preview" id="createBtnPreview" style="background:var(--primary)">
+              <i id="createBtnIcon" class="fa-solid fa-shopping-cart"></i>
+              <span id="createBtnText">Buy Now</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -571,6 +630,11 @@ function openEdit(prod) {
   </div>
 
   <div class="form-group" style="margin:0">
+    <label class="form-label">Buy Button — customise how it looks to buyers</label>
+    ${buildBtnPickerHTML(prod.button_label, prod.button_style)}
+  </div>
+
+  <div class="form-group" style="margin:0">
     <label class="form-label">Who Can Buy</label>
     <select name="access_type" class="form-input">${accessOpts}</select>
   </div>
@@ -691,6 +755,10 @@ function openBuy(prod) {
        <span class="price-discount-badge">-${pct}%</span>`
     : `<span style="font-size:1.2rem;font-weight:800;color:var(--primary)">$${parseFloat(prod.price).toFixed(2)}</span>`;
 
+  const btnLabel = prod.button_label || 'Buy Now';
+  const btnBg    = getBtnBg(prod.button_style || 'primary');
+  const btnIcon  = getBtnIcon(btnLabel);
+
   document.getElementById('buyBody').innerHTML = `
     <div style="display:flex;align-items:center;gap:.85rem;margin-bottom:1.25rem">
       ${prod.preview_image
@@ -711,7 +779,9 @@ function openBuy(prod) {
       </div>
       <div class="modal-footer-btns">
         <button type="button" class="btn btn-outline btn-sm" onclick="closeBuy()">Cancel</button>
-        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-lock"></i> Confirm Purchase — $${parseFloat(prod.price).toFixed(2)}</button>
+        <button type="submit" style="display:inline-flex;align-items:center;gap:.5rem;padding:.65rem 1.25rem;border-radius:8px;font-weight:700;font-size:.9rem;color:#fff;background:${btnBg};border:none;cursor:pointer">
+          <i class="fa-solid ${btnIcon}"></i> ${esc(btnLabel)} — $${parseFloat(prod.price).toFixed(2)}
+        </button>
       </div>
     </form>`;
   document.getElementById('buyModal').classList.add('open');
@@ -774,6 +844,106 @@ function copyShareUrl() {
 document.getElementById('shareProdModal')?.addEventListener('click', e => {
   if (e.target === document.getElementById('shareProdModal')) document.getElementById('shareProdModal').classList.remove('open');
 });
+
+/* ─────────────── Buy button customiser ─────────────── */
+const BTN_BG = {
+  primary: 'var(--primary)',
+  success: '#10B981',
+  dark:    '#0F172A',
+  danger:  '#DC2626',
+  ocean:   'linear-gradient(135deg,#0EA5E9,#2563EB)',
+  sunset:  'linear-gradient(135deg,#F59E0B,#EF4444)',
+  purple:  'linear-gradient(135deg,#7C3AED,#6366F1)',
+};
+const LABEL_PRESETS_MAP = {
+  'Buy Now':'fa-shopping-cart','Get Instant Access':'fa-bolt','Get Access':'fa-unlock',
+  'Download Free':'fa-download','Claim Your Copy':'fa-hand-pointer','Get It Now':'fa-arrow-right',
+  'Unlock Now':'fa-lock-open','Start Learning':'fa-graduation-cap','Grab the Template':'fa-file-lines',
+  'Add to Cart':'fa-cart-plus',
+};
+function getBtnBg(style)  { return BTN_BG[style] || BTN_BG.primary; }
+function getBtnIcon(label) { return LABEL_PRESETS_MAP[label] || 'fa-shopping-cart'; }
+
+function pickLabel(btn, pfx) {
+  btn.closest('div').querySelectorAll('.lbl-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const label = btn.dataset.label;
+  const icon  = btn.dataset.icon;
+  const ci = document.getElementById(`${pfx}CustomInput`);
+  if (ci) ci.style.display = 'none';
+  document.getElementById(`${pfx}BtnLabel`).value = label;
+  document.getElementById(`${pfx}BtnText`).textContent = label;
+  const iconEl = document.getElementById(`${pfx}BtnIcon`);
+  if (iconEl) iconEl.className = `fa-solid ${icon}`;
+}
+function pickCustomLabel(btn, pfx) {
+  btn.closest('div').querySelectorAll('.lbl-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const ci = document.getElementById(`${pfx}CustomInput`);
+  if (ci) { ci.style.display = ''; ci.focus(); }
+}
+function syncLabel(input, pfx) {
+  const val = input.value || 'Buy Now';
+  document.getElementById(`${pfx}BtnLabel`).value = val;
+  document.getElementById(`${pfx}BtnText`).textContent = val;
+  const iconEl = document.getElementById(`${pfx}BtnIcon`);
+  if (iconEl) iconEl.className = 'fa-solid fa-pen';
+}
+function pickStyle(btn, pfx) {
+  btn.closest('div').querySelectorAll('.style-swatch').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const style = btn.dataset.style;
+  document.getElementById(`${pfx}BtnStyle`).value = style;
+  const prev = document.getElementById(`${pfx}BtnPreview`);
+  if (prev) prev.style.background = getBtnBg(style);
+}
+
+/* Build button picker HTML for the JS-generated edit modal */
+function buildBtnPickerHTML(labelVal, styleVal) {
+  const curLabel = labelVal || 'Buy Now';
+  const curStyle = styleVal || 'primary';
+  const isCustom = !Object.prototype.hasOwnProperty.call(LABEL_PRESETS_MAP, curLabel);
+  const presets = [
+    ['Buy Now','fa-shopping-cart'],['Get Instant Access','fa-bolt'],['Get Access','fa-unlock'],
+    ['Download Free','fa-download'],['Claim Your Copy','fa-hand-pointer'],['Get It Now','fa-arrow-right'],
+    ['Unlock Now','fa-lock-open'],['Start Learning','fa-graduation-cap'],['Grab the Template','fa-file-lines'],
+    ['Add to Cart','fa-cart-plus'],
+  ];
+  const chips = presets.map(([lbl,ico]) =>
+    `<button type="button" class="lbl-chip${lbl===curLabel&&!isCustom?' active':''}" data-label="${esc(lbl)}" data-icon="${ico}" onclick="pickLabel(this,'edit')"><i class="fa-solid ${ico} fa-xs"></i> ${esc(lbl)}</button>`
+  ).join('');
+  const customChip = `<button type="button" class="lbl-chip${isCustom?' active':''}" data-label="" data-icon="fa-pen" onclick="pickCustomLabel(this,'edit')"><i class="fa-solid fa-pen fa-xs"></i> Custom…</button>`;
+  const swatches = Object.entries(BTN_BG).map(([s,bg]) =>
+    `<button type="button" class="style-swatch${s===curStyle?' active':''}" data-style="${s}" title="${s.charAt(0).toUpperCase()+s.slice(1)}" style="background:${bg}" onclick="pickStyle(this,'edit')"></button>`
+  ).join('');
+  const curBg   = getBtnBg(curStyle);
+  const curIcon = getBtnIcon(curLabel);
+  return `
+    <input type="hidden" name="button_label" id="editBtnLabel" value="${esc(curLabel)}" />
+    <input type="hidden" name="button_style" id="editBtnStyle" value="${esc(curStyle)}" />
+    <div style="background:#F8FAFC;border:1px solid var(--border);border-radius:10px;padding:1rem;display:flex;flex-direction:column;gap:.75rem">
+      <div>
+        <div style="font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.45rem">Button Label</div>
+        <div style="display:flex;flex-wrap:wrap;gap:.3rem">${chips}${customChip}</div>
+        <input type="text" id="editCustomInput" class="form-input" style="${isCustom?'':'display:none;'}font-size:.82rem;margin-top:.5rem"
+               placeholder="e.g. Start Reading…" maxlength="60"
+               value="${esc(isCustom?curLabel:'')}" oninput="syncLabel(this,'edit')" />
+      </div>
+      <div>
+        <div style="font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.45rem">Button Color</div>
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center">${swatches}
+          <span style="font-size:.72rem;color:var(--text-muted);margin-left:.25rem">Hover for name</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.45rem">Live Preview</div>
+        <button type="button" class="btn-preview" id="editBtnPreview" style="background:${curBg}">
+          <i id="editBtnIcon" class="fa-solid ${curIcon}"></i>
+          <span id="editBtnText">${esc(curLabel)}</span>
+        </button>
+      </div>
+    </div>`;
+}
 
 /* ─────────────── Dimension presets ─────────────── */
 const DIM_USES = {
