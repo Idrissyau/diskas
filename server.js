@@ -535,10 +535,43 @@ async function runMigrations() {
       try { await pool.execute(sql); } catch (e) { /* column already exists */ }
     }
 
+    // Video lesson column additions on course_lessons table
+    const videoColMigrations = [
+      `ALTER TABLE course_lessons MODIFY lesson_type ENUM('text','video','file','link','mixed') DEFAULT 'text'`,
+      `ALTER TABLE course_lessons ADD COLUMN video_provider      VARCHAR(50)  DEFAULT NULL`,
+      `ALTER TABLE course_lessons ADD COLUMN video_embed_url     VARCHAR(500) DEFAULT NULL`,
+      `ALTER TABLE course_lessons ADD COLUMN video_id            VARCHAR(200) DEFAULT NULL`,
+      `ALTER TABLE course_lessons ADD COLUMN video_thumbnail_url VARCHAR(500) DEFAULT NULL`,
+      `ALTER TABLE course_lessons ADD COLUMN video_duration      VARCHAR(20)  DEFAULT NULL`,
+      `ALTER TABLE course_lessons ADD COLUMN video_embed_code    TEXT         DEFAULT NULL`,
+      `ALTER TABLE course_lessons ADD COLUMN download_allowed    TINYINT(1)   DEFAULT 0`,
+      `ALTER TABLE course_lessons ADD COLUMN autoplay            TINYINT(1)   DEFAULT 0`,
+      `ALTER TABLE course_lessons ADD COLUMN required_plan_id    INT          DEFAULT NULL`,
+      `ALTER TABLE course_lessons ADD COLUMN completion_tracking TINYINT(1)   DEFAULT 1`,
+      `ALTER TABLE course_lessons ADD COLUMN storage_type        VARCHAR(30)  DEFAULT 'text_only'`,
+      `ALTER TABLE course_lessons ADD COLUMN external_link       VARCHAR(500) DEFAULT NULL`,
+    ];
+    for (const sql of videoColMigrations) {
+      try { await pool.execute(sql); } catch (e) { /* column already exists or enum unchanged */ }
+    }
+
     // Seed default platform settings
     try {
       await pool.execute("INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES ('commission_pct', '10')");
       await pool.execute("INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES ('min_payout', '50')");
+      // Video provider settings
+      await pool.execute("INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES ('video_allow_youtube', '1')");
+      await pool.execute("INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES ('video_allow_vimeo', '1')");
+      await pool.execute("INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES ('video_allow_bunny', '1')");
+      await pool.execute("INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES ('video_allow_cloudflare', '1')");
+      await pool.execute("INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES ('video_allow_embed', '1')");
+      await pool.execute("INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES ('video_allow_external', '1')");
+      await pool.execute("INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES ('video_direct_upload', '0')");
+      await pool.execute("INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES ('video_completion_tracking', '1')");
+      await pool.execute("INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES ('video_free_preview_allowed', '1')");
+      await pool.execute("INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES ('max_file_size_image_mb', '2')");
+      await pool.execute("INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES ('max_file_size_pdf_mb', '10')");
+      await pool.execute("INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES ('max_file_size_zip_mb', '25')");
     } catch(e) {}
 
     console.log('✅ Migrations complete');

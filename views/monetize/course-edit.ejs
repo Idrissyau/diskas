@@ -1,4 +1,4 @@
-<div class="container" style="max-width:900px;padding:2rem 1.25rem">
+<div class="container" style="max-width:980px;padding:2rem 1.25rem">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:1rem">
     <div>
       <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.25rem">
@@ -7,7 +7,10 @@
       </div>
       <p style="color:var(--text-muted);font-size:.85rem;padding-left:1.75rem"><%= course.title %></p>
     </div>
-    <div style="display:flex;gap:.5rem">
+    <div style="display:flex;gap:.5rem;align-items:center">
+      <button type="button" class="btn btn-sm btn-outline" onclick="document.getElementById('videoGuideModal').classList.add('open')" title="How to add video lessons">
+        <i class="fa-solid fa-circle-question"></i> Video Guide
+      </button>
       <a href="/communities/<%= community.slug %>/courses/<%= course.id %>" class="btn btn-outline btn-sm">Preview</a>
       <span class="badge" style="background:<%= course.is_published?'#DCFCE7':'#FFF7ED' %>;color:<%= course.is_published?'#16A34A':'#C2410C' %>;padding:.35rem .75rem;font-size:.8rem">
         <%= course.is_published ? 'Published' : 'Draft' %>
@@ -17,90 +20,79 @@
 
   <div style="display:grid;grid-template-columns:1fr 300px;gap:1.5rem;align-items:start">
 
-    <!-- Modules & Lessons -->
+    <!-- ── Modules & Lessons ─────────────────────────────────────────── -->
     <div>
-      <!-- Existing modules -->
-      <% if (modules.length > 0) { %>
-        <% modules.forEach((mod, mi) => { %>
-          <div class="card" style="padding:0;overflow:hidden;margin-bottom:1rem">
-            <div style="padding:1rem 1.25rem;background:#F8FAFC;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-              <div style="display:flex;align-items:center;gap:.6rem">
-                <span style="width:24px;height:24px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0"><%= mi+1 %></span>
-                <span style="font-weight:700;font-size:.95rem"><%= mod.title %></span>
-              </div>
-              <span style="font-size:.78rem;color:var(--text-muted)"><%= mod.lesson_count %> lesson<%= mod.lesson_count!==1?'s':'' %></span>
-            </div>
+      <% if (modules.length === 0) { %>
+        <div class="card" style="padding:2.5rem;text-align:center;margin-bottom:1rem">
+          <i class="fa-solid fa-layer-group" style="font-size:2rem;color:#CBD5E1;display:block;margin-bottom:.75rem"></i>
+          <p style="color:var(--text-muted);font-size:.88rem">Add your first module below, then add lessons to it.</p>
+        </div>
+      <% } %>
 
-            <!-- Lessons -->
-            <% if (mod.lessons.length > 0) { %>
-              <% mod.lessons.forEach((lesson, li) => { %>
-                <div style="padding:.75rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem">
-                  <i class="fa-solid fa-<%= lesson.lesson_type==='video'?'play-circle':lesson.lesson_type==='download'?'file-arrow-down':'file-lines' %>"
-                     style="color:<%= lesson.lesson_type==='video'?'var(--primary)':lesson.lesson_type==='download'?'var(--success)':'var(--text-muted)' %>;font-size:.9rem;flex-shrink:0"></i>
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:.88rem;font-weight:600"><%= lesson.title %></div>
-                    <div style="font-size:.72rem;color:var(--text-muted)">
-                      <%= lesson.duration_mins > 0 ? lesson.duration_mins + ' min' : '' %>
-                      <% if (lesson.is_free_preview) { %><span style="color:var(--success);margin-left:.35rem"><i class="fa-solid fa-unlock"></i> Free preview</span><% } %>
-                    </div>
+      <% modules.forEach((mod, mi) => { %>
+        <div class="card" style="padding:0;overflow:hidden;margin-bottom:1rem">
+          <!-- Module header -->
+          <div style="padding:.85rem 1.25rem;background:#F8FAFC;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:.6rem">
+              <span style="width:24px;height:24px;background:var(--primary);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0"><%= mi+1 %></span>
+              <span style="font-weight:700;font-size:.95rem"><%= mod.title %></span>
+            </div>
+            <span style="font-size:.75rem;color:var(--text-muted)"><%= mod.lesson_count %> lesson<%= mod.lesson_count!==1?'s':'' %></span>
+          </div>
+
+          <!-- Lesson list -->
+          <% if (mod.lessons.length > 0) { %>
+            <% mod.lessons.forEach((lesson, li) => { %>
+              <div style="padding:.7rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem">
+                <!-- Type icon -->
+                <% const typeIcons = { video:'fa-play-circle', text:'fa-file-lines', file:'fa-file-arrow-down', link:'fa-external-link-alt', mixed:'fa-layer-group' };
+                   const typeColors = { video:'var(--primary)', text:'var(--text-muted)', file:'var(--success)', link:'#6366F1', mixed:'#8B5CF6' }; %>
+                <i class="fa-solid <%= typeIcons[lesson.lesson_type] || 'fa-file-lines' %>"
+                   style="color:<%= typeColors[lesson.lesson_type] || 'var(--text-muted)' %>;font-size:.9rem;flex-shrink:0"></i>
+                <!-- Thumbnail (video) -->
+                <% if (lesson.lesson_type === 'video' && lesson.video_thumbnail_url) { %>
+                  <img src="<%= lesson.video_thumbnail_url %>" style="width:50px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0" />
+                <% } %>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:.88rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= lesson.title %></div>
+                  <div style="font-size:.72rem;color:var(--text-muted);display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.1rem">
+                    <% if (lesson.video_provider) { %><span><i class="fa-solid fa-video"></i> <%= lesson.video_provider.charAt(0).toUpperCase()+lesson.video_provider.slice(1) %></span><% } %>
+                    <% if (lesson.video_duration) { %><span><i class="fa-regular fa-clock"></i> <%= lesson.video_duration %></span><% } else if (lesson.duration_mins > 0) { %><span><%= lesson.duration_mins %> min</span><% } %>
+                    <% if (lesson.is_free_preview) { %><span style="color:var(--success)"><i class="fa-solid fa-unlock"></i> Free preview</span><% } %>
+                    <% if (lesson.storage_type && lesson.storage_type !== 'text_only') { %><span style="color:#8B5CF6"><i class="fa-solid fa-cloud"></i> External</span><% } %>
                   </div>
                 </div>
-              <% }) %>
-            <% } %>
+                <!-- Actions -->
+                <div style="display:flex;gap:.3rem;flex-shrink:0">
+                  <a href="/communities/<%= community.slug %>/courses/<%= course.id %>/lessons/<%= lesson.id %>"
+                     target="_blank" class="btn btn-sm btn-outline" style="font-size:.72rem;padding:.3rem .6rem" title="Preview lesson">
+                    <i class="fa-solid fa-eye"></i>
+                  </a>
+                  <button type="button" onclick="openEditLesson(<%= JSON.stringify(lesson) %>)"
+                          class="btn btn-sm btn-outline" style="font-size:.72rem;padding:.3rem .6rem" title="Edit lesson">
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                  <form action="/communities/<%= community.slug %>/courses/<%= course.id %>/lessons/<%= lesson.id %>/delete" method="POST" style="display:inline" onsubmit="return confirm('Delete lesson \'<%= lesson.title %>\'?')">
+                    <button class="btn btn-sm" style="background:#FEE2E2;color:#DC2626;border:1px solid #FECACA;font-size:.72rem;padding:.3rem .6rem" title="Delete lesson">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </div>
+            <% }) %>
+          <% } %>
 
-            <!-- Add Lesson Form -->
-            <div style="padding:1rem 1.25rem;background:#FAFAFA">
-              <details>
-                <summary style="font-size:.82rem;font-weight:600;color:var(--primary);cursor:pointer;list-style:none">
-                  <i class="fa-solid fa-plus"></i> Add Lesson to this Module
-                </summary>
-                <form action="/communities/<%= community.slug %>/courses/<%= course.id %>/modules/<%= mod.id %>/lessons"
-                      method="POST" enctype="multipart/form-data"
-                      style="display:flex;flex-direction:column;gap:.75rem;margin-top:.75rem">
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-                    <div class="form-group" style="margin:0">
-                      <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Lesson Title *</label>
-                      <input type="text" name="title" class="form-input" placeholder="Lesson title" required style="font-size:.85rem" />
-                    </div>
-                    <div class="form-group" style="margin:0">
-                      <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Type</label>
-                      <select name="lesson_type" class="form-input" style="font-size:.85rem">
-                        <option value="text">Text</option>
-                        <option value="video">Video</option>
-                        <option value="download">Download</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="form-group" style="margin:0">
-                    <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Video URL (YouTube/Vimeo embed)</label>
-                    <input type="url" name="video_url" class="form-input" placeholder="https://..." style="font-size:.85rem" />
-                  </div>
-                  <div class="form-group" style="margin:0">
-                    <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Content</label>
-                    <textarea name="content" class="form-input" rows="3" placeholder="Lesson text content..." style="font-size:.85rem"></textarea>
-                  </div>
-                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem">
-                    <div class="form-group" style="margin:0">
-                      <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Duration (mins)</label>
-                      <input type="number" name="duration_mins" class="form-input" placeholder="0" min="0" style="font-size:.85rem" />
-                    </div>
-                    <div class="form-group" style="margin:0">
-                      <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Downloadable File</label>
-                      <input type="file" name="lesson_file" class="form-input" style="font-size:.75rem" />
-                    </div>
-                    <div class="form-group" style="margin:0;display:flex;align-items:flex-end">
-                      <label style="display:flex;align-items:center;gap:.35rem;font-size:.8rem;cursor:pointer;padding-bottom:.4rem">
-                        <input type="checkbox" name="is_free_preview" value="1" /> Free preview
-                      </label>
-                    </div>
-                  </div>
-                  <button type="submit" class="btn btn-primary btn-sm" style="align-self:flex-start">Add Lesson</button>
-                </form>
-              </details>
-            </div>
+          <!-- ── Add Lesson Form ──────────────────────────────────── -->
+          <div style="padding:1rem 1.25rem;background:#FAFAFA">
+            <details id="addLessonDetails_<%= mod.id %>">
+              <summary style="font-size:.82rem;font-weight:600;color:var(--primary);cursor:pointer;list-style:none;display:flex;align-items:center;gap:.4rem">
+                <i class="fa-solid fa-plus"></i> Add Lesson to this Module
+              </summary>
+              <%- include('_lesson-form', { community, course, mod, lesson: null, plans, action: `/communities/${community.slug}/courses/${course.id}/modules/${mod.id}/lessons` }) %>
+            </details>
           </div>
-        <% }) %>
-      <% } %>
+        </div>
+      <% }) %>
 
       <!-- Add Module -->
       <div class="card" style="padding:1.5rem">
@@ -112,7 +104,7 @@
       </div>
     </div>
 
-    <!-- Settings Panel -->
+    <!-- ── Course Settings Panel ─────────────────────────────────────── -->
     <div style="position:sticky;top:80px">
       <div class="card" style="padding:1.5rem">
         <h3 style="font-size:.95rem;font-weight:700;margin-bottom:1.25rem">Course Settings</h3>
@@ -129,7 +121,7 @@
             <label class="form-label" style="font-size:.8rem">Access Type</label>
             <select name="billing_type" class="form-input" style="font-size:.88rem">
               <option value="included" <%= course.billing_type==='included'?'selected':'' %>>Included in membership</option>
-              <option value="free" <%= course.billing_type==='free'?'selected':'' %>>Free for all</option>
+              <option value="free"     <%= course.billing_type==='free'    ?'selected':'' %>>Free for all</option>
               <option value="one_time" <%= course.billing_type==='one_time'?'selected':'' %>>Separate purchase</option>
             </select>
           </div>
@@ -140,7 +132,7 @@
           <div class="form-group" style="margin:0">
             <label class="form-label" style="font-size:.8rem">Thumbnail</label>
             <input type="file" name="thumbnail" class="form-input" accept="image/*" style="font-size:.78rem" />
-            <% if (course.thumbnail) { %><img src="<%= course.thumbnail %>" style="width:100%;border-radius:6px;margin-top:.4rem" /><% } %>
+            <% if (course.thumbnail) { %><img src="<%= course.thumbnail %>" style="width:100%;border-radius:6px;margin-top:.4rem;aspect-ratio:16/9;object-fit:cover" /><% } %>
           </div>
           <label style="display:flex;align-items:center;gap:.5rem;font-size:.85rem;cursor:pointer">
             <input type="checkbox" name="is_published" value="1" <%= course.is_published?'checked':'' %> /> Published
@@ -151,3 +143,414 @@
     </div>
   </div>
 </div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     Creator Video Guide Modal
+════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="videoGuideModal">
+  <div class="modal-box" style="max-width:660px;max-height:90vh;overflow-y:auto">
+    <div class="modal-head">
+      <h2 class="modal-title"><i class="fa-solid fa-video" style="color:var(--primary)"></i> How to Add Video Lessons</h2>
+      <button type="button" class="modal-close" onclick="document.getElementById('videoGuideModal').classList.remove('open')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1.5rem">
+
+      <!-- No direct upload notice -->
+      <div style="background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:10px;padding:1rem 1.25rem;display:flex;gap:.85rem">
+        <i class="fa-solid fa-circle-info" style="color:#C2410C;font-size:1.1rem;flex-shrink:0;margin-top:.1rem"></i>
+        <div>
+          <div style="font-weight:700;font-size:.88rem;color:#C2410C">No Direct Video Uploads</div>
+          <div style="font-size:.82rem;color:#7C2D12;margin-top:.2rem;line-height:1.5">
+            To save server storage, video files cannot be uploaded directly. Instead, host your video on one of the platforms below and paste the link here. This gives you better video quality, global CDN delivery, and no storage costs on this platform.
+          </div>
+        </div>
+      </div>
+
+      <!-- Provider guide cards -->
+      <% const guides = [
+        {
+          icon: 'fa-brands fa-youtube', color: '#FF0000', bg: '#FFF1F1',
+          label: 'YouTube (Recommended — Free)',
+          steps: [
+            'Go to <strong>YouTube Studio</strong> → Upload your video',
+            'Set visibility to <strong>Unlisted</strong> so only people with the link can see it',
+            'Copy the video URL or use Share → Copy Link',
+            'Paste the URL into the <strong>Video URL</strong> field in the lesson editor',
+          ],
+          tip: 'Unlisted videos are not searchable on YouTube. Only people with your direct link can access them.',
+        },
+        {
+          icon: 'fa-brands fa-vimeo-v', color: '#1AB7EA', bg: '#F0FAFF',
+          label: 'Vimeo',
+          steps: [
+            'Upload your video on <strong>Vimeo.com</strong>',
+            'Set privacy to <strong>Hide from Vimeo</strong> or restrict to domain',
+            'Click <strong>Share</strong> and copy the video link',
+            'Paste the URL or embed code into the lesson editor',
+          ],
+          tip: 'Vimeo Pro allows domain-level privacy so your videos play only on your site.',
+        },
+        {
+          icon: 'fa-solid fa-rabbit', color: '#FF6C37', bg: '#FFF6F3',
+          label: 'Bunny Stream',
+          steps: [
+            'Sign up at <strong>bunny.net</strong> and create a Video Library',
+            'Upload your video and wait for processing',
+            'Go to the video → click <strong>Embed</strong> → copy the embed URL',
+            'Paste the URL or embed code into the lesson editor',
+          ],
+          tip: 'Bunny Stream offers very cheap bandwidth costs and excellent video quality — great for paid courses.',
+        },
+        {
+          icon: 'fa-solid fa-cloud', color: '#F6821F', bg: '#FFF9F3',
+          label: 'Cloudflare Stream',
+          steps: [
+            'Sign into <strong>Cloudflare Dashboard</strong> → Stream',
+            'Upload your video to Cloudflare Stream',
+            'Click your video → <strong>Embed Code</strong> → copy the iframe src URL',
+            'Paste the URL into the <strong>Video URL</strong> field',
+          ],
+          tip: 'Cloudflare Stream charges per minute of video stored, not per GB. Very cost-effective.',
+        },
+        {
+          icon: 'fa-solid fa-code', color: '#6366F1', bg: '#F5F3FF',
+          label: 'Custom Embed Code',
+          steps: [
+            'Get the <strong>&lt;iframe&gt;</strong> embed code from any supported provider',
+            'Paste the entire <code>&lt;iframe ... &gt;&lt;/iframe&gt;</code> into the <strong>Embed Code</strong> field',
+            'The platform will automatically extract and sanitize the source URL',
+            'Only trusted providers are allowed for security',
+          ],
+          tip: 'Supported embed sources: YouTube, Vimeo, Bunny, Cloudflare, Loom, Wistia, Dailymotion.',
+        },
+      ]; %>
+
+      <% guides.forEach(g => { %>
+        <div style="border:1.5px solid var(--border);border-radius:10px;overflow:hidden">
+          <div style="padding:.75rem 1rem;background:<%= g.bg %>;display:flex;align-items:center;gap:.75rem">
+            <i class="<%= g.icon %>" style="color:<%= g.color %>;font-size:1.1rem"></i>
+            <strong style="font-size:.88rem"><%= g.label %></strong>
+          </div>
+          <div style="padding:1rem 1.25rem">
+            <ol style="margin:0;padding-left:1.2rem;display:flex;flex-direction:column;gap:.4rem">
+              <% g.steps.forEach(s => { %><li style="font-size:.83rem;line-height:1.5"><%- s %></li><% }) %>
+            </ol>
+            <div style="margin-top:.75rem;padding:.5rem .85rem;background:#F8FAFC;border-radius:6px;font-size:.78rem;color:var(--text-muted)">
+              <i class="fa-solid fa-lightbulb" style="color:#F59E0B"></i> <strong>Tip:</strong> <%- g.tip %>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+
+      <div style="text-align:center">
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('videoGuideModal').classList.remove('open')">Got it — Start Adding Lessons</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     Edit Lesson Modal
+════════════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="editLessonModal">
+  <div class="modal-box" style="max-width:640px;max-height:90vh;overflow-y:auto">
+    <div class="modal-head">
+      <h2 class="modal-title">Edit Lesson</h2>
+      <button type="button" class="modal-close" onclick="document.getElementById('editLessonModal').classList.remove('open')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div id="editLessonBody" style="padding:1.5rem"></div>
+  </div>
+</div>
+
+<script>
+/* ─ Modal helpers ─ */
+document.getElementById('videoGuideModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('videoGuideModal')) document.getElementById('videoGuideModal').classList.remove('open');
+});
+document.getElementById('editLessonModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('editLessonModal')) document.getElementById('editLessonModal').classList.remove('open');
+});
+
+/* ─ Open edit lesson modal with existing data ─ */
+function openEditLesson(lesson) {
+  const base   = '/communities/<%= community.slug %>/courses/<%= course.id %>';
+  const action = `${base}/lessons/${lesson.id}/update`;
+  const plans  = <%- JSON.stringify(plans) %>;
+
+  const typeOptions = ['text','video','file','link','mixed'].map(t =>
+    `<option value="${t}" ${lesson.lesson_type === t ? 'selected' : ''}>${t.charAt(0).toUpperCase()+t.slice(1)}</option>`
+  ).join('');
+
+  const planOptions = plans.map(p =>
+    `<option value="${p.id}" ${lesson.required_plan_id == p.id ? 'selected' : ''}>${p.name}</option>`
+  ).join('');
+
+  document.getElementById('editLessonBody').innerHTML = buildLessonForm(action, lesson, typeOptions, planOptions, true);
+  document.getElementById('editLessonModal').classList.add('open');
+
+  // Init the type toggle & video detection in the modal form
+  const form = document.getElementById('editLessonBody').querySelector('form');
+  initLessonForm(form, lesson);
+}
+
+/* ─ Build lesson form HTML ─ */
+function buildLessonForm(action, lesson, typeOpts, planOpts, isEdit) {
+  const l = lesson || {};
+  return `
+<form action="${action}" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:1.1rem">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+    <div class="form-group" style="margin:0">
+      <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Lesson Title *</label>
+      <input type="text" name="title" class="form-input" value="${escHtml(l.title||'')}" placeholder="Lesson title" required style="font-size:.85rem" />
+    </div>
+    <div class="form-group" style="margin:0">
+      <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Lesson Type</label>
+      <select name="lesson_type" class="form-input lesson-type-sel" style="font-size:.85rem">${typeOpts}</select>
+    </div>
+  </div>
+
+  <!-- Video Section -->
+  <div class="video-section" style="border:1.5px solid var(--border);border-radius:10px;padding:1rem;background:#F8FAFF;display:none;flex-direction:column;gap:.9rem">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:.82rem;font-weight:700;color:var(--primary)"><i class="fa-solid fa-video"></i> Video Settings</span>
+      <span id="providerBadge_${isEdit?'edit':'new'}" style="font-size:.72rem;padding:.25rem .65rem;border-radius:20px;background:#EFF6FF;color:var(--primary);display:none"></span>
+    </div>
+
+    <div class="form-group" style="margin:0">
+      <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">
+        Video URL <span style="font-weight:400">(YouTube, Vimeo, Bunny, Cloudflare, Loom…)</span>
+      </label>
+      <div style="position:relative">
+        <input type="url" name="video_url" class="form-input video-url-input"
+               value="${escHtml(l.video_url||'')}"
+               placeholder="https://youtu.be/... or https://vimeo.com/..."
+               style="font-size:.85rem;padding-right:2.5rem" />
+        <i class="fa-solid fa-magnifying-glass" style="position:absolute;right:.75rem;top:50%;transform:translateY(-50%);color:#94A3B8;font-size:.8rem;pointer-events:none"></i>
+      </div>
+      <div class="video-detect-status" style="font-size:.72rem;margin-top:.3rem;display:none"></div>
+    </div>
+
+    <!-- Video preview -->
+    <div class="video-preview-wrap" style="display:none;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:#000;max-height:200px">
+      <iframe class="video-preview-iframe" src="" frameborder="0" allowfullscreen style="width:100%;height:100%;border:none"></iframe>
+    </div>
+
+    <div class="form-group" style="margin:0">
+      <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">
+        Embed Code <span style="font-weight:400;color:var(--text-muted)">(optional — paste &lt;iframe&gt; instead of URL)</span>
+      </label>
+      <textarea name="video_embed_code" class="form-input" rows="2"
+                placeholder='&lt;iframe src="https://..." ...&gt;&lt;/iframe&gt;'
+                style="font-size:.78rem;font-family:monospace">${escHtml(l.video_embed_code||'')}</textarea>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+      <div class="form-group" style="margin:0">
+        <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Duration <span style="font-weight:400">(e.g. 12:34)</span></label>
+        <input type="text" name="video_duration" class="form-input" value="${escHtml(l.video_duration||'')}" placeholder="12:34" style="font-size:.85rem" />
+      </div>
+      <div class="form-group" style="margin:0">
+        <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Custom Thumbnail (optional)</label>
+        <input type="file" name="video_thumbnail" class="form-input" accept="image/*" style="font-size:.75rem" />
+        ${l.video_thumbnail_url ? `<img src="${escHtml(l.video_thumbnail_url)}" style="width:80px;height:50px;object-fit:cover;border-radius:4px;margin-top:.3rem" />` : ''}
+      </div>
+    </div>
+
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:.4rem;font-size:.82rem;cursor:pointer">
+        <input type="checkbox" name="autoplay" value="1" ${l.autoplay ? 'checked' : ''} /> Autoplay
+      </label>
+      <label style="display:flex;align-items:center;gap:.4rem;font-size:.82rem;cursor:pointer">
+        <input type="checkbox" name="download_allowed" value="1" ${l.download_allowed ? 'checked' : ''} /> Allow Download
+      </label>
+    </div>
+  </div>
+
+  <!-- File Section -->
+  <div class="file-section" style="display:none;flex-direction:column;gap:.75rem">
+    <div class="form-group" style="margin:0">
+      <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Downloadable File (PDF, ZIP, doc…)</label>
+      <input type="file" name="lesson_file" class="form-input lesson-file-input" style="font-size:.78rem" />
+      ${l.file_url ? `<div style="font-size:.75rem;color:var(--success);margin-top:.3rem"><i class="fa-solid fa-check"></i> File attached: <a href="${escHtml(l.file_url)}" target="_blank" style="color:var(--primary)">${escHtml(l.file_url.split('/').pop())}</a></div>` : ''}
+      <div class="file-upload-error" style="font-size:.75rem;color:#DC2626;margin-top:.3rem;display:none"></div>
+    </div>
+  </div>
+
+  <!-- Link Section -->
+  <div class="link-section" style="display:none;flex-direction:column;gap:.75rem">
+    <div class="form-group" style="margin:0">
+      <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">External Link URL</label>
+      <input type="url" name="external_link" class="form-input" value="${escHtml(l.external_link||'')}" placeholder="https://..." style="font-size:.85rem" />
+    </div>
+  </div>
+
+  <!-- Content / Text -->
+  <div class="form-group" style="margin:0">
+    <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Lesson Content / Notes</label>
+    <textarea name="content" class="form-input" rows="4" placeholder="Lesson text, notes, instructions…" style="font-size:.85rem">${escHtml(l.content||'')}</textarea>
+  </div>
+
+  <!-- Advanced Settings -->
+  <details>
+    <summary style="font-size:.78rem;font-weight:600;color:var(--text-muted);cursor:pointer">Advanced Settings</summary>
+    <div style="display:flex;flex-direction:column;gap:.75rem;margin-top:.75rem">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+        <div class="form-group" style="margin:0">
+          <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Duration (mins)</label>
+          <input type="number" name="duration_mins" class="form-input" value="${l.duration_mins||0}" min="0" style="font-size:.85rem" />
+        </div>
+        <div class="form-group" style="margin:0">
+          <label style="font-size:.78rem;font-weight:600;color:var(--text-muted);display:block;margin-bottom:.25rem">Required Plan</label>
+          <select name="required_plan_id" class="form-input" style="font-size:.85rem">
+            <option value="">Any member</option>
+            ${planOpts}
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:.4rem;font-size:.82rem;cursor:pointer">
+          <input type="checkbox" name="is_free_preview" value="1" ${l.is_free_preview ? 'checked' : ''} /> Free Preview
+        </label>
+        <label style="display:flex;align-items:center;gap:.4rem;font-size:.82rem;cursor:pointer">
+          <input type="checkbox" name="completion_tracking" value="1" ${l.completion_tracking !== 0 ? 'checked' : ''} /> Completion Tracking
+        </label>
+      </div>
+    </div>
+  </details>
+
+  <div style="display:flex;gap:.6rem">
+    <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-floppy-disk"></i> ${isEdit ? 'Update Lesson' : 'Add Lesson'}</button>
+    ${isEdit ? `<button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('editLessonModal').classList.remove('open')">Cancel</button>` : ''}
+  </div>
+</form>`;
+}
+
+/* ─ Helpers ─ */
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ─ Init lesson form interactivity ─ */
+function initLessonForm(form, existingLesson) {
+  if (!form) return;
+  const typeSel       = form.querySelector('.lesson-type-sel');
+  const videoSection  = form.querySelector('.video-section');
+  const fileSection   = form.querySelector('.file-section');
+  const linkSection   = form.querySelector('.link-section');
+  const urlInput      = form.querySelector('.video-url-input');
+  const previewWrap   = form.querySelector('.video-preview-wrap');
+  const previewIframe = form.querySelector('.video-preview-iframe');
+  const statusDiv     = form.querySelector('.video-detect-status');
+  const fileInput     = form.querySelector('.lesson-file-input');
+  const fileErrDiv    = form.querySelector('.file-upload-error');
+  const badgeId       = form.closest('[id]') ? null : null; // badge is inside form
+
+  function toggleSections(type) {
+    videoSection && (videoSection.style.display = (type==='video'||type==='mixed') ? 'flex' : 'none');
+    fileSection  && (fileSection.style.display  = (type==='file' ||type==='mixed') ? 'flex' : 'none');
+    linkSection  && (linkSection.style.display  = (type==='link' ||type==='mixed') ? 'flex' : 'none');
+  }
+
+  if (typeSel) {
+    toggleSections(typeSel.value);
+    typeSel.addEventListener('change', () => toggleSections(typeSel.value));
+  }
+
+  // Show existing video preview
+  if (existingLesson && existingLesson.video_embed_url && previewWrap && previewIframe) {
+    previewIframe.src = existingLesson.video_embed_url;
+    previewWrap.style.display = 'block';
+  }
+
+  // Auto-detect video provider on URL paste
+  let detectTimer = null;
+  if (urlInput) {
+    urlInput.addEventListener('input', () => {
+      clearTimeout(detectTimer);
+      const val = urlInput.value.trim();
+      if (!val) { if (statusDiv) statusDiv.style.display = 'none'; return; }
+      detectTimer = setTimeout(async () => {
+        if (statusDiv) { statusDiv.style.display = 'block'; statusDiv.style.color = '#94A3B8'; statusDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Detecting…'; }
+        try {
+          const r = await fetch('/api/video/detect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ url: val }),
+          });
+          const d = await r.json();
+          if (d.success) {
+            if (statusDiv) {
+              statusDiv.style.color = '#16A34A';
+              statusDiv.innerHTML = `<i class="${d.icon}" style="color:${getProviderColor(d.provider)}"></i> Detected: <strong>${d.label}</strong>${d.videoId ? ` (ID: ${d.videoId})` : ''}`;
+            }
+            if (d.embedUrl && previewIframe && previewWrap) {
+              previewIframe.src = d.embedUrl;
+              previewWrap.style.display = 'block';
+            }
+            if (d.thumbnail) {
+              const thumbInput = form.querySelector('input[name="video_thumbnail"]');
+              // Show auto-detected thumbnail preview
+              let thumbPrev = form.querySelector('.auto-thumb-prev');
+              if (!thumbPrev && thumbInput) {
+                thumbPrev = document.createElement('img');
+                thumbPrev.className = 'auto-thumb-prev';
+                thumbPrev.style = 'width:80px;height:50px;object-fit:cover;border-radius:4px;margin-top:.3rem;display:block';
+                thumbInput.parentNode.appendChild(thumbPrev);
+              }
+              if (thumbPrev) thumbPrev.src = d.thumbnail;
+            }
+          } else {
+            if (statusDiv) { statusDiv.style.color = '#DC2626'; statusDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${d.error || 'Unknown provider'}`; }
+            if (previewWrap) previewWrap.style.display = 'none';
+          }
+        } catch { if (statusDiv) { statusDiv.style.display = 'none'; } }
+      }, 700);
+    });
+  }
+
+  // Block video file uploads
+  if (fileInput) {
+    fileInput.addEventListener('change', () => {
+      const f = fileInput.files[0];
+      if (!f) return;
+      const ext = f.name.split('.').pop().toLowerCase();
+      const blocked = ['mp4','mov','avi','mkv','webm','wmv','flv','m4v','3gp','ogv','ts','mts','vob','rmvb','asf','divx'];
+      if (blocked.includes(ext)) {
+        if (fileErrDiv) {
+          fileErrDiv.style.display = 'block';
+          fileErrDiv.innerHTML = '<i class="fa-solid fa-ban"></i> <strong>Video uploads are disabled.</strong> Please use YouTube, Vimeo, or another external host and paste the link in the Video URL field instead.';
+        }
+        fileInput.value = '';
+      } else {
+        if (fileErrDiv) fileErrDiv.style.display = 'none';
+      }
+    });
+  }
+}
+
+function getProviderColor(provider) {
+  const colors = { youtube:'#FF0000', vimeo:'#1AB7EA', bunny:'#FF6C37', cloudflare:'#F6821F', loom:'#625DF5', wistia:'#54BBFF', embed:'#6366F1', external:'#10B981' };
+  return colors[provider] || 'var(--primary)';
+}
+
+/* ─ Init all add-lesson forms on page load ─ */
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('details form').forEach(form => initLessonForm(form, null));
+});
+</script>
+
+<!-- Partial for static (server-rendered) add-lesson forms -->
+<script>
+// The edit lesson modal uses JS-generated forms.
+// Static add forms use the server-rendered partial below (hidden in <details>).
+// Re-init whenever a <details> is opened.
+document.querySelectorAll('details').forEach(det => {
+  det.addEventListener('toggle', () => {
+    if (det.open) {
+      const form = det.querySelector('form');
+      if (form && !form.dataset.inited) {
+        initLessonForm(form, null);
+        form.dataset.inited = '1';
+      }
+    }
+  });
+});
+</script>

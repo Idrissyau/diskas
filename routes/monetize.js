@@ -30,14 +30,21 @@ router.post('/communities/:slug/coupons/:couponId/delete', requireAuth, ctrl.del
 router.post('/communities/:slug/coupons/:couponId/toggle', requireAuth, ctrl.toggleCoupon);
 
 /* ── Courses ────────────────────────────────────────────────────────────── */
-router.get( '/communities/:slug/courses',                              ctrl.getCourses);
-router.post('/communities/:slug/courses',                requireAuth, ctrl.createCourse);
-router.get( '/communities/:slug/courses/:courseId',                    ctrl.viewCourse);
-router.get( '/communities/:slug/courses/:courseId/edit', requireAuth, ctrl.editCourse);
-router.post('/communities/:slug/courses/:courseId/update', requireAuth, ctrl.updateCourse);
-router.post('/communities/:slug/courses/:courseId/modules', requireAuth, ctrl.addModule);
+router.get( '/communities/:slug/courses',                                           ctrl.getCourses);
+router.post('/communities/:slug/courses',                             requireAuth,  ctrl.createCourse);
+router.get( '/communities/:slug/courses/:courseId',                                 ctrl.viewCourse);
+router.get( '/communities/:slug/courses/:courseId/edit',              requireAuth,  ctrl.editCourse);
+router.post('/communities/:slug/courses/:courseId/update',            requireAuth,  ctrl.updateCourse);
+router.post('/communities/:slug/courses/:courseId/modules',           requireAuth,  ctrl.addModule);
 router.post('/communities/:slug/courses/:courseId/modules/:moduleId/lessons', requireAuth, ctrl.addLesson);
+// Lesson player
+router.get( '/communities/:slug/courses/:courseId/lessons/:lessonId',               ctrl.viewLesson);
+// Lesson management
+router.post('/communities/:slug/courses/:courseId/lessons/:lessonId/update',  requireAuth, ctrl.updateLesson);
+router.post('/communities/:slug/courses/:courseId/lessons/:lessonId/delete',  requireAuth, ctrl.deleteLesson);
 router.post('/communities/:slug/courses/:courseId/lessons/:lessonId/complete', requireAuth, ctrl.completeLesson);
+// AJAX video detection
+router.post('/api/video/detect',                                       requireAuth, ctrl.detectVideoApi);
 
 /* ── Events ─────────────────────────────────────────────────────────────── */
 router.get( '/communities/:slug/events',                              ctrl.getEvents);
@@ -57,5 +64,8 @@ router.post('/admin/settings/commission',               requireAdmin, ctrl.updat
 router.post('/admin/payouts/:id/approve',               requireAdmin, ctrl.adminApprovePayout);
 router.post('/admin/payouts/:id/reject',                requireAdmin, ctrl.adminRejectPayout);
 router.post('/admin/payments/:id/approve',              requireAdmin, ctrl.adminApprovePayment);
+// Video settings
+router.get( '/admin/video-settings',                    requireAdmin, ctrl.adminVideoSettings);
+router.post('/admin/video-settings',                    requireAdmin, ctrl.updateVideoSettings);
 
 module.exports = router;

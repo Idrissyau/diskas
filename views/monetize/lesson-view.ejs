@@ -1,0 +1,316 @@
+<style>
+  .lv-wrap        { display:flex;height:calc(100vh - 64px);overflow:hidden;margin:0 -1.25rem }
+  .lv-sidebar     { width:300px;flex-shrink:0;overflow-y:auto;border-right:1px solid var(--border);background:var(--surface) }
+  .lv-main        { flex:1;overflow-y:auto;display:flex;flex-direction:column }
+  .lv-mod-head    { padding:.65rem 1rem;background:#F1F5F9;border-bottom:1px solid var(--border);font-size:.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:.5rem }
+  .lv-lesson-item { display:flex;align-items:center;gap:.65rem;padding:.65rem 1rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s;text-decoration:none;color:inherit }
+  .lv-lesson-item:hover { background:#EFF6FF }
+  .lv-lesson-item.active { background:#DBEAFE;border-left:3px solid var(--primary) }
+  .lv-lesson-item.completed .lv-check { background:var(--success);border-color:var(--success);color:#fff }
+  .lv-check       { width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.6rem }
+  .lv-lock        { width:20px;height:20px;border-radius:50%;background:#F1F5F9;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.6rem;color:#94A3B8 }
+  .lv-player      { background:#000;width:100%;aspect-ratio:16/9 }
+  .lv-player iframe,.lv-player video { width:100%;height:100%;border:none;display:block }
+  .lv-content     { flex:1;padding:1.75rem 2rem;max-width:860px }
+  .lv-topbar      { padding:.65rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem;background:var(--surface);flex-shrink:0 }
+  .lv-nav-btn     { display:flex;align-items:center;gap:.4rem;font-size:.82rem;font-weight:600;padding:.45rem .85rem;border-radius:8px;border:1.5px solid var(--border);color:var(--body);text-decoration:none;transition:all .12s }
+  .lv-nav-btn:hover { background:var(--primary);color:#fff;border-color:var(--primary) }
+  .lv-nav-btn:disabled,.lv-nav-btn.disabled { opacity:.35;pointer-events:none }
+  .lv-progress    { height:4px;background:var(--border);border-radius:2px;margin:0 1rem .25rem }
+  .lv-progress-bar { height:100%;background:var(--primary);border-radius:2px;transition:width .3s }
+  @media(max-width:768px){
+    .lv-wrap { flex-direction:column;height:auto }
+    .lv-sidebar { width:100%;max-height:220px;border-right:none;border-bottom:1px solid var(--border) }
+    .lv-content { padding:1rem }
+  }
+</style>
+
+<div class="lv-wrap">
+
+  <!-- ── Left Sidebar: Module Navigation ─────────────────────────────── -->
+  <aside class="lv-sidebar">
+    <!-- Course link -->
+    <div style="padding:.85rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.6rem">
+      <a href="/communities/<%= community.slug %>/courses/<%= course.id %>" style="color:var(--text-muted);font-size:.8rem;display:flex;align-items:center;gap:.4rem;text-decoration:none;flex:1;min-width:0">
+        <i class="fa-solid fa-arrow-left" style="flex-shrink:0"></i>
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= course.title %></span>
+      </a>
+    </div>
+
+    <%
+      let globalIdx = 0;
+      const totalCount = modules.reduce((a,m) => a+m.lessons.length, 0);
+      const completedCount = modules.reduce((a,m) => a + m.lessons.filter(l=>l.completed).length, 0);
+    %>
+    <!-- Progress bar -->
+    <div style="padding:.65rem 1rem .25rem">
+      <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:.35rem;display:flex;justify-content:space-between">
+        <span>Progress</span><span><%= completedCount %>/<%= totalCount %></span>
+      </div>
+      <div class="lv-progress"><div class="lv-progress-bar" style="width:<%= totalCount>0?Math.round(completedCount/totalCount*100):0 %>%"></div></div>
+    </div>
+
+    <% modules.forEach((mod, mi) => { %>
+      <div class="lv-mod-head">
+        <span><%= mi+1 %>.</span> <%= mod.title %>
+      </div>
+      <% mod.lessons.forEach((l, li) => {
+           globalIdx++;
+           const isCurrent = l.id === lesson.id;
+           const isLocked  = !hasAccess && !l.is_free_preview;
+      %>
+        <a href="<%= isLocked ? '#' : `/communities/${community.slug}/courses/${course.id}/lessons/${l.id}` %>"
+           class="lv-lesson-item <%= isCurrent ? 'active' : '' %> <%= l.completed ? 'completed' : '' %>"
+           style="<%= isLocked ? 'opacity:.55;cursor:not-allowed;' : '' %>"
+           title="<%= isLocked ? 'Locked — upgrade your plan' : l.title %>">
+          <% if (isLocked) { %>
+            <div class="lv-lock"><i class="fa-solid fa-lock"></i></div>
+          <% } else { %>
+            <div class="lv-check"><% if(l.completed){%><i class="fa-solid fa-check"></i><%}else{%><span style="font-size:.68rem;color:var(--text-muted)"><%= globalIdx %></span><%}%></div>
+          <% } %>
+          <% const typeIcon = {video:'fa-play-circle',text:'fa-file-lines',file:'fa-file-arrow-down',link:'fa-external-link-alt',mixed:'fa-layer-group'}; %>
+          <i class="fa-solid <%= typeIcon[l.lesson_type]||'fa-file-lines' %>" style="font-size:.78rem;color:var(--text-muted);flex-shrink:0"></i>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.82rem;font-weight:<%= isCurrent?'700':'500' %>;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= l.title %></div>
+            <% if (l.video_duration || l.duration_mins > 0) { %>
+              <div style="font-size:.7rem;color:var(--text-muted)"><%= l.video_duration || (l.duration_mins+' min') %></div>
+            <% } %>
+          </div>
+          <% if (l.is_free_preview && !isCurrent) { %>
+            <span style="font-size:.63rem;background:#F0FDF4;color:#16A34A;padding:.1rem .4rem;border-radius:4px;flex-shrink:0">Free</span>
+          <% } %>
+        </a>
+      <% }) %>
+    <% }) %>
+  </aside>
+
+  <!-- ── Main Content Area ────────────────────────────────────────────── -->
+  <main class="lv-main">
+
+    <!-- Top bar: breadcrumb + prev/next -->
+    <div class="lv-topbar">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.72rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+          <a href="/communities/<%= community.slug %>/courses" style="color:var(--text-muted)"><%= community.name %></a>
+          <i class="fa-solid fa-chevron-right" style="font-size:.6rem;margin:0 .3rem"></i>
+          <a href="/communities/<%= community.slug %>/courses/<%= course.id %>" style="color:var(--text-muted)"><%= course.title %></a>
+          <i class="fa-solid fa-chevron-right" style="font-size:.6rem;margin:0 .3rem"></i>
+          <span style="color:var(--body)"><%= lesson.module_title %></span>
+        </div>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-shrink:0">
+        <% if (prevLesson) { %>
+          <a href="/communities/<%= community.slug %>/courses/<%= course.id %>/lessons/<%= prevLesson.id %>" class="lv-nav-btn">
+            <i class="fa-solid fa-chevron-left"></i> Prev
+          </a>
+        <% } else { %>
+          <span class="lv-nav-btn disabled"><i class="fa-solid fa-chevron-left"></i> Prev</span>
+        <% } %>
+        <% if (nextLesson) { %>
+          <a href="/communities/<%= community.slug %>/courses/<%= course.id %>/lessons/<%= nextLesson.id %>" class="lv-nav-btn" id="nextBtn">
+            Next <i class="fa-solid fa-chevron-right"></i>
+          </a>
+        <% } else { %>
+          <a href="/communities/<%= community.slug %>/courses/<%= course.id %>" class="lv-nav-btn" style="background:var(--success);color:#fff;border-color:var(--success)">
+            <i class="fa-solid fa-flag-checkered"></i> Course Complete!
+          </a>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- ── LOCKED STATE ─────────────────────────────────────────────── -->
+    <% if (!hasAccess) { %>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:3rem 2rem">
+        <div style="text-align:center;max-width:460px">
+          <div style="width:80px;height:80px;border-radius:50%;background:#FEF2F2;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-size:2rem;color:#DC2626">
+            <i class="fa-solid fa-lock"></i>
+          </div>
+          <h2 style="font-size:1.4rem;font-weight:800;margin-bottom:.65rem">This lesson is locked</h2>
+          <% if (reason === 'not_logged_in') { %>
+            <p style="color:var(--text-muted);margin-bottom:1.5rem">Sign in to access this lesson.</p>
+            <a href="/auth/login" class="btn btn-primary">Sign In</a>
+          <% } else if (reason === 'not_member') { %>
+            <p style="color:var(--text-muted);margin-bottom:1.5rem">Join <strong><%= community.name %></strong> to access this course.</p>
+            <a href="/communities/<%= community.slug %>" class="btn btn-primary">View Membership Plans</a>
+          <% } else if (reason === 'wrong_plan') { %>
+            <p style="color:var(--text-muted);margin-bottom:.75rem">
+              This lesson requires<% if (requiredPlan) { %> the <strong><%= requiredPlan.name %></strong> plan or higher.<% } else { %> a higher-tier membership.<% } %>
+            </p>
+            <p style="color:var(--text-muted);font-size:.88rem;margin-bottom:1.5rem">Upgrade your plan to unlock this and all future lessons in this tier.</p>
+            <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap">
+              <% plans.forEach(p => { %>
+                <a href="/checkout/plan/<%= p.id %>" class="btn btn-primary" style="font-size:.88rem">
+                  <i class="fa-solid fa-unlock"></i> Upgrade to <%= p.name %> — <%= formatUSD ? formatUSD(p.price) : '$'+p.price %>
+                </a>
+              <% }) %>
+              <a href="/communities/<%= community.slug %>" class="btn btn-outline" style="font-size:.88rem">View All Plans</a>
+            </div>
+          <% } %>
+          <div style="margin-top:1.5rem;padding:.75rem 1rem;background:#F8FAFC;border-radius:8px;font-size:.82rem;color:var(--text-muted)">
+            <i class="fa-solid fa-lightbulb" style="color:#F59E0B"></i> <strong>Free preview available:</strong> Some lessons in this course are marked as free preview and can be viewed without a subscription.
+          </div>
+        </div>
+      </div>
+
+    <!-- ── ACCESSIBLE LESSON ─────────────────────────────────────────── -->
+    <% } else { %>
+
+      <!-- Video Player -->
+      <% if (lesson.lesson_type === 'video' || lesson.video_embed_url || lesson.video_embed_code || lesson.video_url) { %>
+        <div class="lv-player">
+          <% if (lesson.video_embed_url) { %>
+            <iframe src="<%= lesson.video_embed_url %><%= lesson.autoplay ? (lesson.video_embed_url.includes('?')?'&':'?')+'autoplay=1' : '' %>"
+                    frameborder="0" allowfullscreen
+                    allow="autoplay; encrypted-media; picture-in-picture"></iframe>
+          <% } else if (lesson.video_embed_code) { %>
+            <%- lesson.video_embed_code %>
+          <% } else if (lesson.video_url && lesson.video_provider === 'external') { %>
+            <video controls <%= lesson.autoplay ? 'autoplay' : '' %> style="width:100%;height:100%;background:#000">
+              <source src="<%= lesson.video_url %>" />
+              Your browser does not support HTML5 video.
+            </video>
+          <% } else if (lesson.video_thumbnail_url) { %>
+            <div style="width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;position:relative">
+              <img src="<%= lesson.video_thumbnail_url %>" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.4" />
+              <div style="position:relative;text-align:center;color:#fff">
+                <i class="fa-solid fa-play-circle" style="font-size:4rem;opacity:.8"></i>
+                <p style="margin-top:.5rem;font-size:.88rem;opacity:.7">Video link unavailable</p>
+              </div>
+            </div>
+          <% } %>
+        </div>
+      <% } %>
+
+      <!-- Lesson content -->
+      <div class="lv-content">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap">
+          <div>
+            <% const typeLabel = {video:'Video Lesson',text:'Text Lesson',file:'Downloadable Resource',link:'External Resource',mixed:'Mixed Lesson'}; %>
+            <div style="font-size:.75rem;color:var(--primary);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem">
+              <% if (lesson.video_provider) { %>
+                <%= lesson.video_provider.charAt(0).toUpperCase()+lesson.video_provider.slice(1) %> ·
+              <% } %>
+              <%= typeLabel[lesson.lesson_type] || 'Lesson' %>
+              <% if (lesson.video_duration || lesson.duration_mins > 0) { %> · <i class="fa-regular fa-clock"></i> <%= lesson.video_duration || lesson.duration_mins+' min' %><% } %>
+            </div>
+            <h1 style="font-size:1.6rem;font-weight:800;margin:0"><%= lesson.title %></h1>
+          </div>
+
+          <!-- Complete / Completed button -->
+          <% if (currentUser && lesson.completion_tracking !== 0) { %>
+            <button id="completeBtn" onclick="markComplete(this)"
+                    class="btn btn-sm <%= isCompleted ? 'btn-success' : 'btn-outline' %>"
+                    style="flex-shrink:0;background:<%= isCompleted?'var(--success)':'transparent' %>;color:<%= isCompleted?'#fff':'var(--primary)' %>">
+              <i class="fa-solid fa-<%= isCompleted ? 'check-circle' : 'circle' %>"></i>
+              <%= isCompleted ? 'Completed' : 'Mark Complete' %>
+            </button>
+          <% } %>
+        </div>
+
+        <!-- Text content -->
+        <% if (lesson.content) { %>
+          <div style="font-size:.95rem;line-height:1.8;color:var(--body);margin-bottom:1.5rem">
+            <%- lesson.content.replace(/\n/g,'<br>') %>
+          </div>
+        <% } %>
+
+        <!-- File download -->
+        <% if (lesson.file_url) { %>
+          <div style="display:inline-flex;align-items:center;gap:.6rem;padding:.75rem 1.25rem;background:#F0FDF4;border:1.5px solid #86EFAC;border-radius:10px;margin-bottom:1.25rem">
+            <i class="fa-solid fa-file-arrow-down" style="color:var(--success);font-size:1.1rem"></i>
+            <div>
+              <div style="font-size:.85rem;font-weight:600">Resource File</div>
+              <div style="font-size:.75rem;color:var(--text-muted)"><%= lesson.file_url.split('/').pop() %></div>
+            </div>
+            <a href="<%= lesson.file_url %>" download class="btn btn-sm" style="background:var(--success);color:#fff;margin-left:.5rem">
+              <i class="fa-solid fa-download"></i> Download
+            </a>
+          </div>
+        <% } %>
+
+        <!-- External link -->
+        <% if (lesson.external_link) { %>
+          <div style="display:inline-flex;align-items:center;gap:.6rem;padding:.75rem 1.25rem;background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:10px;margin-bottom:1.25rem">
+            <i class="fa-solid fa-external-link-alt" style="color:var(--primary)"></i>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.85rem;font-weight:600">External Resource</div>
+              <div style="font-size:.75rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= lesson.external_link %></div>
+            </div>
+            <a href="<%= lesson.external_link %>" target="_blank" rel="noopener" class="btn btn-sm btn-primary">
+              Open <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
+          </div>
+        <% } %>
+
+        <!-- Divider -->
+        <div style="height:1px;background:var(--border);margin:1.5rem 0"></div>
+
+        <!-- Navigation -->
+        <div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+          <div>
+            <% if (prevLesson) { %>
+              <a href="/communities/<%= community.slug %>/courses/<%= course.id %>/lessons/<%= prevLesson.id %>" class="btn btn-outline" style="font-size:.85rem">
+                <i class="fa-solid fa-chevron-left"></i> Previous
+              </a>
+            <% } %>
+          </div>
+          <div>
+            <% if (nextLesson) { %>
+              <a href="/communities/<%= community.slug %>/courses/<%= course.id %>/lessons/<%= nextLesson.id %>" class="btn btn-primary" style="font-size:.85rem" id="nextLessonBtn">
+                Next Lesson <i class="fa-solid fa-chevron-right"></i>
+              </a>
+            <% } else { %>
+              <a href="/communities/<%= community.slug %>/courses/<%= course.id %>" class="btn btn-primary" style="font-size:.85rem;background:var(--success);border-color:var(--success)">
+                <i class="fa-solid fa-flag-checkered"></i> Finish Course
+              </a>
+            <% } %>
+          </div>
+        </div>
+
+        <!-- Owner edit link -->
+        <% if (isOwner) { %>
+          <div style="margin-top:2rem;padding:.75rem 1rem;background:#F8FAFC;border-radius:8px;font-size:.8rem;color:var(--text-muted)">
+            <i class="fa-solid fa-pen" style="color:var(--primary)"></i>
+            <strong>Owner:</strong>
+            <a href="/communities/<%= community.slug %>/courses/<%= course.id %>/edit" style="color:var(--primary)">Edit this lesson in the Course Builder</a>
+          </div>
+        <% } %>
+      </div>
+    <% } %>
+  </main>
+</div>
+
+<script>
+async function markComplete(btn) {
+  if (btn.dataset.done) return;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+  try {
+    const r = await fetch(
+      '/communities/<%= community.slug %>/courses/<%= course.id %>/lessons/<%= lesson.id %>/complete',
+      { method:'POST', headers:{'X-Requested-With':'XMLHttpRequest'} }
+    );
+    const d = await r.json();
+    if (d.success) {
+      btn.dataset.done = '1';
+      btn.innerHTML = '<i class="fa-solid fa-check-circle"></i> Completed';
+      btn.style.background = 'var(--success)';
+      btn.style.color = '#fff';
+      btn.style.borderColor = 'var(--success)';
+      // Update sidebar item
+      const sidebarItem = document.querySelector('.lv-lesson-item.active .lv-check');
+      if (sidebarItem) { sidebarItem.style.background='var(--success)'; sidebarItem.style.borderColor='var(--success)'; sidebarItem.style.color='#fff'; sidebarItem.innerHTML='<i class="fa-solid fa-check"></i>'; }
+      // Progress bar update
+      const bar = document.querySelector('.lv-progress-bar');
+      if (bar) {
+        const total = parseInt(bar.closest('.lv-sidebar').querySelectorAll('.lv-lesson-item').length);
+        const done  = parseInt(bar.closest('.lv-sidebar').querySelectorAll('.lv-lesson-item.completed').length) + 1;
+        bar.style.width = Math.round(done/total*100)+'%';
+        const label = bar.closest('.lv-sidebar').querySelector('.lv-progress').previousElementSibling.querySelector('span:last-child');
+        if (label) label.textContent = `${done}/${total}`;
+      }
+    }
+  } catch(e) {
+    btn.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Error';
+  }
+}
+</script>

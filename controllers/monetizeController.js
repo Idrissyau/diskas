@@ -7,6 +7,7 @@
 const { query, queryOne, insert, update, remove } = require('../helpers/db');
 const { makeSlug, timeAgo } = require('../helpers/utils');
 const ps = require('../services/paymentService');
+const vs = require('../services/videoService');
 const fs = require('fs');
 const path = require('path');
 
@@ -685,8 +686,30 @@ exports.addLesson = async (req, res) => {
     const community = await queryOne('SELECT * FROM communities WHERE slug = ? AND owner_id = ?', [req.params.slug, req.session.user.id]);
     if (!community) return res.status(403).send('Forbidden');
 
-    const { title, content, video_url, lesson_type, duration_mins, is_free_preview } = req.body;
+    const {
+      title, content, video_url, video_embed_code, video_duration,
+      lesson_type, external_link, duration_mins, is_free_preview,
+      download_allowed, autoplay, completion_tracking, required_plan_id,
+    } = req.body;
+
     if (!title || !title.trim()) return res.redirect(`/communities/${req.params.slug}/courses/${req.params.courseId}/edit`);
+
+    // Validate file upload — blocks video files
+    if (req.files && req.files.lesson_file) {
+      const check = vs.validateFileUpload(req.files.lesson_file);
+      if (!check.valid) {
+        req.flash('error', check.error);
+        return res.redirect(`/communities/${req.params.slug}/courses/${req.params.courseId}/edit`);
+      }
+    }
+
+    // Process video metadata
+    let videoMeta = {};
+    const effectiveLessonType = lesson_type || 'text';
+    if (effectiveLessonType === 'video' && (video_url || video_embed_code)) {
+      const processed = vs.processVideoInput(video_url, video_embed_code, null, !!autoplay);
+      if (processed) videoMeta = processed;
+    }
 
     const lastLesson = await queryOne('SELECT MAX(sort_order) AS max_sort FROM course_lessons WHERE module_id = ?', [req.params.moduleId]);
 
@@ -699,22 +722,265 @@ exports.addLesson = async (req, res) => {
       file_url = `/uploads/communities/${fname}`;
     }
 
+    // Custom thumbnail for video lessons
+    if (req.files && req.files.video_thumbnail && effectiveLessonType === 'video') {
+      const f   = req.files.video_thumbnail;
+      const ext = f.name.split('.').pop().toLowerCase();
+      if (['jpg','jpeg','png','webp'].includes(ext)) {
+        const check = vs.validateFileUpload(f);
+        if (check.valid) {
+          const fname = `vthumb_${Date.now()}.${ext}`;
+          await f.mv(`${UPLOAD_DIR}/${fname}`);
+          videoMeta.video_thumbnail_url = `/uploads/communities/${fname}`;
+        }
+      }
+    }
+
     await insert('course_lessons', {
-      module_id:       req.params.moduleId,
-      title:           title.trim(),
-      content:         content || null,
-      video_url:       video_url || null,
-      lesson_type:     lesson_type || 'text',
+      module_id:            req.params.moduleId,
+      title:                title.trim(),
+      content:              content || null,
+      lesson_type:          effectiveLessonType,
+      // Video fields
+      video_url:            video_url || null,
+      video_provider:       videoMeta.video_provider      || null,
+      video_id:             videoMeta.video_id             || null,
+      video_embed_url:      videoMeta.video_embed_url      || null,
+      video_embed_code:     videoMeta.video_embed_code     || null,
+      video_thumbnail_url:  videoMeta.video_thumbnail_url  || null,
+      video_duration:       video_duration ? video_duration.trim() : null,
+      storage_type:         videoMeta.storage_type         || 'text_only',
+      // File/link
       file_url,
-      duration_mins:   parseInt(duration_mins) || 0,
-      is_free_preview: is_free_preview ? 1 : 0,
-      sort_order:      (lastLesson?.max_sort || 0) + 1,
+      external_link:        external_link || null,
+      // Settings
+      duration_mins:        parseInt(duration_mins) || 0,
+      is_free_preview:      is_free_preview  ? 1 : 0,
+      download_allowed:     download_allowed ? 1 : 0,
+      autoplay:             autoplay         ? 1 : 0,
+      completion_tracking:  completion_tracking !== '0' ? 1 : 0,
+      required_plan_id:     required_plan_id ? parseInt(required_plan_id) : null,
+      sort_order:           (lastLesson?.max_sort || 0) + 1,
     });
 
+    req.flash('success', 'Lesson added!');
+    res.redirect(`/communities/${req.params.slug}/courses/${req.params.courseId}/edit`);
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Failed to add lesson.');
+    res.redirect(`/communities/${req.params.slug}/courses/${req.params.courseId}/edit`);
+  }
+};
+
+// POST /communities/:slug/courses/:courseId/lessons/:lessonId/update
+exports.updateLesson = async (req, res) => {
+  try {
+    const community = await queryOne('SELECT * FROM communities WHERE slug = ? AND owner_id = ?', [req.params.slug, req.session.user.id]);
+    if (!community) return res.status(403).send('Forbidden');
+
+    const lesson = await queryOne(
+      `SELECT cl.* FROM course_lessons cl
+       JOIN course_modules cm ON cl.module_id = cm.id
+       JOIN courses c ON cm.course_id = c.id
+       WHERE cl.id = ? AND c.community_id = ?`,
+      [req.params.lessonId, community.id]
+    );
+    if (!lesson) return res.status(404).send('Lesson not found');
+
+    const {
+      title, content, video_url, video_embed_code, video_duration,
+      lesson_type, external_link, duration_mins, is_free_preview,
+      download_allowed, autoplay, completion_tracking, required_plan_id,
+    } = req.body;
+
+    // Validate file upload
+    if (req.files && req.files.lesson_file) {
+      const check = vs.validateFileUpload(req.files.lesson_file);
+      if (!check.valid) {
+        req.flash('error', check.error);
+        return res.redirect(`/communities/${req.params.slug}/courses/${req.params.courseId}/edit`);
+      }
+    }
+
+    const effectiveLessonType = lesson_type || lesson.lesson_type;
+    let videoMeta = {};
+    if (effectiveLessonType === 'video' && (video_url || video_embed_code)) {
+      const processed = vs.processVideoInput(video_url, video_embed_code, null, !!autoplay);
+      if (processed) videoMeta = processed;
+    }
+
+    let file_url = lesson.file_url;
+    if (req.files && req.files.lesson_file) {
+      const f = req.files.lesson_file;
+      const ext = f.name.split('.').pop().toLowerCase();
+      const fname = `lesson_${Date.now()}.${ext}`;
+      await f.mv(`${UPLOAD_DIR}/${fname}`);
+      file_url = `/uploads/communities/${fname}`;
+    }
+
+    let thumb = lesson.video_thumbnail_url;
+    if (req.files && req.files.video_thumbnail) {
+      const f = req.files.video_thumbnail;
+      const ext = f.name.split('.').pop().toLowerCase();
+      if (['jpg','jpeg','png','webp'].includes(ext)) {
+        const check = vs.validateFileUpload(f);
+        if (check.valid) {
+          const fname = `vthumb_${Date.now()}.${ext}`;
+          await f.mv(`${UPLOAD_DIR}/${fname}`);
+          thumb = `/uploads/communities/${fname}`;
+        }
+      }
+    }
+
+    await update('course_lessons', {
+      title:                title ? title.trim() : lesson.title,
+      content:              content || null,
+      lesson_type:          effectiveLessonType,
+      video_url:            video_url || lesson.video_url,
+      video_provider:       videoMeta.video_provider      || lesson.video_provider,
+      video_id:             videoMeta.video_id             || lesson.video_id,
+      video_embed_url:      videoMeta.video_embed_url      || lesson.video_embed_url,
+      video_embed_code:     videoMeta.video_embed_code     || lesson.video_embed_code,
+      video_thumbnail_url:  thumb,
+      video_duration:       video_duration ? video_duration.trim() : lesson.video_duration,
+      storage_type:         videoMeta.storage_type         || lesson.storage_type,
+      file_url,
+      external_link:        external_link || lesson.external_link,
+      duration_mins:        parseInt(duration_mins) || lesson.duration_mins,
+      is_free_preview:      is_free_preview  ? 1 : 0,
+      download_allowed:     download_allowed ? 1 : 0,
+      autoplay:             autoplay         ? 1 : 0,
+      completion_tracking:  completion_tracking !== '0' ? 1 : 0,
+      required_plan_id:     required_plan_id ? parseInt(required_plan_id) : null,
+    }, 'id = ?', [req.params.lessonId]);
+
+    req.flash('success', 'Lesson updated!');
+    res.redirect(`/communities/${req.params.slug}/courses/${req.params.courseId}/edit`);
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Failed to update lesson.');
+    res.redirect(`/communities/${req.params.slug}/courses/${req.params.courseId}/edit`);
+  }
+};
+
+// POST /communities/:slug/courses/:courseId/lessons/:lessonId/delete
+exports.deleteLesson = async (req, res) => {
+  try {
+    const community = await queryOne('SELECT * FROM communities WHERE slug = ? AND owner_id = ?', [req.params.slug, req.session.user.id]);
+    if (!community) return res.status(403).send('Forbidden');
+
+    const lesson = await queryOne(
+      `SELECT cl.* FROM course_lessons cl
+       JOIN course_modules cm ON cl.module_id = cm.id
+       JOIN courses c ON cm.course_id = c.id
+       WHERE cl.id = ? AND c.community_id = ?`,
+      [req.params.lessonId, community.id]
+    );
+    if (!lesson) return res.status(404).send('Not found');
+
+    await remove('lesson_completions', 'lesson_id = ?', [lesson.id]);
+    await remove('course_lessons', 'id = ?', [lesson.id]);
+
+    req.flash('success', 'Lesson deleted.');
     res.redirect(`/communities/${req.params.slug}/courses/${req.params.courseId}/edit`);
   } catch (err) {
     console.error(err);
     res.redirect(`/communities/${req.params.slug}/courses/${req.params.courseId}/edit`);
+  }
+};
+
+// GET /communities/:slug/courses/:courseId/lessons/:lessonId
+exports.viewLesson = async (req, res) => {
+  try {
+    const community = await queryOne('SELECT * FROM communities WHERE slug = ?', [req.params.slug]);
+    if (!community) return res.status(404).render('errors/404', { title: 'Not found' });
+
+    const course = await queryOne('SELECT * FROM courses WHERE id = ? AND community_id = ?', [req.params.courseId, community.id]);
+    if (!course) return res.status(404).render('errors/404', { title: 'Not found' });
+
+    const isOwner = req.session.user && community.owner_id === req.session.user.id;
+    if (!course.is_published && !isOwner) return res.status(404).render('errors/404', { title: 'Not found' });
+
+    const lesson = await queryOne(
+      `SELECT cl.*, cm.title AS module_title, cm.id AS module_id
+       FROM course_lessons cl
+       JOIN course_modules cm ON cl.module_id = cm.id
+       WHERE cl.id = ? AND cm.course_id = ?`,
+      [req.params.lessonId, course.id]
+    );
+    if (!lesson) return res.status(404).render('errors/404', { title: 'Not found' });
+
+    // Server-side access check
+    const userId = req.session.user ? req.session.user.id : null;
+    const { hasAccess, reason } = await vs.checkLessonAccess(lesson, userId, community.id, isOwner);
+
+    // Load all modules + lessons for sidebar navigation
+    const modules = await query('SELECT * FROM course_modules WHERE course_id = ? ORDER BY sort_order', [course.id]);
+    for (const mod of modules) {
+      mod.lessons = await query('SELECT id, title, lesson_type, duration_mins, is_free_preview, video_thumbnail_url, storage_type, completion_tracking FROM course_lessons WHERE module_id = ? ORDER BY sort_order', [mod.id]);
+      if (userId) {
+        for (const l of mod.lessons) {
+          const done = await queryOne('SELECT id FROM lesson_completions WHERE user_id = ? AND lesson_id = ?', [userId, l.id]);
+          l.completed = !!done;
+        }
+      }
+    }
+
+    // Flatten all lessons for prev/next navigation
+    const allLessons = modules.flatMap(m => m.lessons);
+    const currentIdx = allLessons.findIndex(l => l.id === lesson.id);
+    const prevLesson = currentIdx > 0 ? allLessons[currentIdx - 1] : null;
+    const nextLesson = currentIdx < allLessons.length - 1 ? allLessons[currentIdx + 1] : null;
+
+    // Completion status
+    let isCompleted = false;
+    if (userId) {
+      const done = await queryOne('SELECT id FROM lesson_completions WHERE user_id = ? AND lesson_id = ?', [userId, lesson.id]);
+      isCompleted = !!done;
+    }
+
+    // Required plan name if applicable
+    let requiredPlan = null;
+    if (lesson.required_plan_id) {
+      requiredPlan = await queryOne('SELECT * FROM membership_plans WHERE id = ?', [lesson.required_plan_id]);
+    }
+
+    const plans = await query('SELECT * FROM membership_plans WHERE community_id = ? AND is_active = 1 AND billing_type != \'free\' ORDER BY price ASC', [community.id]);
+
+    res.render('monetize/lesson-view', {
+      title: `${lesson.title} — ${course.title}`,
+      community, course, lesson, modules,
+      prevLesson, nextLesson,
+      hasAccess, reason,
+      isOwner, isCompleted,
+      requiredPlan, plans,
+      currentUser: req.session.user || null,
+      formatUSD: ps.formatUSD,
+    });
+  } catch (err) {
+    console.error(err);
+    res.redirect(`/communities/${req.params.slug}/courses/${req.params.courseId}`);
+  }
+};
+
+// POST /api/video/detect  (AJAX — detect provider from URL)
+exports.detectVideoApi = (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) return res.json({ success: false, error: 'No URL provided' });
+
+    const provider   = vs.detectVideoProvider(url);
+    const videoId    = vs.extractVideoId(url, provider);
+    const embedUrl   = vs.generateEmbedUrl(url, provider, videoId);
+    const thumbnail  = vs.getThumbnailUrl(provider, videoId);
+    const label      = vs.PROVIDER_LABELS[provider] || 'Unknown';
+    const icon       = vs.PROVIDER_ICONS[provider]  || 'fa-solid fa-video';
+
+    if (!provider) return res.json({ success: false, error: 'Could not detect video provider from this URL.' });
+
+    res.json({ success: true, provider, videoId, embedUrl, thumbnail, label, icon });
+  } catch (err) {
+    res.json({ success: false, error: 'Detection failed.' });
   }
 };
 
@@ -746,11 +1012,18 @@ exports.viewCourse = async (req, res) => {
       }
     }
 
-    const hasAccess = isOwner || (membership && course.billing_type === 'included');
+    const hasAccess = isOwner || !!membership;
+    const plans = await query('SELECT * FROM membership_plans WHERE community_id = ? AND is_active = 1 ORDER BY price ASC', [community.id]);
+    const totalLessons = modules.reduce((a, m) => a + m.lessons.length, 0);
+    const completedLessons = req.session.user
+      ? modules.reduce((a, m) => a + m.lessons.filter(l => l.completed).length, 0)
+      : 0;
 
     res.render('monetize/course-view', {
       title: course.title,
       community, course, modules, membership, isOwner, hasAccess,
+      plans, totalLessons, completedLessons,
+      formatUSD: ps.formatUSD,
     });
   } catch (err) {
     console.error(err);
@@ -761,10 +1034,11 @@ exports.viewCourse = async (req, res) => {
 // POST /communities/:slug/courses/:courseId/lessons/:lessonId/complete
 exports.completeLesson = async (req, res) => {
   try {
-    const existing = await queryOne('SELECT id FROM lesson_completions WHERE user_id = ? AND lesson_id = ?', [req.session.user.id, req.params.lessonId]);
-    if (!existing) {
-      await insert('lesson_completions', { user_id: req.session.user.id, lesson_id: req.params.lessonId });
-    }
+    const lesson = await queryOne('SELECT id, completion_tracking FROM course_lessons WHERE id = ?', [req.params.lessonId]);
+    if (!lesson) return res.json({ success: false, error: 'Lesson not found' });
+    if (lesson.completion_tracking === 0) return res.json({ success: true, skipped: true });
+
+    await vs.markLessonComplete(req.session.user.id, lesson.id);
     res.json({ success: true });
   } catch (err) {
     res.json({ success: false });
@@ -1206,4 +1480,69 @@ exports.adminApprovePayment = async (req, res) => {
     req.flash('error', 'Failed to approve payment.');
   }
   res.redirect('/admin/monetize');
+};
+
+// GET /admin/video-settings
+exports.adminVideoSettings = async (req, res) => {
+  try {
+    const settingKeys = [
+      'video_allow_youtube','video_allow_vimeo','video_allow_bunny',
+      'video_allow_cloudflare','video_allow_embed','video_allow_external',
+      'video_direct_upload','video_completion_tracking','video_free_preview_allowed',
+      'max_file_size_image_mb','max_file_size_pdf_mb','max_file_size_zip_mb',
+    ];
+    const rows = await query(
+      `SELECT setting_key, setting_value FROM platform_settings WHERE setting_key IN (${settingKeys.map(() => '?').join(',')})`,
+      settingKeys
+    );
+    const settings = {};
+    rows.forEach(r => { settings[r.setting_key] = r.setting_value; });
+    // Apply defaults
+    settingKeys.forEach(k => { if (!(k in settings)) settings[k] = k.startsWith('video_allow') ? '1' : '0'; });
+
+    res.render('admin/video-settings', {
+      title: 'Video Settings',
+      settings,
+      PROVIDER_LABELS: vs.PROVIDER_LABELS,
+      PROVIDER_ICONS:  vs.PROVIDER_ICONS,
+    });
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Could not load video settings.');
+    res.redirect('/admin/monetize');
+  }
+};
+
+// POST /admin/video-settings
+exports.updateVideoSettings = async (req, res) => {
+  try {
+    const boolKeys = [
+      'video_allow_youtube','video_allow_vimeo','video_allow_bunny',
+      'video_allow_cloudflare','video_allow_embed','video_allow_external',
+      'video_direct_upload','video_completion_tracking','video_free_preview_allowed',
+    ];
+    const numKeys = ['max_file_size_image_mb','max_file_size_pdf_mb','max_file_size_zip_mb'];
+
+    for (const key of boolKeys) {
+      const val = req.body[key] === '1' ? '1' : '0';
+      await query(
+        "INSERT INTO platform_settings (setting_key, setting_value) VALUES (?,?) ON DUPLICATE KEY UPDATE setting_value=?",
+        [key, val, val]
+      );
+    }
+    for (const key of numKeys) {
+      const val = parseFloat(req.body[key]) || 0;
+      await query(
+        "INSERT INTO platform_settings (setting_key, setting_value) VALUES (?,?) ON DUPLICATE KEY UPDATE setting_value=?",
+        [key, val.toString(), val.toString()]
+      );
+    }
+
+    req.flash('success', 'Video settings saved!');
+    res.redirect('/admin/video-settings');
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Failed to save video settings.');
+    res.redirect('/admin/video-settings');
+  }
 };

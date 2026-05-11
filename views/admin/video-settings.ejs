@@ -1,0 +1,155 @@
+<div style="max-width:860px">
+  <div style="margin-bottom:2rem">
+    <h1 style="font-size:1.4rem;font-weight:800;margin-bottom:.25rem"><i class="fa-solid fa-video" style="color:var(--primary)"></i> Video Settings</h1>
+    <p style="color:var(--text-muted);font-size:.88rem">Control which video providers are allowed, file size limits, and default lesson behavior.</p>
+  </div>
+
+  <form action="/admin/video-settings" method="POST">
+
+    <!-- Allowed Providers -->
+    <div class="panel" style="margin-bottom:1.5rem">
+      <div class="panel-header">
+        <div class="panel-title"><i class="fa-solid fa-check-circle"></i> Allowed Video Providers</div>
+      </div>
+      <div style="padding:1.5rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem">
+
+        <% const providers = [
+          { key: 'video_allow_youtube',    label: 'YouTube',          icon: 'fa-brands fa-youtube',    color: '#FF0000', desc: 'YouTube & YouTube Unlisted' },
+          { key: 'video_allow_vimeo',      label: 'Vimeo',            icon: 'fa-brands fa-vimeo-v',    color: '#1AB7EA', desc: 'Vimeo public & unlisted' },
+          { key: 'video_allow_bunny',      label: 'Bunny Stream',     icon: 'fa-solid fa-rabbit',      color: '#FF6C37', desc: 'Bunny Stream CDN embed' },
+          { key: 'video_allow_cloudflare', label: 'Cloudflare Stream',icon: 'fa-solid fa-cloud',       color: '#F6821F', desc: 'Cloudflare Stream embed' },
+          { key: 'video_allow_embed',      label: 'Custom Embed',     icon: 'fa-solid fa-code',        color: '#6366F1', desc: 'Any trusted iframe embed' },
+          { key: 'video_allow_external',   label: 'External URL',     icon: 'fa-solid fa-link',        color: '#10B981', desc: 'Direct .mp4 URL (HTML5)' },
+        ]; %>
+
+        <% providers.forEach(p => { %>
+          <label style="display:flex;align-items:center;gap:1rem;padding:1rem;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:border-color .15s"
+                 onmouseover="this.style.borderColor='<%= p.color %>'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="width:42px;height:42px;border-radius:10px;background:<%= p.color %>1a;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="<%= p.icon %>" style="color:<%= p.color %>;font-size:1.1rem"></i>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:.88rem"><%= p.label %></div>
+              <div style="font-size:.72rem;color:var(--text-muted)"><%= p.desc %></div>
+            </div>
+            <div style="position:relative;flex-shrink:0">
+              <input type="hidden" name="<%= p.key %>" value="0" />
+              <input type="checkbox" name="<%= p.key %>" value="1"
+                     style="width:18px;height:18px;cursor:pointer;accent-color:<%= p.color %>"
+                     <%= settings[p.key] === '1' ? 'checked' : '' %> />
+            </div>
+          </label>
+        <% }) %>
+      </div>
+
+      <!-- Direct video upload toggle -->
+      <div style="margin:0 1.5rem 1.5rem;padding:1rem 1.25rem;background:#FEF2F2;border:1.5px solid #FECACA;border-radius:10px;display:flex;align-items:center;gap:1rem">
+        <i class="fa-solid fa-triangle-exclamation" style="color:#DC2626;font-size:1.2rem;flex-shrink:0"></i>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:.88rem;color:#DC2626">Direct Video Upload to Server</div>
+          <div style="font-size:.78rem;color:#7F1D1D;margin-top:.2rem">Enabling this allows creators to upload video files directly. This uses significant server storage. <strong>Recommended: keep disabled</strong> and use external providers instead.</div>
+        </div>
+        <div style="flex-shrink:0">
+          <input type="hidden" name="video_direct_upload" value="0" />
+          <input type="checkbox" name="video_direct_upload" value="1"
+                 style="width:18px;height:18px;cursor:pointer;accent-color:#DC2626"
+                 <%= settings['video_direct_upload'] === '1' ? 'checked' : '' %> />
+        </div>
+      </div>
+    </div>
+
+    <!-- Default Behavior -->
+    <div class="panel" style="margin-bottom:1.5rem">
+      <div class="panel-header">
+        <div class="panel-title"><i class="fa-solid fa-sliders"></i> Default Lesson Behavior</div>
+      </div>
+      <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem">
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.85rem 1rem;background:var(--surface);border-radius:8px;cursor:pointer">
+          <div>
+            <div style="font-weight:600;font-size:.88rem">Completion Tracking enabled by default</div>
+            <div style="font-size:.75rem;color:var(--text-muted)">New lessons will have completion tracking on by default</div>
+          </div>
+          <div>
+            <input type="hidden" name="video_completion_tracking" value="0" />
+            <input type="checkbox" name="video_completion_tracking" value="1"
+                   style="width:18px;height:18px;cursor:pointer"
+                   <%= settings['video_completion_tracking'] === '1' ? 'checked' : '' %> />
+          </div>
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.85rem 1rem;background:var(--surface);border-radius:8px;cursor:pointer">
+          <div>
+            <div style="font-weight:600;font-size:.88rem">Allow Free Preview Lessons</div>
+            <div style="font-size:.75rem;color:var(--text-muted)">Creators can mark individual lessons as free preview for non-members</div>
+          </div>
+          <div>
+            <input type="hidden" name="video_free_preview_allowed" value="0" />
+            <input type="checkbox" name="video_free_preview_allowed" value="1"
+                   style="width:18px;height:18px;cursor:pointer"
+                   <%= settings['video_free_preview_allowed'] === '1' ? 'checked' : '' %> />
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- File Size Limits -->
+    <div class="panel" style="margin-bottom:1.5rem">
+      <div class="panel-header">
+        <div class="panel-title"><i class="fa-solid fa-weight-hanging"></i> File Size Limits (Supporting Files Only)</div>
+      </div>
+      <div style="padding:1.5rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem">
+        <% [
+          { key: 'max_file_size_image_mb', label: 'Images', icon: 'fa-solid fa-image', unit: 'MB', default: 2 },
+          { key: 'max_file_size_pdf_mb',   label: 'PDFs & Documents', icon: 'fa-solid fa-file-pdf', unit: 'MB', default: 10 },
+          { key: 'max_file_size_zip_mb',   label: 'ZIP Archives', icon: 'fa-solid fa-file-zipper', unit: 'MB', default: 25 },
+        ].forEach(f => { %>
+          <div style="padding:1rem;border:1.5px solid var(--border);border-radius:10px">
+            <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
+              <i class="<%= f.icon %>" style="color:var(--primary)"></i>
+              <span style="font-weight:600;font-size:.85rem"><%= f.label %></span>
+            </div>
+            <div style="display:flex;align-items:center;gap:.4rem">
+              <input type="number" name="<%= f.key %>" class="form-input"
+                     value="<%= settings[f.key] || f.default %>"
+                     min="1" max="100" step="1"
+                     style="flex:1;font-size:.88rem" />
+              <span style="font-size:.8rem;color:var(--text-muted);font-weight:600"><%= f.unit %></span>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+      <div style="padding:0 1.5rem 1.25rem;font-size:.78rem;color:var(--text-muted)">
+        <i class="fa-solid fa-circle-info"></i> Video files (.mp4, .mov, .avi, etc.) are always blocked from direct upload regardless of size limit. Use external providers above.
+      </div>
+    </div>
+
+    <!-- Future Cloud Upload -->
+    <div class="panel" style="margin-bottom:1.5rem;border:1.5px dashed var(--border)">
+      <div class="panel-header">
+        <div class="panel-title"><i class="fa-solid fa-cloud-arrow-up"></i> Future Direct Cloud Upload (Not Yet Active)</div>
+      </div>
+      <div style="padding:1.5rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div style="padding:1rem;background:var(--surface);border-radius:10px">
+          <div style="font-weight:700;font-size:.88rem;margin-bottom:.35rem"><i class="fa-solid fa-rabbit" style="color:#FF6C37"></i> Bunny Stream Direct Upload</div>
+          <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.75rem">Upload videos directly from the platform to Bunny Stream.</div>
+          <div style="font-size:.75rem;font-family:monospace;background:#1E293B;color:#7DD3FC;padding:.5rem .75rem;border-radius:6px;line-height:1.8">
+            BUNNY_STORAGE_ZONE=<br>BUNNY_API_KEY=<br>BUNNY_LIBRARY_ID=
+          </div>
+          <div style="font-size:.72rem;color:var(--text-muted);margin-top:.5rem">Add these to your <code>.env</code> file to enable.</div>
+        </div>
+        <div style="padding:1rem;background:var(--surface);border-radius:10px">
+          <div style="font-weight:700;font-size:.88rem;margin-bottom:.35rem"><i class="fa-solid fa-cloud" style="color:#F6821F"></i> Cloudflare Stream Direct Upload</div>
+          <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.75rem">Upload videos directly from the platform to Cloudflare Stream.</div>
+          <div style="font-size:.75rem;font-family:monospace;background:#1E293B;color:#7DD3FC;padding:.5rem .75rem;border-radius:6px;line-height:1.8">
+            CF_ACCOUNT_ID=<br>CF_STREAM_TOKEN=
+          </div>
+          <div style="font-size:.72rem;color:var(--text-muted);margin-top:.5rem">Add these to your <code>.env</code> file to enable.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:.75rem">
+      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Video Settings</button>
+      <a href="/admin/monetize" class="btn btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
