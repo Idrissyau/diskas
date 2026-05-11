@@ -1,0 +1,274 @@
+<%# Public landing page — rendered server-side from JSON blocks %>
+
+<% if (isOwnerPreview) { %>
+<div style="background:#f59e0b;color:#fff;text-align:center;padding:10px 16px;font-size:.85rem;font-weight:600;position:sticky;top:0;z-index:9999">
+  <i class="fa-solid fa-eye"></i> Preview Mode — This page is a <strong>Draft</strong> and not visible to the public.
+  <a href="/pages/<%= page.id %>/edit" style="color:#fff;text-decoration:underline;margin-left:12px">Edit Page</a>
+</div>
+<% } %>
+
+<%
+// ── Helpers ──────────────────────────────────────────────────────────────
+function he(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function getVideoEmbed(url) {
+  if (!url) return '';
+  const yt = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
+  if (yt) return 'https://www.youtube.com/embed/' + yt[1];
+  const vi = url.match(/vimeo\.com\/(\d+)/);
+  if (vi) return 'https://player.vimeo.com/video/' + vi[1];
+  return url;
+}
+
+function renderBlock(block) {
+  const d = block.data || {};
+  switch (block.type) {
+
+    case 'hero':
+      return `<section class="pub-hero" style="background:${he(d.bgColor||'#1e1b4b')};color:${he(d.textColor||'#fff')};text-align:${he(d.align||'center')}">
+        <div class="pub-container">
+          ${d.image ? `<img src="${he(d.image)}" class="pub-hero-img" alt="" />` : ''}
+          <h1 class="pub-hero-h1">${he(d.heading||'')}</h1>
+          ${d.subheading ? `<p class="pub-hero-sub">${he(d.subheading)}</p>` : ''}
+          ${d.btnText ? `<a href="${he(d.btnUrl||'#')}" class="pub-btn" style="background:${he(d.btnColor||'#6366f1')};color:#fff">${he(d.btnText)}</a>` : ''}
+        </div>
+      </section>`;
+
+    case 'text':
+      return `<section class="pub-text"><div class="pub-container pub-prose">${d.html||''}</div></section>`;
+
+    case 'features': {
+      const items = d.items || [];
+      return `<section class="pub-features">
+        <div class="pub-container">
+          ${d.heading ? `<h2 class="pub-section-title">${he(d.heading)}</h2>` : ''}
+          <ul class="pub-feat-list">
+            ${items.map(i=>`<li>${he(i)}</li>`).join('')}
+          </ul>
+        </div>
+      </section>`;
+    }
+
+    case 'cta':
+      return `<section class="pub-cta" style="background:${he(d.bgColor||'#6366f1')};color:${he(d.textColor||'#fff')}">
+        <div class="pub-container" style="text-align:center">
+          <h2 class="pub-cta-h2">${he(d.heading||'')}</h2>
+          ${d.sub ? `<p class="pub-cta-sub">${he(d.sub)}</p>` : ''}
+          ${d.btnText ? `<a href="${he(d.btnUrl||'#')}" class="pub-btn" style="background:${he(d.textColor||'#fff')};color:${he(d.bgColor||'#6366f1')}">${he(d.btnText)}</a>` : ''}
+        </div>
+      </section>`;
+
+    case 'image':
+      return `<section class="pub-image">
+        <div class="pub-container" style="text-align:center">
+          ${d.url ? `<img src="${he(d.url)}" alt="${he(d.alt||'')}" style="border-radius:${he(d.radius||'10')}px;max-width:100%" />` : ''}
+          ${d.caption ? `<p class="pub-caption">${he(d.caption)}</p>` : ''}
+        </div>
+      </section>`;
+
+    case 'video': {
+      const embed = getVideoEmbed(d.url||'');
+      return `<section class="pub-video">
+        <div class="pub-container">
+          ${embed ? `<div class="pub-video-wrap"><iframe src="${he(embed)}" frameborder="0" allowfullscreen></iframe></div>` : ''}
+        </div>
+      </section>`;
+    }
+
+    case 'countdown': {
+      const target = d.targetDate ? new Date(d.targetDate).getTime() : 0;
+      const diff   = Math.max(0, target - Date.now());
+      const days   = Math.floor(diff/86400000);
+      const hrs    = Math.floor((diff%86400000)/3600000);
+      const mins   = Math.floor((diff%3600000)/60000);
+      const secs   = Math.floor((diff%60000)/1000);
+      const pad    = n => String(n).padStart(2,'0');
+      return `<section class="pub-countdown" style="color:${he(d.textColor||'#1e293b')}">
+        <div class="pub-container" style="text-align:center">
+          ${d.label ? `<p class="pub-cd-label">${he(d.label)}</p>` : ''}
+          <div class="pub-cd-timer" data-target="${he(d.targetDate||'')}">
+            <div class="pub-cd-unit"><div class="pub-cd-num" id="pub-days">${pad(days)}</div><div class="pub-cd-lbl">days</div></div>
+            <div class="pub-cd-unit"><div class="pub-cd-num" id="pub-hrs">${pad(hrs)}</div><div class="pub-cd-lbl">hours</div></div>
+            <div class="pub-cd-unit"><div class="pub-cd-num" id="pub-mins">${pad(mins)}</div><div class="pub-cd-lbl">mins</div></div>
+            <div class="pub-cd-unit"><div class="pub-cd-num" id="pub-secs">${pad(secs)}</div><div class="pub-cd-lbl">secs</div></div>
+          </div>
+        </div>
+      </section>`;
+    }
+
+    case 'testimonial': {
+      const items = d.items || [];
+      return `<section class="pub-testi">
+        <div class="pub-container">
+          ${d.heading ? `<h2 class="pub-section-title">${he(d.heading)}</h2>` : ''}
+          <div class="pub-testi-grid">
+            ${items.map(t=>`<div class="pub-testi-card">
+              <div class="pub-testi-quote">${he(t.quote||'')}</div>
+              <div class="pub-testi-name">${he(t.name||'')}</div>
+              ${t.title ? `<div class="pub-testi-role">${he(t.title)}</div>` : ''}
+            </div>`).join('')}
+          </div>
+        </div>
+      </section>`;
+    }
+
+    case 'faq': {
+      const items = d.items || [];
+      return `<section class="pub-faq">
+        <div class="pub-container">
+          ${d.heading ? `<h2 class="pub-section-title">${he(d.heading)}</h2>` : ''}
+          ${items.map((f,i)=>`<details class="pub-faq-item">
+            <summary class="pub-faq-q">${he(f.q||'')} <i class="fa-solid fa-chevron-down pub-faq-icon"></i></summary>
+            <div class="pub-faq-a">${he(f.a||'')}</div>
+          </details>`).join('')}
+        </div>
+      </section>`;
+    }
+
+    case 'columns':
+      return `<section class="pub-columns">
+        <div class="pub-container">
+          <div class="pub-cols-grid">
+            <div class="pub-prose">${d.col1||''}</div>
+            <div class="pub-prose">${d.col2||''}</div>
+          </div>
+        </div>
+      </section>`;
+
+    case 'divider':
+      return `<div class="pub-divider" style="padding:${he(d.paddingV||'16')}px 0">
+        <div class="pub-container"><hr style="border:none;border-top:${he(d.thickness||'1')}px solid ${he(d.color||'#e2e8f0')}" /></div>
+      </div>`;
+
+    case 'spacer':
+      return `<div style="height:${he(d.height||'60')}px"></div>`;
+
+    case 'html':
+      return `<div class="pub-html pub-container">${d.html||''}</div>`;
+
+    default:
+      return '';
+  }
+}
+%>
+
+<!-- Render all blocks -->
+<% blocks.forEach(block => { %>
+  <%- renderBlock(block) %>
+<% }) %>
+
+<% if (!blocks.length) { %>
+<div style="text-align:center;padding:120px 24px;color:#94a3b8">
+  <p style="font-size:1.1rem">This page has no content yet.</p>
+</div>
+<% } %>
+
+<!-- Public page styles -->
+<style>
+  :root {
+    --pub-primary: <%= page.primary_color || '#6366f1' %>;
+    --pub-bg:      <%= page.bg_color      || '#ffffff' %>;
+  }
+  body { background: var(--pub-bg); }
+
+  .pub-container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+  /* Hero */
+  .pub-hero { padding: 80px 24px; }
+  .pub-hero-img { max-height: 300px; border-radius: 12px; margin-bottom: 24px; display: block; margin-left: auto; margin-right: auto; }
+  .pub-hero-h1 { font-size: clamp(1.8rem, 5vw, 3rem); font-weight: 800; line-height: 1.15; margin-bottom: 16px; }
+  .pub-hero-sub { font-size: 1.05rem; opacity: .85; max-width: 560px; margin: 0 auto 28px; line-height: 1.65; }
+  .pub-btn { display: inline-block; padding: 14px 32px; border-radius: 10px; font-weight: 700; font-size: 1rem; text-decoration: none; transition: opacity .2s; }
+  .pub-btn:hover { opacity: .9; }
+
+  /* Text */
+  .pub-text { padding: 48px 0; }
+  .pub-prose { line-height: 1.75; }
+  .pub-prose h1,.pub-prose h2,.pub-prose h3,.pub-prose h4 { font-weight: 700; margin: 1.2em 0 .5em; }
+  .pub-prose h2 { font-size: 1.6rem; }
+  .pub-prose h3 { font-size: 1.25rem; }
+  .pub-prose p  { margin-bottom: .9em; color: #374151; }
+  .pub-prose ul,.pub-prose ol { margin: .75em 0 .75em 1.5em; }
+  .pub-prose li { margin-bottom: .4em; }
+  .pub-prose blockquote { border-left: 4px solid var(--pub-primary); padding: 12px 20px; margin: 1em 0; background: #f8fafc; border-radius: 0 8px 8px 0; }
+  .pub-prose a { color: var(--pub-primary); }
+
+  /* Features */
+  .pub-features { padding: 48px 0; }
+  .pub-section-title { font-size: 1.6rem; font-weight: 700; text-align: center; margin-bottom: 28px; }
+  .pub-feat-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px; max-width: 560px; margin: 0 auto; }
+  .pub-feat-list li { font-size: .98rem; color: #374151; padding: 10px 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
+
+  /* CTA */
+  .pub-cta { padding: 72px 24px; }
+  .pub-cta-h2 { font-size: 2rem; font-weight: 800; margin-bottom: 12px; }
+  .pub-cta-sub { font-size: 1rem; opacity: .85; margin-bottom: 28px; }
+
+  /* Image */
+  .pub-image { padding: 32px 0; }
+  .pub-caption { font-size: .83rem; color: #94a3b8; margin-top: 10px; }
+
+  /* Video */
+  .pub-video { padding: 32px 0; }
+  .pub-video-wrap { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; }
+  .pub-video-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 12px; }
+
+  /* Countdown */
+  .pub-countdown { padding: 56px 0; }
+  .pub-cd-label { font-size: .9rem; color: #64748b; font-weight: 500; margin-bottom: 16px; }
+  .pub-cd-timer { display: inline-flex; gap: 16px; }
+  .pub-cd-unit  { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .pub-cd-num   { font-size: 2.4rem; font-weight: 800; min-width: 72px; padding: 12px 8px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; line-height: 1; }
+  .pub-cd-lbl   { font-size: .72rem; color: #94a3b8; text-transform: uppercase; letter-spacing: .05em; }
+
+  /* Testimonials */
+  .pub-testi { padding: 56px 0; }
+  .pub-testi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+  .pub-testi-card { background: #f8fafc; border-radius: 14px; padding: 24px; border: 1px solid #e2e8f0; }
+  .pub-testi-quote { font-style: italic; color: #374151; font-size: .92rem; margin-bottom: 14px; line-height: 1.65; }
+  .pub-testi-name { font-weight: 700; font-size: .88rem; color: #0f172a; }
+  .pub-testi-role { font-size: .78rem; color: #94a3b8; margin-top: 2px; }
+
+  /* FAQ */
+  .pub-faq { padding: 56px 0; }
+  .pub-faq-item { border-bottom: 1px solid #f1f5f9; }
+  .pub-faq-item summary { list-style: none; }
+  .pub-faq-item summary::-webkit-details-marker { display: none; }
+  .pub-faq-q { font-weight: 600; color: #0f172a; font-size: .98rem; cursor: pointer; padding: 16px 0; display: flex; justify-content: space-between; align-items: center; }
+  .pub-faq-icon { font-size: .75rem; color: #94a3b8; transition: transform .2s; }
+  details[open] .pub-faq-icon { transform: rotate(180deg); }
+  .pub-faq-a { font-size: .9rem; color: #64748b; padding-bottom: 16px; line-height: 1.7; }
+
+  /* Columns */
+  .pub-columns { padding: 48px 0; }
+  .pub-cols-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  @media (max-width: 640px) { .pub-cols-grid { grid-template-columns: 1fr; } }
+
+  /* HTML block */
+  .pub-html { padding: 24px 0; }
+
+  /* Divider */
+  .pub-divider .pub-container { padding: 0 24px; }
+</style>
+
+<!-- Countdown live tick -->
+<script>
+(function() {
+  const timerEl = document.querySelector('.pub-cd-timer');
+  if (!timerEl) return;
+  const target = new Date(timerEl.dataset.target).getTime();
+  if (!target || isNaN(target)) return;
+  const pad = n => String(n).padStart(2,'0');
+  function tick() {
+    const diff = Math.max(0, target - Date.now());
+    document.getElementById('pub-days').textContent = pad(Math.floor(diff/86400000));
+    document.getElementById('pub-hrs').textContent  = pad(Math.floor((diff%86400000)/3600000));
+    document.getElementById('pub-mins').textContent = pad(Math.floor((diff%3600000)/60000));
+    document.getElementById('pub-secs').textContent = pad(Math.floor((diff%60000)/1000));
+    if (diff > 0) setTimeout(tick, 1000);
+  }
+  tick();
+})();
+</script>

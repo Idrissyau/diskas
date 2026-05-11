@@ -1,0 +1,101 @@
+<div class="container" style="max-width:960px;padding:40px 16px">
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h1 style="font-size:1.6rem;font-weight:700;color:#0f172a;margin-bottom:4px">My Pages</h1>
+      <p style="color:#64748b;font-size:.9rem">Create landing pages to promote your products, events, courses & more.</p>
+    </div>
+    <a href="/pages/new" class="btn btn-primary"><i class="fa-solid fa-plus"></i> New Page</a>
+  </div>
+
+  <% if (pages.length === 0) { %>
+  <!-- Empty state -->
+  <div style="text-align:center;padding:80px 24px;background:#f8fafc;border-radius:16px;border:2px dashed #e2e8f0">
+    <div style="font-size:3rem;margin-bottom:16px">🚀</div>
+    <h2 style="font-size:1.2rem;font-weight:600;color:#0f172a;margin-bottom:8px">Create your first landing page</h2>
+    <p style="color:#64748b;max-width:380px;margin:0 auto 24px">Use our visual builder to create beautiful pages that convert visitors into customers.</p>
+    <a href="/pages/new" class="btn btn-primary btn-lg">Create a Page</a>
+  </div>
+  <% } else { %>
+  <!-- Pages grid -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px">
+    <% pages.forEach(page => { %>
+    <div class="pg-card" data-id="<%= page.id %>">
+      <div class="pg-card-thumb">
+        <div class="pg-thumb-preview" style="background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)">
+          <i class="fa-solid fa-file-lines" style="font-size:2rem;color:rgba(255,255,255,.7)"></i>
+        </div>
+        <span class="pg-status-badge pg-status-<%= page.status %>"><%= page.status %></span>
+      </div>
+      <div class="pg-card-body">
+        <h3 class="pg-card-title"><%= page.title %></h3>
+        <div class="pg-card-meta">
+          <span><i class="fa-solid fa-link"></i> /p/<%= page.slug %></span>
+          <span><i class="fa-solid fa-eye"></i> <%= page.views || 0 %> views</span>
+        </div>
+        <div class="pg-card-meta" style="margin-top:4px">
+          <span><i class="fa-regular fa-clock"></i> Updated <%= new Date(page.updated_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) %></span>
+        </div>
+        <div class="pg-card-actions">
+          <a href="/pages/<%= page.id %>/edit" class="btn btn-sm btn-outline"><i class="fa-solid fa-pen"></i> Edit</a>
+          <% if (page.status === 'published') { %>
+          <a href="/p/<%= page.slug %>" target="_blank" class="btn btn-sm btn-outline"><i class="fa-solid fa-arrow-up-right-from-square"></i> View</a>
+          <% } %>
+          <button class="btn btn-sm btn-outline" onclick="copyPageUrl('<%= page.slug %>')"><i class="fa-solid fa-copy"></i></button>
+          <button class="btn btn-sm btn-outline" onclick="duplicatePage(<%= page.id %>)"><i class="fa-solid fa-clone"></i></button>
+          <button class="btn btn-sm" style="background:#fee2e2;color:#dc2626;border:none" onclick="deletePage(<%= page.id %>)"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>
+    </div>
+    <% }) %>
+  </div>
+  <% } %>
+</div>
+
+<!-- Toast -->
+<div id="pgToast" style="position:fixed;bottom:24px;right:24px;background:#1e293b;color:#fff;padding:10px 18px;border-radius:10px;font-size:.85rem;display:none;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3)"></div>
+
+<style>
+.pg-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;transition:box-shadow .2s,transform .2s}
+.pg-card:hover{box-shadow:0 8px 30px rgba(0,0,0,.08);transform:translateY(-2px)}
+.pg-card-thumb{position:relative;height:120px}
+.pg-thumb-preview{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.pg-status-badge{position:absolute;top:10px;right:10px;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.pg-status-published{background:#dcfce7;color:#16a34a}
+.pg-status-draft{background:#f1f5f9;color:#64748b}
+.pg-card-body{padding:16px}
+.pg-card-title{font-size:1rem;font-weight:600;color:#0f172a;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pg-card-meta{display:flex;gap:14px;font-size:.78rem;color:#94a3b8;margin-bottom:6px}
+.pg-card-meta i{margin-right:3px}
+.pg-card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+</style>
+
+<script>
+function showToast(msg) {
+  const t = document.getElementById('pgToast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 2500);
+}
+
+function copyPageUrl(slug) {
+  const url = `${location.origin}/p/${slug}`;
+  navigator.clipboard.writeText(url).then(() => showToast('Link copied!'));
+}
+
+async function duplicatePage(id) {
+  if (!confirm('Duplicate this page?')) return;
+  const r = await fetch(`/pages/${id}/duplicate`, { method: 'POST' });
+  const d = await r.json();
+  if (d.success) { showToast('Page duplicated!'); setTimeout(() => location.reload(), 800); }
+  else alert(d.error || 'Failed');
+}
+
+async function deletePage(id) {
+  if (!confirm('Delete this page permanently?')) return;
+  const r = await fetch(`/pages/${id}`, { method: 'DELETE' });
+  const d = await r.json();
+  if (d.success) { document.querySelector(`.pg-card[data-id="${id}"]`)?.remove(); showToast('Page deleted'); }
+  else alert(d.error || 'Failed');
+}
+</script>

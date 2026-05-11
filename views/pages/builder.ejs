@@ -1,0 +1,1083 @@
+<%# Landing Page Builder — visual drag-and-drop + code editor mode %>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.css" />
+
+<!-- ─── Builder Shell ─────────────────────────────────────────────────────── -->
+<div id="lpBuilder" class="lpb-shell">
+
+  <!-- Top Bar -->
+  <header class="lpb-topbar">
+    <div class="lpb-topbar-left">
+      <a href="/pages" class="lpb-back-btn" title="Back to My Pages"><i class="fa-solid fa-arrow-left"></i></a>
+      <input type="text" id="lpTitle" class="lpb-title-input" value="<%= page ? page.title : 'Untitled Page' %>" placeholder="Page title…" />
+      <span id="lpSaveStatus" class="lpb-save-status">All changes saved</span>
+    </div>
+    <div class="lpb-topbar-center">
+      <button class="lpb-mode-btn active" id="btnVisual" onclick="switchMode('visual')"><i class="fa-solid fa-eye"></i> Visual</button>
+      <button class="lpb-mode-btn" id="btnCode"   onclick="switchMode('code')"><i class="fa-solid fa-code"></i> Code</button>
+    </div>
+    <div class="lpb-topbar-right">
+      <button class="btn btn-sm btn-outline" id="btnPreview" onclick="previewPage()"><i class="fa-solid fa-arrow-up-right-from-square"></i> Preview</button>
+      <button class="btn btn-sm btn-outline" onclick="openSettings()"><i class="fa-solid fa-sliders"></i> Settings</button>
+      <button class="btn btn-sm btn-outline" onclick="saveDraft()">Save Draft</button>
+      <button class="btn btn-primary btn-sm" onclick="publishPage()"><i class="fa-solid fa-globe"></i> Publish</button>
+    </div>
+  </header>
+
+  <!-- Visual Mode -->
+  <div id="visualMode" class="lpb-workspace">
+
+    <!-- Left Panel: Block Palette -->
+    <aside class="lpb-palette">
+      <div class="lpb-palette-header">
+        <span>Blocks</span>
+        <button class="lpb-palette-close" onclick="togglePalette()" title="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="lpb-palette-section">Templates</div>
+      <div class="lpb-template-grid">
+        <% ['blank','event','course','product','community'].forEach(t => { %>
+        <button class="lpb-tpl-btn" onclick="loadTemplate('<%= t %>')" title="<%= t.charAt(0).toUpperCase()+t.slice(1) %>">
+          <span class="lpb-tpl-icon">
+            <% if(t==='blank'){ %><i class="fa-regular fa-square"></i>
+            <% } else if(t==='event'){ %><i class="fa-solid fa-calendar-days"></i>
+            <% } else if(t==='course'){ %><i class="fa-solid fa-graduation-cap"></i>
+            <% } else if(t==='product'){ %><i class="fa-solid fa-box-open"></i>
+            <% } else { %><i class="fa-solid fa-people-group"></i><% } %>
+          </span>
+          <span><%= t.charAt(0).toUpperCase()+t.slice(1) %></span>
+        </button>
+        <% }) %>
+      </div>
+
+      <div class="lpb-palette-section">Blocks</div>
+      <div class="lpb-block-list" id="blockPalette">
+        <% [
+          {type:'hero',       icon:'fa-image',         label:'Hero Banner'},
+          {type:'text',       icon:'fa-align-left',    label:'Text / HTML'},
+          {type:'features',   icon:'fa-list-check',    label:'Feature List'},
+          {type:'cta',        icon:'fa-bullhorn',      label:'Call to Action'},
+          {type:'image',      icon:'fa-photo-film',    label:'Image'},
+          {type:'video',      icon:'fa-circle-play',   label:'Video Embed'},
+          {type:'countdown',  icon:'fa-hourglass-half',label:'Countdown'},
+          {type:'testimonial',icon:'fa-quote-left',    label:'Testimonials'},
+          {type:'faq',        icon:'fa-circle-question',label:'FAQ'},
+          {type:'columns',    icon:'fa-columns',       label:'2 Columns'},
+          {type:'divider',    icon:'fa-minus',         label:'Divider'},
+          {type:'spacer',     icon:'fa-arrows-up-down',label:'Spacer'},
+          {type:'html',       icon:'fa-code',          label:'Custom HTML'},
+        ].forEach(b => { %>
+        <div class="lpb-palette-block" draggable="true" data-block-type="<%= b.type %>">
+          <i class="fa-solid <%= b.icon %>"></i> <%= b.label %>
+        </div>
+        <% }) %>
+      </div>
+    </aside>
+
+    <!-- Canvas -->
+    <main class="lpb-canvas-wrap">
+      <div class="lpb-canvas-toolbar">
+        <button class="lpb-canvas-ctl" onclick="togglePalette()" title="Toggle panel"><i class="fa-solid fa-sidebar"></i></button>
+        <button class="lpb-canvas-ctl" id="btnUndo" onclick="undo()" title="Undo"><i class="fa-solid fa-rotate-left"></i></button>
+        <button class="lpb-canvas-ctl" id="btnRedo" onclick="redo()" title="Redo"><i class="fa-solid fa-rotate-right"></i></button>
+        <span style="flex:1"></span>
+        <div class="lpb-device-btns">
+          <button class="lpb-dev active" id="devDesktop" onclick="setDevice('desktop')" title="Desktop"><i class="fa-solid fa-desktop"></i></button>
+          <button class="lpb-dev" id="devTablet"  onclick="setDevice('tablet')"  title="Tablet"><i class="fa-solid fa-tablet-screen-button"></i></button>
+          <button class="lpb-dev" id="devMobile"  onclick="setDevice('mobile')"  title="Mobile"><i class="fa-solid fa-mobile-screen"></i></button>
+        </div>
+      </div>
+
+      <div class="lpb-canvas-frame" id="canvasFrame">
+        <div class="lpb-canvas" id="canvas">
+          <!-- blocks rendered here -->
+        </div>
+        <div class="lpb-canvas-empty" id="canvasEmpty">
+          <i class="fa-solid fa-plus-large" style="font-size:2rem;color:#cbd5e1;margin-bottom:12px"></i>
+          <p>Choose a template or drag blocks from the left panel</p>
+        </div>
+      </div>
+    </main>
+
+    <!-- Right Panel: Block Properties -->
+    <aside class="lpb-props" id="propsPanel">
+      <div class="lpb-props-header">
+        <span id="propsPanelTitle">Properties</span>
+        <button onclick="deselectBlock()" style="background:none;border:none;cursor:pointer;color:#64748b"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="propsContent" class="lpb-props-body">
+        <p style="color:#94a3b8;font-size:.85rem;text-align:center;padding:24px">Select a block to edit its properties</p>
+      </div>
+    </aside>
+  </div><!-- /visualMode -->
+
+  <!-- Code Mode -->
+  <div id="codeMode" class="lpb-code-wrap" style="display:none">
+    <div class="lpb-code-tabs">
+      <button class="lpb-code-tab active" onclick="switchCodeTab('json')">Blocks JSON</button>
+      <button class="lpb-code-tab" onclick="switchCodeTab('css')">Custom CSS</button>
+    </div>
+    <div id="codeTabJson" class="lpb-code-panel">
+      <div class="lpb-code-hint">Edit the raw JSON blocks array. Changes sync to the visual editor when you switch back.</div>
+      <textarea id="codeJsonEditor" class="lpb-code-textarea" spellcheck="false"></textarea>
+    </div>
+    <div id="codeTabCss" class="lpb-code-panel" style="display:none">
+      <div class="lpb-code-hint">Write custom CSS that will be injected into the published page's &lt;head&gt;.</div>
+      <textarea id="codeCssEditor" class="lpb-code-textarea" spellcheck="false" placeholder="/* your custom CSS here */"></textarea>
+    </div>
+    <div style="padding:12px 16px;display:flex;gap:8px;border-top:1px solid #e2e8f0">
+      <button class="btn btn-primary btn-sm" onclick="applyCode()"><i class="fa-solid fa-check"></i> Apply & Switch to Visual</button>
+      <button class="btn btn-sm btn-outline" onclick="switchMode('visual')">Cancel</button>
+    </div>
+  </div>
+
+</div><!-- /lpBuilder -->
+
+<!-- ─── Settings Modal ──────────────────────────────────────────────────── -->
+<div id="settingsModal" class="lpm-overlay" style="display:none" onclick="if(event.target===this)closeSettings()">
+  <div class="lpm-box" style="max-width:520px">
+    <div class="lpm-hdr"><span><i class="fa-solid fa-sliders"></i> Page Settings</span><button onclick="closeSettings()" class="lpm-close">&times;</button></div>
+    <div class="lpm-body">
+      <!-- Slug -->
+      <label class="lpb-label">Page URL</label>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">
+        <span style="color:#64748b;font-size:.85rem;white-space:nowrap">/p/</span>
+        <input type="text" id="settingsSlug" class="lpb-input" placeholder="my-page" style="flex:1" />
+      </div>
+      <!-- Meta -->
+      <label class="lpb-label">SEO Title</label>
+      <input type="text" id="settingsMetaTitle" class="lpb-input" placeholder="Leave blank to use page title" style="margin-bottom:10px" />
+      <label class="lpb-label">SEO Description</label>
+      <textarea id="settingsMetaDesc" class="lpb-input" rows="2" placeholder="Brief description for search engines…" style="margin-bottom:10px;resize:vertical"></textarea>
+      <label class="lpb-label">OG Image URL</label>
+      <input type="text" id="settingsOgImage" class="lpb-input" placeholder="https://…" style="margin-bottom:16px" />
+      <!-- Design -->
+      <div class="lpb-section-divider">Design</div>
+      <label class="lpb-label">Font Family</label>
+      <select id="settingsFont" class="lpb-input" style="margin-bottom:10px">
+        <option value="Inter">Inter (default)</option>
+        <option value="Poppins">Poppins</option>
+        <option value="Lato">Lato</option>
+        <option value="Montserrat">Montserrat</option>
+        <option value="Playfair Display">Playfair Display</option>
+      </select>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div>
+          <label class="lpb-label">Primary Color</label>
+          <input type="color" id="settingsPrimary" value="#6366F1" class="lpb-color-input" />
+        </div>
+        <div>
+          <label class="lpb-label">Background Color</label>
+          <input type="color" id="settingsBg" value="#FFFFFF" class="lpb-color-input" />
+        </div>
+      </div>
+      <div class="lpm-footer">
+        <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+        <button class="btn btn-outline" onclick="closeSettings()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Block Props Editors (rendered dynamically in #propsContent) ──────── -->
+
+<!-- ─── CSS ─────────────────────────────────────────────────────────────── -->
+<style>
+/* ── Shell layout ── */
+.lpb-shell{display:flex;flex-direction:column;height:calc(100vh - 58px);background:#f1f5f9;font-family:'Inter',sans-serif}
+/* Topbar */
+.lpb-topbar{display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #e2e8f0;padding:0 16px;height:52px;gap:12px;z-index:100;flex-shrink:0}
+.lpb-topbar-left,.lpb-topbar-center,.lpb-topbar-right{display:flex;align-items:center;gap:8px}
+.lpb-back-btn{color:#64748b;font-size:1rem;text-decoration:none;padding:6px;border-radius:6px;display:flex;align-items:center}
+.lpb-back-btn:hover{background:#f1f5f9}
+.lpb-title-input{border:none;outline:none;font-size:1rem;font-weight:600;color:#0f172a;background:transparent;min-width:180px;max-width:260px}
+.lpb-save-status{font-size:.75rem;color:#94a3b8;white-space:nowrap}
+.lpb-mode-btn{border:1px solid #e2e8f0;background:#f8fafc;color:#64748b;padding:5px 14px;border-radius:8px;cursor:pointer;font-size:.83rem;font-weight:500;transition:all .15s}
+.lpb-mode-btn.active{background:#6366f1;color:#fff;border-color:#6366f1}
+/* Workspace */
+.lpb-workspace{display:flex;flex:1;overflow:hidden}
+/* Palette */
+.lpb-palette{width:220px;background:#fff;border-right:1px solid #e2e8f0;overflow-y:auto;flex-shrink:0;transition:width .2s;display:flex;flex-direction:column}
+.lpb-palette.collapsed{width:0;overflow:hidden}
+.lpb-palette-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;font-weight:600;font-size:.85rem;color:#374151;border-bottom:1px solid #f1f5f9;flex-shrink:0}
+.lpb-palette-close{background:none;border:none;cursor:pointer;color:#94a3b8;font-size:1rem}
+.lpb-palette-section{padding:8px 14px 4px;font-size:.72rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em}
+.lpb-template-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 10px 10px}
+.lpb-tpl-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;cursor:pointer;font-size:.72rem;font-weight:500;color:#374151;transition:all .15s}
+.lpb-tpl-btn:hover{border-color:#6366f1;background:#eef2ff;color:#6366f1}
+.lpb-tpl-icon{font-size:1.2rem}
+.lpb-block-list{padding:6px 10px 16px;display:flex;flex-direction:column;gap:4px}
+.lpb-palette-block{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:grab;font-size:.83rem;color:#374151;border:1px solid transparent;background:#f8fafc;user-select:none;transition:all .15s}
+.lpb-palette-block:hover{border-color:#6366f1;background:#eef2ff;color:#6366f1}
+.lpb-palette-block i{width:16px;text-align:center;color:#94a3b8}
+.lpb-palette-block:hover i{color:#6366f1}
+/* Canvas */
+.lpb-canvas-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.lpb-canvas-toolbar{display:flex;align-items:center;gap:6px;padding:8px 16px;background:#fff;border-bottom:1px solid #e2e8f0;flex-shrink:0}
+.lpb-canvas-ctl{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:.85rem;transition:all .15s}
+.lpb-canvas-ctl:hover{background:#f1f5f9;color:#374151}
+.lpb-device-btns{display:flex;gap:4px}
+.lpb-dev{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:.85rem;transition:all .15s}
+.lpb-dev.active{background:#6366f1;color:#fff;border-color:#6366f1}
+.lpb-canvas-frame{flex:1;overflow-y:auto;display:flex;justify-content:center;padding:24px;background:#e2e8f0}
+.lpb-canvas{background:#fff;min-height:600px;width:100%;max-width:900px;border-radius:10px;box-shadow:0 4px 30px rgba(0,0,0,.1);position:relative;overflow:hidden;transition:max-width .3s}
+.lpb-canvas.device-tablet{max-width:768px}
+.lpb-canvas.device-mobile{max-width:390px}
+.lpb-canvas-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;color:#94a3b8;font-size:.9rem;text-align:center;padding:40px}
+.lpb-canvas-empty.hidden{display:none}
+/* Block wrapper in canvas */
+.lpb-block-wrapper{position:relative;cursor:pointer;border:2px solid transparent;transition:border-color .15s}
+.lpb-block-wrapper:hover{border-color:#bfdbfe}
+.lpb-block-wrapper.selected{border-color:#6366f1}
+.lpb-block-actions{position:absolute;top:6px;right:6px;display:none;gap:4px;z-index:10}
+.lpb-block-wrapper:hover .lpb-block-actions,
+.lpb-block-wrapper.selected .lpb-block-actions{display:flex}
+.lpb-block-btn{background:#fff;border:1px solid #e2e8f0;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.75rem;color:#64748b;transition:all .15s}
+.lpb-block-btn:hover{background:#f1f5f9;color:#374151}
+.lpb-block-btn.danger:hover{background:#fee2e2;color:#dc2626;border-color:#fca5a5}
+.lpb-drag-handle{cursor:grab;position:absolute;top:6px;left:6px;background:#fff;border:1px solid #e2e8f0;border-radius:6px;width:28px;height:28px;display:none;align-items:center;justify-content:center;font-size:.75rem;color:#94a3b8;z-index:10}
+.lpb-block-wrapper:hover .lpb-drag-handle,
+.lpb-block-wrapper.selected .lpb-drag-handle{display:flex}
+/* sortable ghost */
+.sortable-ghost{opacity:.35}
+/* Props panel */
+.lpb-props{width:280px;background:#fff;border-left:1px solid #e2e8f0;overflow-y:auto;flex-shrink:0}
+.lpb-props-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #f1f5f9;font-weight:600;font-size:.85rem;color:#374151;flex-shrink:0;position:sticky;top:0;background:#fff;z-index:5}
+.lpb-props-body{padding:14px}
+/* Code mode */
+.lpb-code-wrap{flex:1;display:flex;flex-direction:column;background:#1e293b}
+.lpb-code-tabs{display:flex;gap:0;border-bottom:1px solid #334155;background:#0f172a}
+.lpb-code-tab{padding:10px 20px;color:#94a3b8;background:none;border:none;cursor:pointer;font-size:.85rem;font-weight:500;border-bottom:2px solid transparent;transition:all .15s}
+.lpb-code-tab.active{color:#f1f5f9;border-bottom-color:#6366f1}
+.lpb-code-panel{flex:1;display:flex;flex-direction:column}
+.lpb-code-hint{padding:8px 16px;background:#1e293b;color:#64748b;font-size:.78rem}
+.lpb-code-textarea{flex:1;background:#0f172a;color:#e2e8f0;border:none;outline:none;padding:16px;font-family:'Fira Code','Cascadia Code',monospace;font-size:.83rem;line-height:1.6;resize:none;min-height:400px;tab-size:2}
+/* Props form elements */
+.lpb-label{display:block;font-size:.78rem;font-weight:600;color:#374151;margin-bottom:5px;margin-top:10px}
+.lpb-label:first-child{margin-top:0}
+.lpb-input{width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;font-size:.83rem;color:#1e293b;outline:none;background:#fff;font-family:'Inter',sans-serif;transition:border-color .15s}
+.lpb-input:focus{border-color:#6366f1}
+textarea.lpb-input{resize:vertical}
+.lpb-color-input{width:100%;height:38px;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;padding:2px;background:#fff}
+.lpb-section-divider{font-size:.72rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;padding:14px 0 6px;border-top:1px solid #f1f5f9;margin-top:10px}
+/* Feature items / FAQ items editor */
+.lpb-list-items{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.lpb-list-item{display:flex;align-items:center;gap:6px}
+.lpb-list-item input{flex:1;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-size:.82rem;outline:none}
+.lpb-list-item input:focus{border-color:#6366f1}
+.lpb-list-remove{background:#fee2e2;color:#dc2626;border:none;border-radius:6px;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0}
+.lpb-add-item{font-size:.8rem;color:#6366f1;background:none;border:1px dashed #c7d2fe;border-radius:6px;padding:5px 10px;cursor:pointer;width:100%;transition:all .15s}
+.lpb-add-item:hover{background:#eef2ff}
+/* Modal */
+.lpm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px}
+.lpm-box{background:#fff;border-radius:16px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden}
+.lpm-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #f1f5f9;font-weight:600;font-size:1rem}
+.lpm-close{background:none;border:none;font-size:1.4rem;cursor:pointer;color:#94a3b8}
+.lpm-body{padding:20px;max-height:70vh;overflow-y:auto}
+.lpm-footer{display:flex;gap:8px;margin-top:16px}
+/* Block renderers - canvas previews */
+.lpb-blk-hero{display:flex;align-items:center;justify-content:center;min-height:240px;text-align:center;flex-direction:column;gap:12px;padding:60px 40px}
+.lpb-blk-hero h1{font-size:2rem;font-weight:800;margin:0;line-height:1.2}
+.lpb-blk-hero p{font-size:1.05rem;opacity:.85;max-width:520px;margin:0}
+.lpb-blk-hero-btn{display:inline-block;padding:12px 28px;border-radius:8px;font-weight:600;font-size:.9rem;text-decoration:none;margin-top:8px}
+.lpb-blk-text{padding:40px;max-width:700px;margin:0 auto;line-height:1.75;color:#1e293b}
+.lpb-blk-text h1,.lpb-blk-text h2,.lpb-blk-text h3{margin-bottom:.5em;font-weight:700}
+.lpb-blk-text h2{font-size:1.5rem}
+.lpb-blk-features{padding:40px;max-width:700px;margin:0 auto}
+.lpb-blk-features h2{font-size:1.4rem;font-weight:700;margin-bottom:20px;text-align:center}
+.lpb-blk-features ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:10px}
+.lpb-blk-features ul li{display:flex;align-items:flex-start;gap:8px;font-size:.95rem;color:#374151}
+.lpb-blk-cta{padding:60px 40px;text-align:center}
+.lpb-blk-cta h2{font-size:1.7rem;font-weight:800;margin-bottom:10px}
+.lpb-blk-cta p{opacity:.85;margin-bottom:24px;font-size:1rem}
+.lpb-blk-cta-btn{display:inline-block;padding:14px 32px;border-radius:10px;font-weight:700;font-size:1rem;text-decoration:none;margin:0 auto}
+.lpb-blk-image{padding:24px;text-align:center}
+.lpb-blk-image img{max-width:100%;border-radius:10px}
+.lpb-blk-image .lpb-image-placeholder{background:#f1f5f9;border:2px dashed #cbd5e1;border-radius:10px;padding:60px 40px;color:#94a3b8;font-size:.9rem}
+.lpb-blk-video{padding:24px}
+.lpb-blk-video .lpb-video-placeholder{background:#0f172a;border-radius:10px;padding:60px 40px;text-align:center;color:#64748b}
+.lpb-blk-video iframe{width:100%;aspect-ratio:16/9;border:none;border-radius:10px}
+.lpb-blk-countdown{padding:40px;text-align:center}
+.lpb-blk-countdown .lpb-cd-label{font-size:.85rem;color:#64748b;margin-bottom:12px;font-weight:500}
+.lpb-blk-countdown .lpb-cd-timer{display:inline-flex;gap:16px}
+.lpb-cd-unit{display:flex;flex-direction:column;align-items:center;gap:4px}
+.lpb-cd-num{font-size:2.2rem;font-weight:800;line-height:1;min-width:64px;padding:10px 8px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;text-align:center}
+.lpb-cd-lbl{font-size:.7rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em}
+.lpb-blk-testimonial{padding:40px;max-width:800px;margin:0 auto}
+.lpb-blk-testimonial h2{font-size:1.4rem;font-weight:700;margin-bottom:24px;text-align:center}
+.lpb-testi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.lpb-testi-card{background:#f8fafc;border-radius:12px;padding:20px;border:1px solid #e2e8f0}
+.lpb-testi-quote{font-style:italic;color:#374151;font-size:.9rem;margin-bottom:12px;line-height:1.6}
+.lpb-testi-name{font-weight:600;font-size:.85rem;color:#0f172a}
+.lpb-testi-role{font-size:.78rem;color:#94a3b8}
+.lpb-blk-faq{padding:40px;max-width:700px;margin:0 auto}
+.lpb-blk-faq h2{font-size:1.4rem;font-weight:700;margin-bottom:20px}
+.lpb-faq-item{border-bottom:1px solid #f1f5f9;padding:14px 0}
+.lpb-faq-q{font-weight:600;color:#0f172a;font-size:.95rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.lpb-faq-a{font-size:.88rem;color:#64748b;margin-top:8px;line-height:1.65}
+.lpb-blk-columns{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:40px}
+.lpb-blk-divider{padding:8px 40px}
+.lpb-blk-divider hr{border:none;border-top:2px solid #e2e8f0;margin:0}
+.lpb-blk-spacer{background:repeating-linear-gradient(45deg,#f8fafc,#f8fafc 4px,#f1f5f9 4px,#f1f5f9 8px)}
+.lpb-blk-html{padding:24px}
+</style>
+
+<!-- ─── JS ────────────────────────────────────────────────────────────────── -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script>
+(function() {
+'use strict';
+
+// ── State ──────────────────────────────────────────────────────────────────
+const APP_URL = '<%= appUrl %>';
+const TEMPLATES = <%- templates %>;
+let blocks   = [];
+try { blocks = JSON.parse(<%- JSON.stringify(blocksJson) %>); } catch(e) { blocks = []; }
+
+let settings = {
+  id:           <%= page ? page.id : 'null' %>,
+  title:        <%- JSON.stringify(page ? page.title : 'Untitled Page') %>,
+  slug:         <%- JSON.stringify(page ? page.slug  : '') %>,
+  status:       <%- JSON.stringify(page ? page.status : 'draft') %>,
+  meta_title:   <%- JSON.stringify(page ? (page.meta_title||'') : '') %>,
+  meta_desc:    <%- JSON.stringify(page ? (page.meta_desc||'')  : '') %>,
+  og_image:     <%- JSON.stringify(page ? (page.og_image||'')   : '') %>,
+  font:         <%- JSON.stringify(page ? (page.font||'Inter')  : 'Inter') %>,
+  primary_color:<%- JSON.stringify(page ? (page.primary_color||'#6366F1') : '#6366F1') %>,
+  bg_color:     <%- JSON.stringify(page ? (page.bg_color||'#FFFFFF')      : '#FFFFFF') %>,
+  custom_css:   <%- JSON.stringify(page ? (page.custom_css||'') : '') %>,
+};
+
+let selectedBlockId = null;
+let undoStack = [];
+let redoStack = [];
+let autoSaveTimer = null;
+let idCounter = Date.now();
+
+// ── Utilities ──────────────────────────────────────────────────────────────
+function uid() { return 'b' + (++idCounter); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+function setSaveStatus(msg) { document.getElementById('lpSaveStatus').textContent = msg; }
+
+function pushUndo() {
+  undoStack.push(deepClone(blocks));
+  if (undoStack.length > 50) undoStack.shift();
+  redoStack = [];
+}
+function undo() { if (!undoStack.length) return; redoStack.push(deepClone(blocks)); blocks = undoStack.pop(); renderCanvas(); deselectBlock(); setSaveStatus('Unsaved changes'); }
+function redo() { if (!redoStack.length) return; undoStack.push(deepClone(blocks)); blocks = redoStack.pop(); renderCanvas(); deselectBlock(); setSaveStatus('Unsaved changes'); }
+window.undo = undo; window.redo = redo;
+
+// ── Canvas Render ──────────────────────────────────────────────────────────
+const canvas = document.getElementById('canvas');
+const emptyEl = document.getElementById('canvasEmpty');
+
+function renderCanvas() {
+  canvas.innerHTML = '';
+  if (!blocks.length) { emptyEl.classList.remove('hidden'); return; }
+  emptyEl.classList.add('hidden');
+  blocks.forEach(b => canvas.appendChild(createBlockEl(b)));
+  initSortable();
+}
+
+function createBlockEl(block) {
+  const wrap = document.createElement('div');
+  wrap.className = 'lpb-block-wrapper';
+  wrap.dataset.id = block.id;
+  wrap.innerHTML = `
+    <div class="lpb-drag-handle" title="Drag to reorder"><i class="fa-solid fa-grip-vertical"></i></div>
+    <div class="lpb-block-actions">
+      <button class="lpb-block-btn" onclick="moveBlock('${block.id}',-1)" title="Move up"><i class="fa-solid fa-chevron-up"></i></button>
+      <button class="lpb-block-btn" onclick="moveBlock('${block.id}',1)"  title="Move down"><i class="fa-solid fa-chevron-down"></i></button>
+      <button class="lpb-block-btn" onclick="duplicateBlock('${block.id}')" title="Duplicate"><i class="fa-solid fa-clone"></i></button>
+      <button class="lpb-block-btn danger" onclick="deleteBlock('${block.id}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
+    </div>
+    <div class="lpb-block-inner">${renderBlockHTML(block)}</div>
+  `;
+  wrap.addEventListener('click', (e) => {
+    if (e.target.closest('.lpb-block-actions') || e.target.closest('.lpb-drag-handle')) return;
+    selectBlock(block.id);
+  });
+  return wrap;
+}
+
+function renderBlockHTML(block) {
+  const d = block.data || {};
+  switch (block.type) {
+    case 'hero': return `
+      <div class="lpb-blk-hero" style="background:${esc(d.bgColor||'#1e1b4b')};color:${esc(d.textColor||'#fff')};text-align:${esc(d.align||'center')}">
+        ${d.image ? `<img src="${esc(d.image)}" style="max-height:220px;border-radius:10px;margin-bottom:20px" />` : ''}
+        <h1>${esc(d.heading||'Your Headline Here')}</h1>
+        <p>${esc(d.subheading||'Your subheading goes here.')}</p>
+        ${d.btnText ? `<a href="${esc(d.btnUrl||'#')}" class="lpb-blk-hero-btn" style="background:${esc(d.btnColor||'#6366f1')};color:#fff">${esc(d.btnText)}</a>` : ''}
+      </div>`;
+
+    case 'text': return `<div class="lpb-blk-text">${d.html||'<p>Click to edit this text block.</p>'}</div>`;
+
+    case 'features': {
+      const items = d.items || [];
+      return `<div class="lpb-blk-features">
+        ${d.heading ? `<h2>${esc(d.heading)}</h2>` : ''}
+        <ul>${items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul>
+      </div>`;
+    }
+
+    case 'cta': return `
+      <div class="lpb-blk-cta" style="background:${esc(d.bgColor||'#6366f1')};color:${esc(d.textColor||'#fff')}">
+        <h2>${esc(d.heading||'Ready to get started?')}</h2>
+        <p>${esc(d.sub||'Take action today.')}</p>
+        ${d.btnText ? `<a href="${esc(d.btnUrl||'#')}" class="lpb-blk-cta-btn" style="background:${esc(d.textColor||'#fff')};color:${esc(d.bgColor||'#6366f1')}">${esc(d.btnText)}</a>` : ''}
+      </div>`;
+
+    case 'image': return `
+      <div class="lpb-blk-image">
+        ${d.url ? `<img src="${esc(d.url)}" alt="${esc(d.alt||'')}" style="border-radius:${esc(d.radius||'10')}px" />` : '<div class="lpb-image-placeholder"><i class="fa-solid fa-image" style="font-size:2rem;margin-bottom:8px;display:block"></i>Add image URL in properties</div>'}
+        ${d.caption ? `<p style="margin-top:10px;font-size:.85rem;color:#64748b;text-align:center">${esc(d.caption)}</p>` : ''}
+      </div>`;
+
+    case 'video': {
+      const embedUrl = getVideoEmbed(d.url||'');
+      return `<div class="lpb-blk-video">${embedUrl ? `<iframe src="${esc(embedUrl)}" allowfullscreen></iframe>` : '<div class="lpb-video-placeholder"><i class="fa-solid fa-circle-play" style="font-size:2rem;margin-bottom:8px;display:block"></i><p>Paste a YouTube/Vimeo URL in properties</p></div>'}</div>`;
+    }
+
+    case 'countdown': {
+      const target = d.targetDate ? new Date(d.targetDate).getTime() : (Date.now() + 7*24*60*60*1000);
+      const diff   = Math.max(0, target - Date.now());
+      const days   = Math.floor(diff / 86400000);
+      const hrs    = Math.floor((diff % 86400000) / 3600000);
+      const mins   = Math.floor((diff % 3600000) / 60000);
+      const secs   = Math.floor((diff % 60000) / 1000);
+      return `<div class="lpb-blk-countdown" style="color:${esc(d.textColor||'#1e293b')}">
+        ${d.label ? `<p class="lpb-cd-label">${esc(d.label)}</p>` : ''}
+        <div class="lpb-cd-timer">
+          <div class="lpb-cd-unit"><div class="lpb-cd-num" id="cd-days-${block.id}">${pad(days)}</div><div class="lpb-cd-lbl">days</div></div>
+          <div class="lpb-cd-unit"><div class="lpb-cd-num" id="cd-hrs-${block.id}">${pad(hrs)}</div><div class="lpb-cd-lbl">hours</div></div>
+          <div class="lpb-cd-unit"><div class="lpb-cd-num" id="cd-mins-${block.id}">${pad(mins)}</div><div class="lpb-cd-lbl">mins</div></div>
+          <div class="lpb-cd-unit"><div class="lpb-cd-num" id="cd-secs-${block.id}">${pad(secs)}</div><div class="lpb-cd-lbl">secs</div></div>
+        </div>
+      </div>`;
+    }
+
+    case 'testimonial': {
+      const items = d.items || [];
+      return `<div class="lpb-blk-testimonial">
+        ${d.heading ? `<h2>${esc(d.heading)}</h2>` : ''}
+        <div class="lpb-testi-grid">
+          ${items.map(t=>`<div class="lpb-testi-card">
+            <div class="lpb-testi-quote">${esc(t.quote||'')}</div>
+            <div class="lpb-testi-name">${esc(t.name||'')}</div>
+            ${t.title ? `<div class="lpb-testi-role">${esc(t.title)}</div>` : ''}
+          </div>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    case 'faq': {
+      const items = d.items || [];
+      return `<div class="lpb-blk-faq">
+        ${d.heading ? `<h2>${esc(d.heading)}</h2>` : ''}
+        ${items.map(f=>`<div class="lpb-faq-item">
+          <div class="lpb-faq-q">${esc(f.q||'')} <i class="fa-solid fa-chevron-down" style="font-size:.75rem;color:#94a3b8"></i></div>
+          <div class="lpb-faq-a">${esc(f.a||'')}</div>
+        </div>`).join('')}
+      </div>`;
+    }
+
+    case 'columns': return `
+      <div class="lpb-blk-columns">
+        <div class="lpb-blk-text">${d.col1||'<p>Left column content.</p>'}</div>
+        <div class="lpb-blk-text">${d.col2||'<p>Right column content.</p>'}</div>
+      </div>`;
+
+    case 'divider': return `<div class="lpb-blk-divider" style="padding:${esc(d.paddingV||'8')}px 40px"><hr style="border-color:${esc(d.color||'#e2e8f0')};border-top-width:${esc(d.thickness||'1')}px" /></div>`;
+
+    case 'spacer':  return `<div class="lpb-blk-spacer" style="height:${esc(d.height||'60')}px"></div>`;
+
+    case 'html':    return `<div class="lpb-blk-html">${d.html||'<!-- Custom HTML -->'}</div>`;
+
+    default: return `<div style="padding:24px;text-align:center;color:#94a3b8">[Unknown block: ${esc(block.type)}]</div>`;
+  }
+}
+
+function pad(n) { return String(n).padStart(2,'0'); }
+
+function getVideoEmbed(url) {
+  if (!url) return '';
+  const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
+  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  const viMatch = url.match(/vimeo\.com\/(\d+)/);
+  if (viMatch) return `https://player.vimeo.com/video/${viMatch[1]}`;
+  return url; // raw embed url
+}
+
+// ── Sortable drag-and-drop ─────────────────────────────────────────────────
+let sortable = null;
+function initSortable() {
+  if (sortable) sortable.destroy();
+  sortable = Sortable.create(canvas, {
+    animation: 150,
+    handle: '.lpb-drag-handle',
+    ghostClass: 'sortable-ghost',
+    onEnd(evt) {
+      pushUndo();
+      const moved = blocks.splice(evt.oldIndex, 1)[0];
+      blocks.splice(evt.newIndex, 0, moved);
+      setSaveStatus('Unsaved changes');
+      scheduleAutoSave();
+    }
+  });
+}
+
+// ── Palette drag-to-canvas ─────────────────────────────────────────────────
+document.querySelectorAll('.lpb-palette-block').forEach(el => {
+  el.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('block-type', el.dataset.blockType);
+  });
+});
+canvas.addEventListener('dragover', e => e.preventDefault());
+canvas.addEventListener('drop', e => {
+  e.preventDefault();
+  const type = e.dataTransfer.getData('block-type');
+  if (type) addBlock(type);
+});
+
+// ── Block CRUD ─────────────────────────────────────────────────────────────
+function addBlock(type, data, insertAfter) {
+  pushUndo();
+  const block = { id: uid(), type, data: data || defaultData(type) };
+  if (insertAfter) {
+    const idx = blocks.findIndex(b => b.id === insertAfter);
+    blocks.splice(idx + 1, 0, block);
+  } else {
+    blocks.push(block);
+  }
+  renderCanvas();
+  setTimeout(() => selectBlock(block.id), 50);
+  setSaveStatus('Unsaved changes');
+  scheduleAutoSave();
+}
+
+function defaultData(type) {
+  switch(type) {
+    case 'hero':        return { heading:'Your Headline', subheading:'Your compelling subheading.', bgColor:'#1e1b4b', textColor:'#fff', align:'center', btnText:'Get Started', btnUrl:'#', btnColor:'#6366f1' };
+    case 'text':        return { html:'<h2>Section Title</h2><p>Write your content here. This block supports full HTML.</p>' };
+    case 'features':    return { heading:'Key Features', items:['✅ Feature one','✅ Feature two','✅ Feature three'] };
+    case 'cta':         return { heading:'Ready to get started?', sub:'Join thousands of happy users.', btnText:'Get Started', btnUrl:'#', bgColor:'#6366f1', textColor:'#fff' };
+    case 'image':       return { url:'', alt:'', caption:'', radius:'10' };
+    case 'video':       return { url:'' };
+    case 'countdown':   return { targetDate:'', label:'Offer ends in', textColor:'#1e293b' };
+    case 'testimonial': return { heading:'What People Say', items:[{quote:'"Amazing experience!"',name:'Jane D.',title:'Customer'},{quote:'"Highly recommended."',name:'Mark R.',title:'User'}] };
+    case 'faq':         return { heading:'Frequently Asked Questions', items:[{q:'What is this?',a:'This is your answer.'},{q:'How does it work?',a:'Another answer here.'}] };
+    case 'columns':     return { col1:'<h3>Left Column</h3><p>Content goes here.</p>', col2:'<h3>Right Column</h3><p>Content goes here.</p>' };
+    case 'divider':     return { color:'#e2e8f0', thickness:'1', paddingV:'16' };
+    case 'spacer':      return { height:'60' };
+    case 'html':        return { html:'<!-- Paste your custom HTML here -->' };
+    default:            return {};
+  }
+}
+
+function deleteBlock(id) {
+  pushUndo();
+  blocks = blocks.filter(b => b.id !== id);
+  if (selectedBlockId === id) deselectBlock();
+  renderCanvas();
+  setSaveStatus('Unsaved changes');
+  scheduleAutoSave();
+}
+window.deleteBlock = deleteBlock;
+
+function moveBlock(id, dir) {
+  pushUndo();
+  const idx = blocks.findIndex(b => b.id === id);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= blocks.length) return;
+  [blocks[idx], blocks[newIdx]] = [blocks[newIdx], blocks[idx]];
+  renderCanvas();
+  setTimeout(() => selectBlock(id), 10);
+  setSaveStatus('Unsaved changes');
+  scheduleAutoSave();
+}
+window.moveBlock = moveBlock;
+
+function duplicateBlock(id) {
+  pushUndo();
+  const block = blocks.find(b => b.id === id);
+  if (!block) return;
+  const clone = { ...deepClone(block), id: uid() };
+  const idx = blocks.findIndex(b => b.id === id);
+  blocks.splice(idx + 1, 0, clone);
+  renderCanvas();
+  setTimeout(() => selectBlock(clone.id), 50);
+  setSaveStatus('Unsaved changes');
+  scheduleAutoSave();
+}
+window.duplicateBlock = duplicateBlock;
+
+// ── Block Selection & Properties ───────────────────────────────────────────
+function selectBlock(id) {
+  selectedBlockId = id;
+  document.querySelectorAll('.lpb-block-wrapper').forEach(el => el.classList.toggle('selected', el.dataset.id === id));
+  const block = blocks.find(b => b.id === id);
+  if (!block) return;
+  document.getElementById('propsPanelTitle').textContent = blockLabel(block.type);
+  document.getElementById('propsContent').innerHTML = buildPropsHTML(block);
+  attachPropsHandlers(block);
+}
+
+function deselectBlock() {
+  selectedBlockId = null;
+  document.querySelectorAll('.lpb-block-wrapper').forEach(el => el.classList.remove('selected'));
+  document.getElementById('propsPanelTitle').textContent = 'Properties';
+  document.getElementById('propsContent').innerHTML = '<p style="color:#94a3b8;font-size:.85rem;text-align:center;padding:24px">Select a block to edit its properties</p>';
+}
+window.deselectBlock = deselectBlock;
+
+function blockLabel(type) {
+  const map = { hero:'Hero Banner', text:'Text / HTML', features:'Feature List', cta:'Call to Action', image:'Image', video:'Video', countdown:'Countdown', testimonial:'Testimonials', faq:'FAQ', columns:'2 Columns', divider:'Divider', spacer:'Spacer', html:'Custom HTML' };
+  return map[type] || type;
+}
+
+function buildPropsHTML(block) {
+  const d = block.data || {};
+  switch (block.type) {
+    case 'hero': return `
+      <label class="lpb-label">Heading</label>
+      <input type="text" class="lpb-input" data-field="heading" value="${esc(d.heading||'')}" />
+      <label class="lpb-label">Subheading</label>
+      <textarea class="lpb-input" data-field="subheading" rows="2">${esc(d.subheading||'')}</textarea>
+      <label class="lpb-label">Image URL (optional)</label>
+      <input type="text" class="lpb-input" data-field="image" value="${esc(d.image||'')}" placeholder="https://…" />
+      <label class="lpb-label">Text Align</label>
+      <select class="lpb-input" data-field="align">
+        <option value="left" ${d.align==='left'?'selected':''}>Left</option>
+        <option value="center" ${!d.align||d.align==='center'?'selected':''}>Center</option>
+        <option value="right" ${d.align==='right'?'selected':''}>Right</option>
+      </select>
+      <div class="lpb-section-divider">Colors</div>
+      <label class="lpb-label">Background</label>
+      <input type="color" class="lpb-color-input" data-field="bgColor" value="${d.bgColor||'#1e1b4b'}" />
+      <label class="lpb-label">Text Color</label>
+      <input type="color" class="lpb-color-input" data-field="textColor" value="${d.textColor||'#ffffff'}" />
+      <div class="lpb-section-divider">Button</div>
+      <label class="lpb-label">Button Text</label>
+      <input type="text" class="lpb-input" data-field="btnText" value="${esc(d.btnText||'')}" placeholder="Get Started" />
+      <label class="lpb-label">Button URL</label>
+      <input type="text" class="lpb-input" data-field="btnUrl" value="${esc(d.btnUrl||'#')}" />
+      <label class="lpb-label">Button Color</label>
+      <input type="color" class="lpb-color-input" data-field="btnColor" value="${d.btnColor||'#6366f1'}" />`;
+
+    case 'text': return `
+      <label class="lpb-label">HTML Content</label>
+      <textarea class="lpb-input" data-field="html" rows="12" style="font-family:monospace;font-size:.78rem">${esc(d.html||'')}</textarea>
+      <p style="font-size:.73rem;color:#94a3b8;margin-top:6px">Full HTML supported. Use &lt;h2&gt;, &lt;p&gt;, &lt;ul&gt;, etc.</p>`;
+
+    case 'features': return `
+      <label class="lpb-label">Heading</label>
+      <input type="text" class="lpb-input" data-field="heading" value="${esc(d.heading||'')}" style="margin-bottom:12px" />
+      <label class="lpb-label">Items</label>
+      <div class="lpb-list-items" id="featureItems">
+        ${(d.items||[]).map((item,i)=>`<div class="lpb-list-item"><input type="text" value="${esc(item)}" data-feature-idx="${i}" /><button class="lpb-list-remove" onclick="removeListItem('feature',${i})"><i class="fa-solid fa-xmark"></i></button></div>`).join('')}
+      </div>
+      <button class="lpb-add-item" onclick="addListItem('feature')"><i class="fa-solid fa-plus"></i> Add item</button>`;
+
+    case 'cta': return `
+      <label class="lpb-label">Heading</label>
+      <input type="text" class="lpb-input" data-field="heading" value="${esc(d.heading||'')}" />
+      <label class="lpb-label">Subtext</label>
+      <textarea class="lpb-input" data-field="sub" rows="2">${esc(d.sub||'')}</textarea>
+      <label class="lpb-label">Button Text</label>
+      <input type="text" class="lpb-input" data-field="btnText" value="${esc(d.btnText||'')}" />
+      <label class="lpb-label">Button URL</label>
+      <input type="text" class="lpb-input" data-field="btnUrl" value="${esc(d.btnUrl||'#')}" />
+      <div class="lpb-section-divider">Colors</div>
+      <label class="lpb-label">Background</label>
+      <input type="color" class="lpb-color-input" data-field="bgColor" value="${d.bgColor||'#6366f1'}" />
+      <label class="lpb-label">Text Color</label>
+      <input type="color" class="lpb-color-input" data-field="textColor" value="${d.textColor||'#ffffff'}" />`;
+
+    case 'image': return `
+      <label class="lpb-label">Image URL</label>
+      <input type="text" class="lpb-input" data-field="url" value="${esc(d.url||'')}" placeholder="https://…" />
+      <label class="lpb-label">Alt Text</label>
+      <input type="text" class="lpb-input" data-field="alt" value="${esc(d.alt||'')}" />
+      <label class="lpb-label">Caption</label>
+      <input type="text" class="lpb-input" data-field="caption" value="${esc(d.caption||'')}" />
+      <label class="lpb-label">Border Radius (px)</label>
+      <input type="number" class="lpb-input" data-field="radius" value="${esc(d.radius||'10')}" min="0" max="50" />`;
+
+    case 'video': return `
+      <label class="lpb-label">YouTube / Vimeo URL</label>
+      <input type="text" class="lpb-input" data-field="url" value="${esc(d.url||'')}" placeholder="https://youtube.com/watch?v=…" />
+      <p style="font-size:.73rem;color:#94a3b8;margin-top:6px">Paste a YouTube, Vimeo, or direct embed URL.</p>`;
+
+    case 'countdown': return `
+      <label class="lpb-label">Target Date & Time</label>
+      <input type="datetime-local" class="lpb-input" data-field="targetDate" value="${esc(d.targetDate||'')}" />
+      <label class="lpb-label">Label</label>
+      <input type="text" class="lpb-input" data-field="label" value="${esc(d.label||'Offer ends in')}" />
+      <label class="lpb-label">Text Color</label>
+      <input type="color" class="lpb-color-input" data-field="textColor" value="${d.textColor||'#1e293b'}" />`;
+
+    case 'testimonial': return `
+      <label class="lpb-label">Section Heading</label>
+      <input type="text" class="lpb-input" data-field="heading" value="${esc(d.heading||'')}" style="margin-bottom:12px" />
+      <label class="lpb-label">Testimonials</label>
+      <div id="testiItems">
+        ${(d.items||[]).map((t,i)=>`
+        <div style="background:#f8fafc;border-radius:8px;padding:10px;margin-bottom:8px;border:1px solid #e2e8f0">
+          <input type="text" placeholder="Quote" value="${esc(t.quote||'')}" data-testi-idx="${i}" data-testi-field="quote" class="lpb-input" style="margin-bottom:5px" />
+          <input type="text" placeholder="Name" value="${esc(t.name||'')}" data-testi-idx="${i}" data-testi-field="name" class="lpb-input" style="margin-bottom:5px" />
+          <input type="text" placeholder="Title / Role" value="${esc(t.title||'')}" data-testi-idx="${i}" data-testi-field="title" class="lpb-input" />
+          <button class="lpb-list-remove" style="margin-top:6px;width:auto;padding:4px 10px;font-size:.78rem" onclick="removeTestiItem(${i})"><i class="fa-solid fa-xmark"></i> Remove</button>
+        </div>`).join('')}
+      </div>
+      <button class="lpb-add-item" onclick="addTestiItem()"><i class="fa-solid fa-plus"></i> Add testimonial</button>`;
+
+    case 'faq': return `
+      <label class="lpb-label">Section Heading</label>
+      <input type="text" class="lpb-input" data-field="heading" value="${esc(d.heading||'')}" style="margin-bottom:12px" />
+      <label class="lpb-label">FAQ Items</label>
+      <div id="faqItems">
+        ${(d.items||[]).map((f,i)=>`
+        <div style="background:#f8fafc;border-radius:8px;padding:10px;margin-bottom:8px;border:1px solid #e2e8f0">
+          <input type="text" placeholder="Question" value="${esc(f.q||'')}" data-faq-idx="${i}" data-faq-field="q" class="lpb-input" style="margin-bottom:5px" />
+          <textarea placeholder="Answer" data-faq-idx="${i}" data-faq-field="a" class="lpb-input" rows="2">${esc(f.a||'')}</textarea>
+          <button class="lpb-list-remove" style="margin-top:6px;width:auto;padding:4px 10px;font-size:.78rem" onclick="removeFaqItem(${i})"><i class="fa-solid fa-xmark"></i> Remove</button>
+        </div>`).join('')}
+      </div>
+      <button class="lpb-add-item" onclick="addFaqItem()"><i class="fa-solid fa-plus"></i> Add FAQ</button>`;
+
+    case 'columns': return `
+      <label class="lpb-label">Left Column HTML</label>
+      <textarea class="lpb-input" data-field="col1" rows="6" style="font-family:monospace;font-size:.78rem">${esc(d.col1||'')}</textarea>
+      <label class="lpb-label">Right Column HTML</label>
+      <textarea class="lpb-input" data-field="col2" rows="6" style="font-family:monospace;font-size:.78rem">${esc(d.col2||'')}</textarea>`;
+
+    case 'divider': return `
+      <label class="lpb-label">Line Color</label>
+      <input type="color" class="lpb-color-input" data-field="color" value="${d.color||'#e2e8f0'}" />
+      <label class="lpb-label">Thickness (px)</label>
+      <input type="number" class="lpb-input" data-field="thickness" value="${d.thickness||'1'}" min="1" max="20" />
+      <label class="lpb-label">Vertical Padding (px)</label>
+      <input type="number" class="lpb-input" data-field="paddingV" value="${d.paddingV||'16'}" min="0" max="100" />`;
+
+    case 'spacer': return `
+      <label class="lpb-label">Height (px)</label>
+      <input type="number" class="lpb-input" data-field="height" value="${d.height||'60'}" min="10" max="400" />`;
+
+    case 'html': return `
+      <label class="lpb-label">Custom HTML</label>
+      <textarea class="lpb-input" data-field="html" rows="16" style="font-family:monospace;font-size:.78rem">${esc(d.html||'')}</textarea>
+      <p style="font-size:.73rem;color:#ff6b6b;margin-top:6px"><i class="fa-solid fa-triangle-exclamation"></i> Only use trusted HTML. Scripts are not executed in preview.</p>`;
+
+    default: return `<p style="color:#94a3b8;padding:12px;font-size:.85rem">No properties for this block type.</p>`;
+  }
+}
+
+function attachPropsHandlers(block) {
+  const body = document.getElementById('propsContent');
+
+  // Simple data-field inputs
+  body.querySelectorAll('[data-field]').forEach(el => {
+    el.addEventListener('input', () => {
+      const field = el.dataset.field;
+      block.data[field] = el.value;
+      refreshBlockEl(block);
+      setSaveStatus('Unsaved changes');
+      scheduleAutoSave();
+    });
+  });
+
+  // Feature items
+  body.querySelectorAll('[data-feature-idx]').forEach(el => {
+    el.addEventListener('input', () => {
+      const idx = parseInt(el.dataset.featureIdx);
+      if (!block.data.items) block.data.items = [];
+      block.data.items[idx] = el.value;
+      refreshBlockEl(block);
+      setSaveStatus('Unsaved changes');
+      scheduleAutoSave();
+    });
+  });
+
+  // Testimonial items
+  body.querySelectorAll('[data-testi-idx]').forEach(el => {
+    el.addEventListener('input', () => {
+      const idx = parseInt(el.dataset.testiIdx);
+      const field = el.dataset.testiField;
+      if (!block.data.items) block.data.items = [];
+      if (!block.data.items[idx]) block.data.items[idx] = {};
+      block.data.items[idx][field] = el.value;
+      refreshBlockEl(block);
+      setSaveStatus('Unsaved changes');
+      scheduleAutoSave();
+    });
+  });
+
+  // FAQ items
+  body.querySelectorAll('[data-faq-idx]').forEach(el => {
+    el.addEventListener('input', () => {
+      const idx = parseInt(el.dataset.faqIdx);
+      const field = el.dataset.faqField;
+      if (!block.data.items) block.data.items = [];
+      if (!block.data.items[idx]) block.data.items[idx] = {};
+      block.data.items[idx][field] = el.value;
+      refreshBlockEl(block);
+      setSaveStatus('Unsaved changes');
+      scheduleAutoSave();
+    });
+  });
+}
+
+function refreshBlockEl(block) {
+  const el = canvas.querySelector(`[data-id="${block.id}"] .lpb-block-inner`);
+  if (el) el.innerHTML = renderBlockHTML(block);
+}
+
+// ── List item helpers ──────────────────────────────────────────────────────
+window.removeListItem = function(type, idx) {
+  const block = blocks.find(b => b.id === selectedBlockId);
+  if (!block) return;
+  block.data.items.splice(idx, 1);
+  selectBlock(selectedBlockId); // re-render props
+  refreshBlockEl(block);
+  setSaveStatus('Unsaved changes');
+  scheduleAutoSave();
+};
+
+window.addListItem = function(type) {
+  const block = blocks.find(b => b.id === selectedBlockId);
+  if (!block) return;
+  if (!block.data.items) block.data.items = [];
+  block.data.items.push('New item');
+  selectBlock(selectedBlockId);
+  refreshBlockEl(block);
+  setSaveStatus('Unsaved changes');
+  scheduleAutoSave();
+};
+
+window.removeTestiItem = function(idx) {
+  const block = blocks.find(b => b.id === selectedBlockId);
+  if (!block) return;
+  block.data.items.splice(idx, 1);
+  selectBlock(selectedBlockId);
+  refreshBlockEl(block);
+  setSaveStatus('Unsaved changes');
+  scheduleAutoSave();
+};
+
+window.addTestiItem = function() {
+  const block = blocks.find(b => b.id === selectedBlockId);
+  if (!block) return;
+  if (!block.data.items) block.data.items = [];
+  block.data.items.push({ quote:'"Great experience!"', name:'Name', title:'Role' });
+  selectBlock(selectedBlockId);
+  refreshBlockEl(block);
+  setSaveStatus('Unsaved changes');
+  scheduleAutoSave();
+};
+
+window.removeFaqItem = function(idx) {
+  const block = blocks.find(b => b.id === selectedBlockId);
+  if (!block) return;
+  block.data.items.splice(idx, 1);
+  selectBlock(selectedBlockId);
+  refreshBlockEl(block);
+  setSaveStatus('Unsaved changes');
+  scheduleAutoSave();
+};
+
+window.addFaqItem = function() {
+  const block = blocks.find(b => b.id === selectedBlockId);
+  if (!block) return;
+  if (!block.data.items) block.data.items = [];
+  block.data.items.push({ q:'New question?', a:'Answer here.' });
+  selectBlock(selectedBlockId);
+  refreshBlockEl(block);
+  setSaveStatus('Unsaved changes');
+  scheduleAutoSave();
+};
+
+// ── Template Loader ────────────────────────────────────────────────────────
+window.loadTemplate = function(name) {
+  if (blocks.length && !confirm(`Load the "${name}" template? This will replace current blocks.`)) return;
+  pushUndo();
+  blocks = deepClone(TEMPLATES[name] || []);
+  // assign fresh ids
+  blocks.forEach(b => { b.id = uid(); });
+  renderCanvas();
+  deselectBlock();
+  setSaveStatus('Unsaved changes');
+  scheduleAutoSave();
+};
+
+// ── Mode Switching ─────────────────────────────────────────────────────────
+window.switchMode = function(mode) {
+  const visual = document.getElementById('visualMode');
+  const code   = document.getElementById('codeMode');
+  document.getElementById('btnVisual').classList.toggle('active', mode==='visual');
+  document.getElementById('btnCode').classList.toggle('active', mode==='code');
+  if (mode === 'code') {
+    document.getElementById('codeJsonEditor').value = JSON.stringify(blocks, null, 2);
+    document.getElementById('codeCssEditor').value  = settings.custom_css || '';
+    visual.style.display = 'none';
+    code.style.display   = 'flex';
+  } else {
+    visual.style.display = 'flex';
+    code.style.display   = 'none';
+  }
+};
+
+window.switchCodeTab = function(tab) {
+  document.getElementById('codeTabJson').style.display = tab === 'json' ? 'flex' : 'none';
+  document.getElementById('codeTabCss').style.display  = tab === 'css'  ? 'flex' : 'none';
+  document.querySelectorAll('.lpb-code-tab').forEach((el,i) => el.classList.toggle('active', (i===0&&tab==='json')||(i===1&&tab==='css')));
+};
+
+window.applyCode = function() {
+  try {
+    const newBlocks = JSON.parse(document.getElementById('codeJsonEditor').value);
+    if (!Array.isArray(newBlocks)) throw new Error('Must be an array');
+    pushUndo();
+    blocks = newBlocks;
+    settings.custom_css = document.getElementById('codeCssEditor').value;
+    switchMode('visual');
+    renderCanvas();
+    setSaveStatus('Unsaved changes');
+    scheduleAutoSave();
+  } catch(e) {
+    alert('Invalid JSON: ' + e.message);
+  }
+};
+
+// ── Device preview ─────────────────────────────────────────────────────────
+window.setDevice = function(device) {
+  ['desktop','tablet','mobile'].forEach(d => {
+    document.getElementById('dev'+d.charAt(0).toUpperCase()+d.slice(1)).classList.toggle('active', d===device);
+  });
+  canvas.classList.remove('device-tablet','device-mobile');
+  if (device === 'tablet') canvas.classList.add('device-tablet');
+  if (device === 'mobile') canvas.classList.add('device-mobile');
+};
+
+// ── Palette toggle ─────────────────────────────────────────────────────────
+window.togglePalette = function() {
+  document.querySelector('.lpb-palette').classList.toggle('collapsed');
+};
+
+// ── Settings modal ─────────────────────────────────────────────────────────
+window.openSettings = function() {
+  document.getElementById('settingsSlug').value      = settings.slug;
+  document.getElementById('settingsMetaTitle').value = settings.meta_title;
+  document.getElementById('settingsMetaDesc').value  = settings.meta_desc;
+  document.getElementById('settingsOgImage').value   = settings.og_image;
+  document.getElementById('settingsFont').value      = settings.font;
+  document.getElementById('settingsPrimary').value   = settings.primary_color;
+  document.getElementById('settingsBg').value        = settings.bg_color;
+  document.getElementById('settingsModal').style.display = 'flex';
+};
+
+window.closeSettings = function() {
+  document.getElementById('settingsModal').style.display = 'none';
+};
+
+window.saveSettings = function() {
+  settings.slug          = document.getElementById('settingsSlug').value.trim();
+  settings.meta_title    = document.getElementById('settingsMetaTitle').value.trim();
+  settings.meta_desc     = document.getElementById('settingsMetaDesc').value.trim();
+  settings.og_image      = document.getElementById('settingsOgImage').value.trim();
+  settings.font          = document.getElementById('settingsFont').value;
+  settings.primary_color = document.getElementById('settingsPrimary').value;
+  settings.bg_color      = document.getElementById('settingsBg').value;
+  closeSettings();
+  setSaveStatus('Unsaved changes');
+};
+
+// ── Save ───────────────────────────────────────────────────────────────────
+function buildPayload(status) {
+  const title = document.getElementById('lpTitle').value.trim() || 'Untitled';
+  const slug  = settings.slug || title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/-+/g,'-').slice(0,80);
+  return {
+    id:            settings.id,
+    title,
+    slug,
+    status:        status || settings.status,
+    content:       JSON.stringify(blocks),
+    custom_css:    settings.custom_css || '',
+    meta_title:    settings.meta_title,
+    meta_desc:     settings.meta_desc,
+    og_image:      settings.og_image,
+    font:          settings.font,
+    primary_color: settings.primary_color,
+    bg_color:      settings.bg_color,
+  };
+}
+
+async function doSave(status) {
+  setSaveStatus('Saving…');
+  try {
+    const res  = await fetch('/pages/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildPayload(status)),
+    });
+    const data = await res.json();
+    if (data.success) {
+      settings.id     = data.id;
+      settings.slug   = data.slug;
+      settings.status = status || settings.status;
+      setSaveStatus('All changes saved');
+      return true;
+    } else {
+      setSaveStatus('Save failed');
+      alert(data.error || 'Save failed');
+      return false;
+    }
+  } catch(e) {
+    setSaveStatus('Save failed');
+    alert('Network error: ' + e.message);
+    return false;
+  }
+}
+
+window.saveDraft   = () => doSave('draft');
+window.publishPage = async () => {
+  if (!settings.slug && !document.getElementById('lpTitle').value.trim()) {
+    alert('Please give your page a title first.');
+    return;
+  }
+  const ok = await doSave('published');
+  if (ok) {
+    const slug = settings.slug;
+    if (confirm(`Page published! Open /p/${slug}?`)) window.open('/p/' + slug, '_blank');
+  }
+};
+
+window.previewPage = () => {
+  if (settings.id) window.open('/p/' + settings.slug, '_blank');
+  else alert('Save your page first to preview it.');
+};
+
+function scheduleAutoSave() {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => { if (settings.id) doSave(settings.status); }, 5000);
+}
+
+// ── Title sync ─────────────────────────────────────────────────────────────
+document.getElementById('lpTitle').addEventListener('input', () => {
+  setSaveStatus('Unsaved changes');
+  scheduleAutoSave();
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+renderCanvas();
+
+// Warn on leave with unsaved changes
+window.addEventListener('beforeunload', e => {
+  if (document.getElementById('lpSaveStatus').textContent === 'Unsaved changes') {
+    e.preventDefault(); e.returnValue = '';
+  }
+});
+
+})();
+</script>

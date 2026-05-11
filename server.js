@@ -52,13 +52,14 @@ app.response.render = function(view, options, fn) {
   const req = this.req;
 
   // Determine which layout to use
-  const isAdmin = view.startsWith('admin/');
-  const isAuthOnly = ['auth/login', 'auth/register'].includes(view);
-  const isError = view.startsWith('errors/');
+  const isAdmin   = view.startsWith('admin/');
+  const isMinimal = view === 'pages/public' || (options && options.layout === 'minimal');
 
   const layoutFile = isAdmin
     ? path.join(__dirname, 'views/admin/layout.ejs')
-    : path.join(__dirname, 'views/layouts/main.ejs');
+    : isMinimal
+      ? path.join(__dirname, 'views/layouts/minimal.ejs')
+      : path.join(__dirname, 'views/layouts/main.ejs');
 
   const opts = Object.assign({}, self.locals, options || {});
 
@@ -144,6 +145,9 @@ app.use('/users',       require('./routes/users'));
 app.use('/messages',    require('./routes/messages'));
 app.use('/communities', require('./routes/communities'));
 app.use('/',            require('./routes/monetize'));
+app.use('/pages',       require('./routes/pages'));
+// Public landing page view (minimal layout, no navbar)
+app.get('/p/:slug',     require('./controllers/landingPageController').viewPublicPage);
 
 // Vote endpoint at root level
 const postCtrl = require('./controllers/postController');
@@ -572,6 +576,29 @@ async function runMigrations() {
     for (const sql of videoColMigrations) {
       try { await pool.execute(sql); } catch (e) { /* column already exists or enum unchanged */ }
     }
+
+    // Landing pages table
+    try {
+      await pool.execute(`CREATE TABLE IF NOT EXISTS landing_pages (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        user_id     INT NOT NULL,
+        title       VARCHAR(200) NOT NULL,
+        slug        VARCHAR(220) NOT NULL UNIQUE,
+        status      ENUM('draft','published') DEFAULT 'draft',
+        content     LONGTEXT,
+        custom_css  TEXT,
+        meta_title  VARCHAR(200),
+        meta_desc   VARCHAR(500),
+        og_image    VARCHAR(500),
+        font        VARCHAR(80) DEFAULT 'Inter',
+        primary_color VARCHAR(20) DEFAULT '#6366F1',
+        bg_color    VARCHAR(20) DEFAULT '#FFFFFF',
+        views       INT DEFAULT 0,
+        created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`);
+    } catch(e) { /* table already exists */ }
 
     // Seed default platform settings
     try {

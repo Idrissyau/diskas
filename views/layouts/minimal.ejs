@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title><%= typeof metaTitle !== 'undefined' && metaTitle ? metaTitle : (title || 'Page') %></title>
+  <meta name="description" content="<%= (typeof metaDesc !== 'undefined' && metaDesc ? metaDesc : 'A page on Diskas').replace(/"/g,'&quot;') %>" />
+
+  <% if (typeof noIndex !== 'undefined' && noIndex) { %>
+  <meta name="robots" content="noindex,nofollow" />
+  <% } else { %>
+  <meta name="robots" content="index,follow" />
+  <% } %>
+
+  <% if (typeof canonicalUrl !== 'undefined' && canonicalUrl) { %>
+  <link rel="canonical" href="<%= canonicalUrl %>" />
+  <% } %>
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:title"       content="<%= (typeof metaTitle !== 'undefined' && metaTitle ? metaTitle : (title || 'Page')).replace(/"/g,'&quot;') %>" />
+  <meta property="og:description" content="<%= (typeof metaDesc !== 'undefined' && metaDesc ? metaDesc : '').replace(/"/g,'&quot;') %>" />
+  <% if (typeof ogImage !== 'undefined' && ogImage) { %>
+  <meta property="og:image" content="<%= ogImage %>" />
+  <% } %>
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&family=Lato:wght@300;400;700&family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <link rel="icon" type="image/svg+xml" href="/img/favicon.svg" />
+
+  <!-- Page custom font -->
+  <% if (typeof pageFont !== 'undefined' && pageFont && pageFont !== 'Inter') { %>
+  <style>body { font-family: '<%= pageFont %>', sans-serif !important; }</style>
+  <% } %>
+
+  <!-- Page custom CSS injected by builder -->
+  <% if (typeof customCSS !== 'undefined' && customCSS) { %>
+  <style><%- customCSS %></style>
+  <% } %>
+</head>
+<body class="lp-body">
+
+<%- body %>
+
+<!-- Minimal footer -->
+<footer class="lp-footer">
+  <p>Powered by <a href="<%= typeof appUrl !== 'undefined' ? appUrl : '/' %>" target="_blank" rel="noopener">Diskas</a></p>
+</footer>
+
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;color:#1e293b;background:#fff;line-height:1.6}
+  .lp-footer{text-align:center;padding:24px;font-size:.78rem;color:#94a3b8;border-top:1px solid #f1f5f9}
+  .lp-footer a{color:#6366f1;text-decoration:none}
+  img{max-width:100%;height:auto}
+  a{text-decoration:none}
+  p{margin-bottom:.75em}
+</style>
+
+</body>
+</html>
