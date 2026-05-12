@@ -103,8 +103,8 @@ exports.editPage = async (req, res) => {
 exports.savePage = async (req, res) => {
   if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
   try {
-    const { id, title, slug: rawSlug, content, custom_css, meta_title, meta_desc,
-            og_image, font, primary_color, bg_color, status } = req.body;
+    const { id, title, slug: rawSlug, content, custom_css, custom_html, custom_js,
+            meta_title, meta_desc, og_image, font, primary_color, bg_color, status } = req.body;
 
     const slug = rawSlug ? slugify(rawSlug) : slugify(title || 'my-page');
     if (!slug) return res.status(400).json({ error: 'Invalid slug' });
@@ -122,11 +122,12 @@ exports.savePage = async (req, res) => {
       if (slugConflict) return res.status(400).json({ error: 'That URL slug is already taken' });
 
       await pool.execute(
-        `UPDATE landing_pages SET title=?, slug=?, content=?, custom_css=?, meta_title=?, meta_desc=?,
-         og_image=?, font=?, primary_color=?, bg_color=?, status=?, updated_at=NOW()
+        `UPDATE landing_pages SET title=?, slug=?, content=?, custom_css=?, custom_html=?, custom_js=?,
+         meta_title=?, meta_desc=?, og_image=?, font=?, primary_color=?, bg_color=?, status=?, updated_at=NOW()
          WHERE id = ? AND user_id = ?`,
-        [title||'Untitled', slug, content||'[]', custom_css||'', meta_title||'', meta_desc||'',
-         og_image||'', allowedFont, primary_color||'#6366F1', bg_color||'#FFFFFF', allowedStatus,
+        [title||'Untitled', slug, content||'[]', custom_css||'', custom_html||'', custom_js||'',
+         meta_title||'', meta_desc||'', og_image||'', allowedFont,
+         primary_color||'#6366F1', bg_color||'#FFFFFF', allowedStatus,
          id, req.session.user.id]
       );
       return res.json({ success: true, id, slug });
@@ -136,11 +137,11 @@ exports.savePage = async (req, res) => {
       if (slugConflict) return res.status(400).json({ error: 'That URL slug is already taken' });
 
       const result = await pool.execute(
-        `INSERT INTO landing_pages (user_id, title, slug, content, custom_css, meta_title, meta_desc,
-         og_image, font, primary_color, bg_color, status)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+        `INSERT INTO landing_pages (user_id, title, slug, content, custom_css, custom_html, custom_js,
+         meta_title, meta_desc, og_image, font, primary_color, bg_color, status)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [req.session.user.id, title||'Untitled', slug, content||'[]', custom_css||'',
-         meta_title||'', meta_desc||'', og_image||'', allowedFont,
+         custom_html||'', custom_js||'', meta_title||'', meta_desc||'', og_image||'', allowedFont,
          primary_color||'#6366F1', bg_color||'#FFFFFF', allowedStatus]
       );
       const newId = result[0].insertId;
@@ -197,8 +198,10 @@ exports.viewPublicPage = async (req, res) => {
       metaDesc:   page.meta_desc  || '',
       ogImage:    page.og_image   || '',
       canonicalUrl: `${appUrl}/p/${page.slug}`,
-      pageFont:   page.font       || 'Inter',
-      customCSS:  page.custom_css || '',
+      pageFont:   page.font        || 'Inter',
+      customCSS:  page.custom_css  || '',
+      customHTML: page.custom_html || '',
+      customJS:   page.custom_js   || '',
       page,
       blocks,
       appUrl,

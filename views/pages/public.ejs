@@ -272,3 +272,15 @@ function renderBlock(block) {
   tick();
 })();
 </script>
+
+<% if (typeof customHTML !== 'undefined' && customHTML) { %>
+<!-- Custom HTML (injected by page builder) -->
+<%- customHTML %>
+<% } %>
+
+<% if (typeof customJS !== 'undefined' && customJS) { %>
+<!-- Custom JS (injected by page builder) -->
+<script>
+<%- customJS %>
+</script>
+<% } %>

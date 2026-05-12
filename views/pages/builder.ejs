@@ -113,20 +113,39 @@
   <!-- Code Mode -->
   <div id="codeMode" class="lpb-code-wrap" style="display:none">
     <div class="lpb-code-tabs">
-      <button class="lpb-code-tab active" onclick="switchCodeTab('json')">Blocks JSON</button>
-      <button class="lpb-code-tab" onclick="switchCodeTab('css')">Custom CSS</button>
+      <button class="lpb-code-tab active" onclick="switchCodeTab('json')"><i class="fa-solid fa-brackets-curly"></i> Blocks JSON</button>
+      <button class="lpb-code-tab" onclick="switchCodeTab('css')"><i class="fa-brands fa-css3-alt"></i> Custom CSS</button>
+      <button class="lpb-code-tab" onclick="switchCodeTab('html')"><i class="fa-brands fa-html5"></i> Custom HTML</button>
+      <button class="lpb-code-tab" onclick="switchCodeTab('js')"><i class="fa-brands fa-js"></i> Custom JS</button>
     </div>
     <div id="codeTabJson" class="lpb-code-panel">
-      <div class="lpb-code-hint">Edit the raw JSON blocks array. Changes sync to the visual editor when you switch back.</div>
+      <div class="lpb-code-hint"><i class="fa-solid fa-circle-info"></i> Edit the raw JSON blocks array. Changes sync to the visual editor when you switch back.</div>
       <textarea id="codeJsonEditor" class="lpb-code-textarea" spellcheck="false"></textarea>
     </div>
     <div id="codeTabCss" class="lpb-code-panel" style="display:none">
-      <div class="lpb-code-hint">Write custom CSS that will be injected into the published page's &lt;head&gt;.</div>
-      <textarea id="codeCssEditor" class="lpb-code-textarea" spellcheck="false" placeholder="/* your custom CSS here */"></textarea>
+      <div class="lpb-code-hint"><i class="fa-solid fa-circle-info"></i> Custom CSS injected into the page <code style="background:#1e293b;padding:1px 5px;border-radius:4px">&lt;head&gt;</code>. Styles the entire published page.</div>
+      <textarea id="codeCssEditor" class="lpb-code-textarea" spellcheck="false" placeholder="/* your custom CSS here */
+.my-class {
+  color: red;
+}"></textarea>
     </div>
-    <div style="padding:12px 16px;display:flex;gap:8px;border-top:1px solid #e2e8f0">
+    <div id="codeTabHtml" class="lpb-code-panel" style="display:none">
+      <div class="lpb-code-hint"><i class="fa-solid fa-circle-info"></i> Raw HTML injected into the page <code style="background:#1e293b;padding:1px 5px;border-radius:4px">&lt;body&gt;</code>. Use for embeds, forms, widgets, third-party tools, etc.</div>
+      <textarea id="codeHtmlEditor" class="lpb-code-textarea" spellcheck="false" placeholder="<!-- Paste any HTML here, e.g. embed codes, forms, widgets -->
+<div class=&quot;my-widget&quot;>
+  ...
+</div>"></textarea>
+    </div>
+    <div id="codeTabJs" class="lpb-code-panel" style="display:none">
+      <div class="lpb-code-hint"><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b"></i> JavaScript injected before <code style="background:#1e293b;padding:1px 5px;border-radius:4px">&lt;/body&gt;</code>. Use for analytics, tracking, interactions, etc.</div>
+      <textarea id="codeJsEditor" class="lpb-code-textarea" spellcheck="false" placeholder="// Your custom JavaScript here
+document.addEventListener('DOMContentLoaded', function() {
+  // ...
+});"></textarea>
+    </div>
+    <div style="padding:12px 16px;display:flex;gap:8px;border-top:1px solid #334155;background:#0f172a">
       <button class="btn btn-primary btn-sm" onclick="applyCode()"><i class="fa-solid fa-check"></i> Apply & Switch to Visual</button>
-      <button class="btn btn-sm btn-outline" onclick="switchMode('visual')">Cancel</button>
+      <button class="btn btn-sm btn-outline" style="color:#94a3b8;border-color:#334155" onclick="switchMode('visual')">Cancel</button>
     </div>
   </div>
 
@@ -344,7 +363,9 @@ let settings = {
   font:         <%- JSON.stringify(page ? (page.font||'Inter')  : 'Inter') %>,
   primary_color:<%- JSON.stringify(page ? (page.primary_color||'#6366F1') : '#6366F1') %>,
   bg_color:     <%- JSON.stringify(page ? (page.bg_color||'#FFFFFF')      : '#FFFFFF') %>,
-  custom_css:   <%- JSON.stringify(page ? (page.custom_css||'') : '') %>,
+  custom_css:   <%- JSON.stringify(page ? (page.custom_css||'')  : '') %>,
+  custom_html:  <%- JSON.stringify(page ? (page.custom_html||'') : '') %>,
+  custom_js:    <%- JSON.stringify(page ? (page.custom_js||'')   : '') %>,
 };
 
 let selectedBlockId = null;
@@ -919,9 +940,12 @@ window.switchMode = function(mode) {
   document.getElementById('btnCode').classList.toggle('active', mode==='code');
   if (mode === 'code') {
     document.getElementById('codeJsonEditor').value = JSON.stringify(blocks, null, 2);
-    document.getElementById('codeCssEditor').value  = settings.custom_css || '';
+    document.getElementById('codeCssEditor').value  = settings.custom_css  || '';
+    document.getElementById('codeHtmlEditor').value = settings.custom_html || '';
+    document.getElementById('codeJsEditor').value   = settings.custom_js   || '';
     visual.style.display = 'none';
     code.style.display   = 'flex';
+    switchCodeTab('json'); // always start on JSON tab
   } else {
     visual.style.display = 'flex';
     code.style.display   = 'none';
@@ -929,25 +953,36 @@ window.switchMode = function(mode) {
 };
 
 window.switchCodeTab = function(tab) {
-  document.getElementById('codeTabJson').style.display = tab === 'json' ? 'flex' : 'none';
-  document.getElementById('codeTabCss').style.display  = tab === 'css'  ? 'flex' : 'none';
-  document.querySelectorAll('.lpb-code-tab').forEach((el,i) => el.classList.toggle('active', (i===0&&tab==='json')||(i===1&&tab==='css')));
+  ['json','css','html','js'].forEach(t => {
+    const panel = document.getElementById('codeTab' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (panel) panel.style.display = (t === tab) ? 'flex' : 'none';
+  });
+  document.querySelectorAll('.lpb-code-tab').forEach((el, i) => {
+    const tabs = ['json','css','html','js'];
+    el.classList.toggle('active', tabs[i] === tab);
+  });
 };
 
 window.applyCode = function() {
+  // Validate JSON before applying
+  let newBlocks;
   try {
-    const newBlocks = JSON.parse(document.getElementById('codeJsonEditor').value);
-    if (!Array.isArray(newBlocks)) throw new Error('Must be an array');
-    pushUndo();
-    blocks = newBlocks;
-    settings.custom_css = document.getElementById('codeCssEditor').value;
-    switchMode('visual');
-    renderCanvas();
-    setSaveStatus('Unsaved changes');
-    scheduleAutoSave();
+    newBlocks = JSON.parse(document.getElementById('codeJsonEditor').value);
+    if (!Array.isArray(newBlocks)) throw new Error('Blocks must be a JSON array');
   } catch(e) {
-    alert('Invalid JSON: ' + e.message);
+    alert('Invalid Blocks JSON: ' + e.message);
+    switchCodeTab('json');
+    return;
   }
+  pushUndo();
+  blocks = newBlocks;
+  settings.custom_css  = document.getElementById('codeCssEditor').value;
+  settings.custom_html = document.getElementById('codeHtmlEditor').value;
+  settings.custom_js   = document.getElementById('codeJsEditor').value;
+  switchMode('visual');
+  renderCanvas();
+  setSaveStatus('Unsaved changes');
+  scheduleAutoSave();
 };
 
 // ── Device preview ─────────────────────────────────────────────────────────
@@ -1003,7 +1038,9 @@ function buildPayload(status) {
     slug,
     status:        status || settings.status,
     content:       JSON.stringify(blocks),
-    custom_css:    settings.custom_css || '',
+    custom_css:    settings.custom_css  || '',
+    custom_html:   settings.custom_html || '',
+    custom_js:     settings.custom_js   || '',
     meta_title:    settings.meta_title,
     meta_desc:     settings.meta_desc,
     og_image:      settings.og_image,

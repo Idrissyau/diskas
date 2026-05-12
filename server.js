@@ -600,6 +600,15 @@ async function runMigrations() {
       )`);
     } catch(e) { /* table already exists */ }
 
+    // Landing pages column additions
+    const landingPageColMigrations = [
+      `ALTER TABLE landing_pages ADD COLUMN custom_html LONGTEXT DEFAULT NULL`,
+      `ALTER TABLE landing_pages ADD COLUMN custom_js   LONGTEXT DEFAULT NULL`,
+    ];
+    for (const sql of landingPageColMigrations) {
+      try { await pool.execute(sql); } catch(e) { /* column already exists */ }
+    }
+
     // Seed default platform settings
     try {
       await pool.execute("INSERT IGNORE INTO platform_settings (setting_key, setting_value) VALUES ('commission_pct', '10')");
