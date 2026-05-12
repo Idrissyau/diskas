@@ -26,15 +26,20 @@ function renderBlock(block) {
   const d = block.data || {};
   switch (block.type) {
 
-    case 'hero':
-      return `<section class="pub-hero" style="background:${he(d.bgColor||'#1e1b4b')};color:${he(d.textColor||'#fff')};text-align:${he(d.align||'center')}">
-        <div class="pub-container">
+    case 'hero': {
+      const heroBgStyle = d.bgImage
+        ? `background:${he(d.bgColor||'#1e1b4b')};background-image:url(${he(d.bgImage)});background-size:cover;background-position:center`
+        : `background:${he(d.bgColor||'#1e1b4b')}`;
+      return `<section class="pub-hero" style="${heroBgStyle};color:${he(d.textColor||'#fff')};text-align:${he(d.align||'center')};position:relative;overflow:hidden">
+        ${d.bgVideo ? `<video autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:.7"><source src="${he(d.bgVideo)}" type="video/mp4" /></video>` : ''}
+        <div class="pub-container" style="position:relative;z-index:1">
           ${d.image ? `<img src="${he(d.image)}" class="pub-hero-img" alt="" />` : ''}
           <h1 class="pub-hero-h1">${he(d.heading||'')}</h1>
           ${d.subheading ? `<p class="pub-hero-sub">${he(d.subheading)}</p>` : ''}
           ${d.btnText ? `<a href="${he(d.btnUrl||'#')}" class="pub-btn" style="background:${he(d.btnColor||'#6366f1')};color:#fff">${he(d.btnText)}</a>` : ''}
         </div>
       </section>`;
+    }
 
     case 'text':
       return `<section class="pub-text"><div class="pub-container pub-prose">${d.html||''}</div></section>`;

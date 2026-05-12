@@ -475,13 +475,21 @@ function safeRenderBlock(block) {
 function renderBlockHTML(block) {
   const d = block.data || {};
   switch (block.type) {
-    case 'hero': return `
-      <div class="lpb-blk-hero" style="background:${esc(d.bgColor||'#1e1b4b')};color:${esc(d.textColor||'#fff')};text-align:${esc(d.align||'center')}">
-        ${d.image ? `<img src="${esc(d.image)}" style="max-height:220px;border-radius:10px;margin-bottom:20px" />` : ''}
-        <h1>${esc(d.heading||'Your Headline Here')}</h1>
-        <p>${esc(d.subheading||'Your subheading goes here.')}</p>
-        ${d.btnText ? `<a href="${esc(d.btnUrl||'#')}" class="lpb-blk-hero-btn" style="background:${esc(d.btnColor||'#6366f1')};color:#fff">${esc(d.btnText)}</a>` : ''}
+    case 'hero': {
+      const heroBg = d.bgImage
+        ? `background:${esc(d.bgColor||'#1e1b4b')};background-image:url(${esc(d.bgImage)});background-size:cover;background-position:center`
+        : `background:${esc(d.bgColor||'#1e1b4b')}`;
+      return `
+      <div class="lpb-blk-hero" style="${heroBg};color:${esc(d.textColor||'#fff')};text-align:${esc(d.align||'center')};position:relative;overflow:hidden">
+        ${d.bgVideo ? `<video autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:.6"><source src="${esc(d.bgVideo)}" /></video>` : ''}
+        <div style="position:relative;z-index:1">
+          ${d.image ? `<img src="${esc(d.image)}" style="max-height:220px;border-radius:10px;margin-bottom:20px" />` : ''}
+          <h1>${esc(d.heading||'Your Headline Here')}</h1>
+          <p>${esc(d.subheading||'Your subheading goes here.')}</p>
+          ${d.btnText ? `<a href="${esc(d.btnUrl||'#')}" class="lpb-blk-hero-btn" style="background:${esc(d.btnColor||'#6366f1')};color:#fff">${esc(d.btnText)}</a>` : ''}
+        </div>
       </div>`;
+    }
 
     case 'text': return `<div class="lpb-blk-text">${d.html||'<p>Click to edit this text block.</p>'}</div>`;
 
@@ -720,7 +728,7 @@ function addBlock(type, data, insertAfter) {
 
 function defaultData(type) {
   switch(type) {
-    case 'hero':        return { heading:'Your Headline', subheading:'Your compelling subheading.', bgColor:'#1e1b4b', textColor:'#fff', align:'center', btnText:'Get Started', btnUrl:'#', btnColor:'#6366f1' };
+    case 'hero':        return { heading:'Your Headline', subheading:'Your compelling subheading.', bgColor:'#1e1b4b', bgImage:'', bgVideo:'', textColor:'#fff', align:'center', btnText:'Get Started', btnUrl:'#', btnColor:'#6366f1' };
     case 'text':        return { html:'<h2>Section Title</h2><p>Write your content here. This block supports full HTML.</p>' };
     case 'features':    return { heading:'Key Features', items:['✅ Feature one','✅ Feature two','✅ Feature three'] };
     case 'cta':         return { heading:'Ready to get started?', sub:'Join thousands of happy users.', btnText:'Get Started', btnUrl:'#', bgColor:'#6366f1', textColor:'#fff' };
@@ -820,10 +828,15 @@ function buildPropsHTML(block) {
         <option value="center" ${!d.align||d.align==='center'?'selected':''}>Center</option>
         <option value="right" ${d.align==='right'?'selected':''}>Right</option>
       </select>
-      <div class="lpb-section-divider">Colors</div>
-      <label class="lpb-label">Background</label>
+      <div class="lpb-section-divider">Background</div>
+      <label class="lpb-label">Background Color</label>
       <input type="color" class="lpb-color-input" data-field="bgColor" value="${d.bgColor||'#1e1b4b'}" />
-      <label class="lpb-label">Text Color</label>
+      <label class="lpb-label" style="margin-top:10px">Background Image URL <span style="font-weight:400;color:#94a3b8">(overrides color)</span></label>
+      <input type="text" class="lpb-input" data-field="bgImage" value="${esc(d.bgImage||'')}" placeholder="https://… (JPG, PNG, WebP)" />
+      <label class="lpb-label" style="margin-top:10px">Background Video URL <span style="font-weight:400;color:#94a3b8">(MP4, plays muted)</span></label>
+      <input type="text" class="lpb-input" data-field="bgVideo" value="${esc(d.bgVideo||'')}" placeholder="https://… (.mp4)" />
+      <p style="font-size:.72rem;color:#94a3b8;margin-top:4px">Video takes priority over image when both are set.</p>
+      <label class="lpb-label" style="margin-top:10px">Text Color</label>
       <input type="color" class="lpb-color-input" data-field="textColor" value="${d.textColor||'#ffffff'}" />
       <div class="lpb-section-divider">Button</div>
       <label class="lpb-label">Button Text</label>
