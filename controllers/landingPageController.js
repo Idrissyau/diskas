@@ -1,5 +1,7 @@
 'use strict';
 
+const path = require('path');
+const fs   = require('fs');
 const { query, queryOne, insert, update, remove } = require('../helpers/db');
 const { pool } = require('../config/database');
 
@@ -47,6 +49,16 @@ const TEMPLATES = {
     { id: 'b3', type: 'text',       data: { html: '<h2>Who We Are</h2><p>Tell your community\'s story. Share the mission, values, and what makes it special. Help potential members envision their life inside your community.</p>' } },
     { id: 'b4', type: 'testimonial',data: { heading: 'What Members Say', items: [{ quote: '"Best community I\'ve ever joined."', name: 'Alex T.', title: 'Member' }, { quote: '"The value here is incredible."', name: 'Sarah K.', title: 'Member' }] } },
     { id: 'b5', type: 'cta',        data: { heading: 'Ready to Join?', sub: 'Start your journey with us today.', btnText: 'Join Now', btnUrl: '#buy', bgColor: '#8b5cf6', textColor: '#fff' } },
+  ],
+  store: [
+    { id: 'b1', type: 'hero',       data: { heading: '[Store Name]', subheading: 'Quality products delivered to your door.', bgColor: '#0f172a', textColor: '#ffffff', align: 'center', btnText: 'Shop Now', btnUrl: '#products', btnColor: '#f59e0b' } },
+    { id: 'b2', type: 'trust',      data: { heading: 'Why Shop With Us', bgColor: '#f8fafc', items: [{ icon: 'fa-shield-halved', label: 'Secure Payment' }, { icon: 'fa-truck-fast', label: 'Fast Shipping' }, { icon: 'fa-rotate-left', label: '30-Day Returns' }, { icon: 'fa-headset', label: '24/7 Support' }] } },
+    { id: 'b3', type: 'product',    data: { image: '', name: 'Featured Product', price: '$49', originalPrice: '$99', description: 'This is your best-selling product. Highlight what makes it special and why customers love it.', btnText: '🛒 Add to Cart', btnUrl: '#buy', btnColor: '#f59e0b', badge: 'Best Seller', layout: 'horizontal' } },
+    { id: 'b4', type: 'features',   data: { heading: 'What\'s Included', items: ['📦 Free shipping on orders over $50', '✅ 100% quality guarantee', '🔒 Safe & secure checkout', '🎁 Gift wrapping available'] } },
+    { id: 'b5', type: 'testimonial',data: { heading: 'Happy Customers', items: [{ quote: '"Great quality, arrived fast!"', name: 'Sarah K.', title: 'Verified Buyer' }, { quote: '"Exceeded my expectations."', name: 'James M.', title: 'Verified Buyer' }, { quote: '"Will definitely order again!"', name: 'Priya S.', title: 'Verified Buyer' }] } },
+    { id: 'b6', type: 'pricing',    data: { heading: 'Choose Your Bundle', tiers: [{ name: 'Starter', price: '$29', period: 'one-time', features: ['1 unit', 'Standard packaging', 'Free shipping'], btnText: 'Buy Starter', btnUrl: '#buy', highlight: false }, { name: 'Value Pack', price: '$49', period: 'one-time', features: ['3 units', 'Premium packaging', 'Free shipping', 'Gift card'], btnText: 'Buy Value Pack', btnUrl: '#buy', highlight: true }, { name: 'Bulk', price: '$79', period: 'one-time', features: ['6 units', 'Wholesale pricing', 'Free priority shipping', 'Gift card + Note'], btnText: 'Buy Bulk', btnUrl: '#buy', highlight: false }] } },
+    { id: 'b7', type: 'faq',        data: { heading: 'Frequently Asked Questions', items: [{ q: 'How long does shipping take?', a: 'Standard shipping takes 3-5 business days. Express shipping is available at checkout.' }, { q: 'What is your return policy?', a: 'We offer a full 30-day money-back guarantee if you\'re not completely satisfied.' }, { q: 'Do you ship internationally?', a: 'Yes! We ship to over 50 countries. International shipping rates apply.' }] } },
+    { id: 'b8', type: 'buy_button', data: { text: '🛒 Buy Now — $49', url: '#buy', color: '#f59e0b', textColor: '#0f172a', size: 'large', align: 'center', icon: '', subtext: '✅ Secure checkout · Free shipping · 30-day guarantee' } },
   ],
 };
 
@@ -104,7 +116,7 @@ exports.savePage = async (req, res) => {
   if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
   try {
     const { id, title, slug: rawSlug, content, custom_css, custom_html, custom_js,
-            meta_title, meta_desc, og_image, font, primary_color, bg_color, status } = req.body;
+            meta_title, meta_desc, og_image, font, primary_color, bg_color, bg_image, status } = req.body;
 
     const slug = rawSlug ? slugify(rawSlug) : slugify(title || 'my-page');
     if (!slug) return res.status(400).json({ error: 'Invalid slug' });
@@ -123,11 +135,11 @@ exports.savePage = async (req, res) => {
 
       await pool.execute(
         `UPDATE landing_pages SET title=?, slug=?, content=?, custom_css=?, custom_html=?, custom_js=?,
-         meta_title=?, meta_desc=?, og_image=?, font=?, primary_color=?, bg_color=?, status=?, updated_at=NOW()
+         meta_title=?, meta_desc=?, og_image=?, font=?, primary_color=?, bg_color=?, bg_image=?, status=?, updated_at=NOW()
          WHERE id = ? AND user_id = ?`,
         [title||'Untitled', slug, content||'[]', custom_css||'', custom_html||'', custom_js||'',
          meta_title||'', meta_desc||'', og_image||'', allowedFont,
-         primary_color||'#6366F1', bg_color||'#FFFFFF', allowedStatus,
+         primary_color||'#6366F1', bg_color||'#FFFFFF', bg_image||'', allowedStatus,
          id, req.session.user.id]
       );
       return res.json({ success: true, id, slug });
@@ -138,11 +150,11 @@ exports.savePage = async (req, res) => {
 
       const result = await pool.execute(
         `INSERT INTO landing_pages (user_id, title, slug, content, custom_css, custom_html, custom_js,
-         meta_title, meta_desc, og_image, font, primary_color, bg_color, status)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+         meta_title, meta_desc, og_image, font, primary_color, bg_color, bg_image, status)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [req.session.user.id, title||'Untitled', slug, content||'[]', custom_css||'',
          custom_html||'', custom_js||'', meta_title||'', meta_desc||'', og_image||'', allowedFont,
-         primary_color||'#6366F1', bg_color||'#FFFFFF', allowedStatus]
+         primary_color||'#6366F1', bg_color||'#FFFFFF', bg_image||'', allowedStatus]
       );
       const newId = result[0].insertId;
       return res.json({ success: true, id: newId, slug });
@@ -202,6 +214,7 @@ exports.viewPublicPage = async (req, res) => {
       customCSS:  page.custom_css  || '',
       customHTML: page.custom_html || '',
       customJS:   page.custom_js   || '',
+      bgImage:    page.bg_image    || '',
       page,
       blocks,
       appUrl,
@@ -210,6 +223,35 @@ exports.viewPublicPage = async (req, res) => {
   } catch (err) {
     console.error('viewPublicPage error:', err);
     res.status(500).send('Error loading page');
+  }
+};
+
+// ── Background Image Upload ────────────────────────────────────────────────
+exports.uploadBgImage = async (req, res) => {
+  if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
+  try {
+    const page = await queryOne(`SELECT id FROM landing_pages WHERE id = ? AND user_id = ?`, [req.params.id, req.session.user.id]);
+    if (!page) return res.status(403).json({ error: 'Forbidden' });
+
+    if (!req.files || !req.files.image) return res.status(400).json({ error: 'No file uploaded' });
+    const file = req.files.image;
+    const ext  = path.extname(file.name).toLowerCase();
+    const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    if (!allowed.includes(ext)) return res.status(400).json({ error: 'Invalid file type' });
+
+    const uploadDir = path.join(__dirname, '../public/uploads/pages');
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+    const filename = `bg-${req.params.id}-${Date.now()}${ext}`;
+    const dest = path.join(uploadDir, filename);
+    await file.mv(dest);
+
+    const url = `/uploads/pages/${filename}`;
+    await pool.execute(`UPDATE landing_pages SET bg_image=? WHERE id=?`, [url, req.params.id]);
+    res.json({ url });
+  } catch (err) {
+    console.error('uploadBgImage error:', err);
+    res.status(500).json({ error: err.message });
   }
 };
 

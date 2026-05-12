@@ -604,6 +604,7 @@ async function runMigrations() {
     const landingPageColMigrations = [
       `ALTER TABLE landing_pages ADD COLUMN custom_html LONGTEXT DEFAULT NULL`,
       `ALTER TABLE landing_pages ADD COLUMN custom_js   LONGTEXT DEFAULT NULL`,
+      `ALTER TABLE landing_pages ADD COLUMN bg_image    VARCHAR(500) DEFAULT NULL`,
     ];
     for (const sql of landingPageColMigrations) {
       try { await pool.execute(sql); } catch(e) { /* column already exists */ }

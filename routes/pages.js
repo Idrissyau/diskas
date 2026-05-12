@@ -11,5 +11,6 @@ router.get( '/:id/edit',      ctrl.editPage);
 router.post('/save',          ctrl.savePage);
 router.delete('/:id',         ctrl.deletePage);
 router.post('/:id/duplicate', ctrl.duplicatePage);
+router.post('/:id/upload-bg', ctrl.uploadBgImage);
 
 module.exports = router;

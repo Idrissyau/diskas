@@ -145,6 +145,97 @@ function renderBlock(block) {
     case 'spacer':
       return `<div style="height:${he(d.height||'60')}px"></div>`;
 
+    case 'buy_button':
+      return `<section class="pub-buy-btn" style="text-align:${he(d.align||'center')};padding:32px 24px">
+        <a href="${he(d.url||'#')}" class="pub-btn" style="background:${he(d.color||'#6366f1')};color:${he(d.textColor||'#fff')};font-size:${d.size==='large'?'1.1rem':d.size==='small'?'.85rem':'1rem'}">
+          ${d.icon?`<i class="fa-solid ${he(d.icon)}"></i> `:''}${he(d.text||'Buy Now')}
+        </a>
+        ${d.subtext?`<p style="margin-top:10px;font-size:.8rem;color:#94a3b8">${he(d.subtext)}</p>`:''}
+      </section>`;
+
+    case 'gallery': {
+      const imgs = d.images || [];
+      const cols = parseInt(d.cols||3);
+      return `<section class="pub-gallery">
+        <div class="pub-container">
+          ${imgs.length ? `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:${he(d.gap||'12')}px">
+            ${imgs.map(url=>`<img src="${he(url)}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:${he(d.radius||'8')}px" />`).join('')}
+          </div>` : ''}
+        </div>
+      </section>`;
+    }
+
+    case 'product': {
+      const layout = d.layout || 'horizontal';
+      return `<section class="pub-product">
+        <div class="pub-container">
+          <div style="display:${layout==='horizontal'?'grid':'block'};grid-template-columns:1fr 1fr;gap:40px;align-items:center">
+            <div>
+              ${d.image ? `<img src="${he(d.image)}" style="width:100%;border-radius:14px;max-height:360px;object-fit:cover" alt="${he(d.name||'')}" />` : ''}
+            </div>
+            <div>
+              ${d.badge?`<span style="background:#f59e0b;color:#fff;padding:3px 12px;border-radius:20px;font-size:.75rem;font-weight:700">${he(d.badge)}</span>`:''}
+              <h2 style="font-size:1.8rem;font-weight:800;margin:12px 0 8px">${he(d.name||'')}</h2>
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+                <span style="font-size:2rem;font-weight:800;color:${he(d.btnColor||'#6366f1')}">${he(d.price||'')}</span>
+                ${d.originalPrice?`<span style="font-size:1.1rem;text-decoration:line-through;color:#94a3b8">${he(d.originalPrice)}</span>`:''}
+              </div>
+              <p style="color:#64748b;line-height:1.75;margin-bottom:24px">${he(d.description||'')}</p>
+              ${d.btnText?`<a href="${he(d.btnUrl||'#')}" class="pub-btn" style="background:${he(d.btnColor||'#6366f1')};color:#fff">${he(d.btnText)}</a>`:''}
+            </div>
+          </div>
+        </div>
+      </section>`;
+    }
+
+    case 'pricing': {
+      const tiers = d.tiers || [];
+      return `<section class="pub-pricing">
+        <div class="pub-container">
+          ${d.heading?`<h2 class="pub-section-title">${he(d.heading)}</h2>`:''}
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;max-width:860px;margin:0 auto">
+            ${tiers.map(t=>`<div style="border:${t.highlight?'2px solid #6366f1':'1px solid #e2e8f0'};border-radius:14px;padding:28px;background:${t.highlight?'#eef2ff':'#fff'};text-align:center">
+              ${t.highlight?`<div style="background:#6366f1;color:#fff;font-size:.72rem;font-weight:700;padding:3px 12px;border-radius:20px;display:inline-block;margin-bottom:10px">MOST POPULAR</div>`:''}
+              <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:8px">${he(t.name||'')}</h3>
+              <div style="font-size:2rem;font-weight:800;color:${t.highlight?'#6366f1':'#0f172a'}">${he(t.price||'')}</div>
+              <div style="font-size:.78rem;color:#94a3b8;margin-bottom:16px">${he(t.period||'')}</div>
+              <ul style="list-style:none;padding:0;margin:0 0 20px;font-size:.88rem;color:#374151;text-align:left">
+                ${(t.features||[]).map(f=>`<li style="padding:6px 0;border-bottom:1px solid #f1f5f9">✅ ${he(f)}</li>`).join('')}
+              </ul>
+              ${t.btnText?`<a href="${he(t.btnUrl||'#')}" class="pub-btn" style="background:${t.highlight?'#6366f1':'#f1f5f9'};color:${t.highlight?'#fff':'#374151'};font-size:.85rem;padding:10px 20px;display:block">${he(t.btnText)}</a>`:''}
+            </div>`).join('')}
+          </div>
+        </div>
+      </section>`;
+    }
+
+    case 'trust': {
+      const items = d.items || [];
+      return `<section class="pub-trust" style="background:${he(d.bgColor||'#f8fafc')};padding:32px 24px">
+        <div class="pub-container">
+          ${d.heading?`<h3 style="text-align:center;font-size:1rem;font-weight:600;color:#64748b;margin-bottom:20px">${he(d.heading)}</h3>`:''}
+          <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:24px">
+            ${items.map(it=>`<div style="display:flex;align-items:center;gap:8px;color:#374151;font-size:.9rem;font-weight:600">
+              <i class="fa-solid ${he(it.icon||'fa-check')}" style="color:#10b981;font-size:1.1rem"></i>
+              ${he(it.label||'')}
+            </div>`).join('')}
+          </div>
+        </div>
+      </section>`;
+    }
+
+    case 'section': {
+      const numCols = parseInt(d.cols||2);
+      const colItems = d.items || Array.from({length:numCols}, ()=>[]);
+      return `<section style="padding:${he(d.padding||'32')}px 0;background:${he(d.bgColor||'transparent')}">
+        <div class="pub-container">
+          <div style="display:grid;grid-template-columns:repeat(${numCols},1fr);gap:${he(d.gap||'24')}px">
+            ${colItems.map(col=>`<div>${col.map(sb=>renderBlock(sb)).join('')}</div>`).join('')}
+          </div>
+        </div>
+      </section>`;
+    }
+
     case 'html':
       return `<div class="pub-html pub-container">${d.html||''}</div>`;
 
@@ -171,7 +262,15 @@ function renderBlock(block) {
     --pub-primary: <%= page.primary_color || '#6366f1' %>;
     --pub-bg:      <%= page.bg_color      || '#ffffff' %>;
   }
-  body { background: var(--pub-bg); }
+  body {
+    background: var(--pub-bg);
+    <% if (bgImage) { %>
+    background-image: url('<%= bgImage.replace(/'/g, "\\'") %>');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+    <% } %>
+  }
 
   .pub-container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
 
@@ -251,6 +350,22 @@ function renderBlock(block) {
 
   /* Divider */
   .pub-divider .pub-container { padding: 0 24px; }
+
+  /* Gallery */
+  .pub-gallery { padding: 32px 0; }
+
+  /* Product */
+  .pub-product { padding: 48px 0; }
+  @media (max-width: 640px) { .pub-product div[style*="grid"] { display: block !important; } }
+
+  /* Pricing */
+  .pub-pricing { padding: 56px 0; }
+
+  /* Trust */
+  .pub-trust { }
+
+  /* Buy Button */
+  .pub-buy-btn { }
 </style>
 
 <!-- Countdown live tick -->

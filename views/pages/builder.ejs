@@ -19,7 +19,7 @@
       <button class="btn btn-sm btn-outline" id="btnPreview" onclick="previewPage()"><i class="fa-solid fa-arrow-up-right-from-square"></i> Preview</button>
       <button class="btn btn-sm btn-outline" onclick="openSettings()"><i class="fa-solid fa-sliders"></i> Settings</button>
       <button class="btn btn-sm btn-outline" onclick="saveDraft()">Save Draft</button>
-      <button class="btn btn-primary btn-sm" onclick="publishPage()"><i class="fa-solid fa-globe"></i> Publish</button>
+      <button class="btn btn-primary btn-sm" id="btnPublish" onclick="publishPage()"><i class="fa-solid fa-globe"></i> Publish</button>
     </div>
   </header>
 
@@ -35,13 +35,14 @@
 
       <div class="lpb-palette-section">Templates</div>
       <div class="lpb-template-grid">
-        <% ['blank','event','course','product','community'].forEach(t => { %>
+        <% ['blank','event','course','product','community','store'].forEach(t => { %>
         <button class="lpb-tpl-btn" onclick="loadTemplate('<%= t %>')" title="<%= t.charAt(0).toUpperCase()+t.slice(1) %>">
           <span class="lpb-tpl-icon">
             <% if(t==='blank'){ %><i class="fa-regular fa-square"></i>
             <% } else if(t==='event'){ %><i class="fa-solid fa-calendar-days"></i>
             <% } else if(t==='course'){ %><i class="fa-solid fa-graduation-cap"></i>
             <% } else if(t==='product'){ %><i class="fa-solid fa-box-open"></i>
+            <% } else if(t==='store'){ %><i class="fa-solid fa-store"></i>
             <% } else { %><i class="fa-solid fa-people-group"></i><% } %>
           </span>
           <span><%= t.charAt(0).toUpperCase()+t.slice(1) %></span>
@@ -52,19 +53,24 @@
       <div class="lpb-palette-section">Blocks</div>
       <div class="lpb-block-list" id="blockPalette">
         <% [
-          {type:'hero',       icon:'fa-image',         label:'Hero Banner'},
-          {type:'text',       icon:'fa-align-left',    label:'Text / HTML'},
-          {type:'features',   icon:'fa-list-check',    label:'Feature List'},
-          {type:'cta',        icon:'fa-bullhorn',      label:'Call to Action'},
-          {type:'image',      icon:'fa-photo-film',    label:'Image'},
-          {type:'video',      icon:'fa-circle-play',   label:'Video Embed'},
-          {type:'countdown',  icon:'fa-hourglass-half',label:'Countdown'},
-          {type:'testimonial',icon:'fa-quote-left',    label:'Testimonials'},
-          {type:'faq',        icon:'fa-circle-question',label:'FAQ'},
-          {type:'columns',    icon:'fa-columns',       label:'2 Columns'},
-          {type:'divider',    icon:'fa-minus',         label:'Divider'},
-          {type:'spacer',     icon:'fa-arrows-up-down',label:'Spacer'},
-          {type:'html',       icon:'fa-code',          label:'Custom HTML'},
+          {type:'hero',       icon:'fa-image',           label:'Hero Banner'},
+          {type:'text',       icon:'fa-align-left',      label:'Text / HTML'},
+          {type:'features',   icon:'fa-list-check',      label:'Feature List'},
+          {type:'cta',        icon:'fa-bullhorn',        label:'Call to Action'},
+          {type:'buy_button', icon:'fa-cart-shopping',   label:'Buy Button'},
+          {type:'image',      icon:'fa-photo-film',      label:'Image'},
+          {type:'gallery',    icon:'fa-images',          label:'Image Gallery'},
+          {type:'video',      icon:'fa-circle-play',     label:'Video Embed'},
+          {type:'countdown',  icon:'fa-hourglass-half',  label:'Countdown'},
+          {type:'testimonial',icon:'fa-quote-left',      label:'Testimonials'},
+          {type:'product',    icon:'fa-box-open',        label:'Product Card'},
+          {type:'pricing',    icon:'fa-tags',            label:'Pricing Table'},
+          {type:'trust',      icon:'fa-shield-halved',   label:'Trust Badges'},
+          {type:'faq',        icon:'fa-circle-question', label:'FAQ'},
+          {type:'section',    icon:'fa-table-columns',   label:'Columns Section'},
+          {type:'divider',    icon:'fa-minus',           label:'Divider'},
+          {type:'spacer',     icon:'fa-arrows-up-down',  label:'Spacer'},
+          {type:'html',       icon:'fa-code',            label:'Custom HTML'},
         ].forEach(b => { %>
         <div class="lpb-palette-block" draggable="true" data-block-type="<%= b.type %>">
           <i class="fa-solid <%= b.icon %>"></i> <%= b.label %>
@@ -151,6 +157,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
 </div><!-- /lpBuilder -->
 
+<!-- ─── Sub-block Picker Modal ─────────────────────────────────────────── -->
+<div id="subBlockPicker" class="lpm-overlay" style="display:none" onclick="if(event.target===this)closeSubPicker()">
+  <div class="lpm-box" style="max-width:480px">
+    <div class="lpm-hdr"><span><i class="fa-solid fa-plus"></i> Add block to column</span><button onclick="closeSubPicker()" class="lpm-close">&times;</button></div>
+    <div class="lpm-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <% [
+          {type:'text',       icon:'fa-align-left',    label:'Text / HTML'},
+          {type:'image',      icon:'fa-photo-film',    label:'Image'},
+          {type:'gallery',    icon:'fa-images',        label:'Gallery'},
+          {type:'features',   icon:'fa-list-check',    label:'Feature List'},
+          {type:'cta',        icon:'fa-bullhorn',      label:'Call to Action'},
+          {type:'buy_button', icon:'fa-cart-shopping', label:'Buy Button'},
+          {type:'product',    icon:'fa-box-open',      label:'Product Card'},
+          {type:'pricing',    icon:'fa-tags',          label:'Pricing Table'},
+          {type:'trust',      icon:'fa-shield-halved', label:'Trust Badges'},
+          {type:'testimonial',icon:'fa-quote-left',    label:'Testimonials'},
+          {type:'countdown',  icon:'fa-hourglass-half',label:'Countdown'},
+          {type:'faq',        icon:'fa-circle-question',label:'FAQ'},
+          {type:'video',      icon:'fa-circle-play',   label:'Video'},
+          {type:'divider',    icon:'fa-minus',         label:'Divider'},
+          {type:'spacer',     icon:'fa-arrows-up-down',label:'Spacer'},
+          {type:'html',       icon:'fa-code',          label:'Custom HTML'},
+        ].forEach(b => { %>
+        <button class="lpb-tpl-btn" style="flex-direction:row;justify-content:flex-start;gap:10px;text-align:left" onclick="pickSubBlock('<%= b.type %>')">
+          <i class="fa-solid <%= b.icon %>" style="width:16px;text-align:center"></i> <%= b.label %>
+        </button>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ─── Settings Modal ──────────────────────────────────────────────────── -->
 <div id="settingsModal" class="lpm-overlay" style="display:none" onclick="if(event.target===this)closeSettings()">
   <div class="lpm-box" style="max-width:520px">
@@ -179,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <option value="Montserrat">Montserrat</option>
         <option value="Playfair Display">Playfair Display</option>
       </select>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
         <div>
           <label class="lpb-label">Primary Color</label>
           <input type="color" id="settingsPrimary" value="#6366F1" class="lpb-color-input" />
@@ -189,6 +228,11 @@ document.addEventListener('DOMContentLoaded', function() {
           <input type="color" id="settingsBg" value="#FFFFFF" class="lpb-color-input" />
         </div>
       </div>
+      <label class="lpb-label">Background Image URL (overrides color)</label>
+      <input type="text" id="settingsBgImage" class="lpb-input" placeholder="https://… or leave blank for solid color" style="margin-bottom:6px" />
+      <div style="font-size:.73rem;color:#94a3b8;margin-bottom:4px">Or upload an image:</div>
+      <input type="file" id="settingsBgImageFile" accept="image/*" style="font-size:.78rem;margin-bottom:12px" onchange="uploadBgImage(this)" />
+      <div id="bgImagePreview" style="display:none;margin-bottom:12px;border-radius:8px;overflow:hidden;height:80px;background-size:cover;background-position:center;border:1px solid #e2e8f0"></div>
       <div class="lpm-footer">
         <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
         <button class="btn btn-outline" onclick="closeSettings()">Cancel</button>
@@ -366,6 +410,7 @@ let settings = {
   custom_css:   <%- JSON.stringify(page ? (page.custom_css||'')  : '') %>,
   custom_html:  <%- JSON.stringify(page ? (page.custom_html||'') : '') %>,
   custom_js:    <%- JSON.stringify(page ? (page.custom_js||'')   : '') %>,
+  bg_image:     <%- JSON.stringify(page ? (page.bg_image||'')    : '') %>,
 };
 
 let selectedBlockId = null;
@@ -413,13 +458,18 @@ function createBlockEl(block) {
       <button class="lpb-block-btn" onclick="duplicateBlock('${block.id}')" title="Duplicate"><i class="fa-solid fa-clone"></i></button>
       <button class="lpb-block-btn danger" onclick="deleteBlock('${block.id}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
     </div>
-    <div class="lpb-block-inner">${renderBlockHTML(block)}</div>
+    <div class="lpb-block-inner">${safeRenderBlock(block)}</div>
   `;
   wrap.addEventListener('click', (e) => {
     if (e.target.closest('.lpb-block-actions') || e.target.closest('.lpb-drag-handle')) return;
     selectBlock(block.id);
   });
   return wrap;
+}
+
+function safeRenderBlock(block) {
+  try { return renderBlockHTML(block); }
+  catch(e) { return `<div style="padding:16px;background:#fee2e2;color:#dc2626;font-size:.8rem;border-radius:6px;margin:8px"><i class="fa-solid fa-triangle-exclamation"></i> Render error in <strong>${esc(block.type)}</strong> block: ${esc(String(e.message))}</div>`; }
 }
 
 function renderBlockHTML(block) {
@@ -501,6 +551,96 @@ function renderBlockHTML(block) {
           <div class="lpb-faq-q">${esc(f.q||'')} <i class="fa-solid fa-chevron-down" style="font-size:.75rem;color:#94a3b8"></i></div>
           <div class="lpb-faq-a">${esc(f.a||'')}</div>
         </div>`).join('')}
+      </div>`;
+    }
+
+    case 'buy_button': return `
+      <div style="padding:24px;text-align:${esc(d.align||'center')}">
+        <a href="${esc(d.url||'#')}" class="lpb-blk-cta-btn" style="background:${esc(d.color||'#6366f1')};color:${esc(d.textColor||'#fff')};font-size:${d.size==='large'?'1.1rem':d.size==='small'?'.85rem':'1rem'}">
+          ${d.icon?`<i class="fa-solid ${esc(d.icon)}"></i> `:''}${esc(d.text||'Buy Now')}
+        </a>
+        ${d.subtext?`<p style="margin-top:10px;font-size:.8rem;color:#94a3b8">${esc(d.subtext)}</p>`:''}
+      </div>`;
+
+    case 'gallery': {
+      const imgs = d.images || [];
+      const cols = d.cols || 3;
+      return `<div class="lpb-blk-image" style="padding:24px">
+        ${imgs.length ? `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:${esc(d.gap||'12')}px">
+          ${imgs.map(url=>`<img src="${esc(url)}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:${esc(d.radius||'8')}px" />`).join('')}
+        </div>` : '<div class="lpb-image-placeholder"><i class="fa-solid fa-images" style="font-size:2rem;margin-bottom:8px;display:block"></i>Add image URLs in properties</div>'}
+      </div>`;
+    }
+
+    case 'product': {
+      const layout = d.layout || 'horizontal';
+      return `<div style="padding:32px;display:${layout==='horizontal'?'grid':'block'};grid-template-columns:1fr 1fr;gap:32px;align-items:center">
+        <div>
+          ${d.image ? `<img src="${esc(d.image)}" style="width:100%;border-radius:12px;max-height:320px;object-fit:cover" />` : `<div class="lpb-image-placeholder" style="min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center"><i class="fa-solid fa-box-open" style="font-size:2rem;margin-bottom:8px"></i><p>Product image</p></div>`}
+        </div>
+        <div>
+          ${d.badge?`<span style="background:#f59e0b;color:#fff;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:700">${esc(d.badge)}</span>`:''}
+          <h2 style="font-size:1.6rem;font-weight:800;margin:10px 0 8px">${esc(d.name||'Product Name')}</h2>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+            <span style="font-size:1.8rem;font-weight:800;color:${esc(d.btnColor||'#6366f1')}">${esc(d.price||'$49')}</span>
+            ${d.originalPrice?`<span style="font-size:1.1rem;text-decoration:line-through;color:#94a3b8">${esc(d.originalPrice)}</span>`:''}
+          </div>
+          <p style="color:#64748b;line-height:1.7;margin-bottom:20px">${esc(d.description||'Describe your product here.')}</p>
+          <a href="${esc(d.btnUrl||'#')}" class="lpb-blk-cta-btn" style="background:${esc(d.btnColor||'#6366f1')};color:#fff">${esc(d.btnText||'Buy Now')}</a>
+        </div>
+      </div>`;
+    }
+
+    case 'pricing': {
+      const tiers = d.tiers || [];
+      return `<div style="padding:40px">
+        ${d.heading?`<h2 style="text-align:center;font-size:1.6rem;font-weight:800;margin-bottom:28px">${esc(d.heading)}</h2>`:''}
+        <div style="display:grid;grid-template-columns:repeat(${tiers.length||1},1fr);gap:20px;max-width:800px;margin:0 auto">
+          ${tiers.map(t=>`<div style="border:${t.highlight?'2px solid #6366f1':'1px solid #e2e8f0'};border-radius:14px;padding:28px;background:${t.highlight?'#eef2ff':'#fff'};text-align:center">
+            ${t.highlight?`<div style="background:#6366f1;color:#fff;font-size:.72rem;font-weight:700;padding:3px 12px;border-radius:20px;display:inline-block;margin-bottom:10px">MOST POPULAR</div>`:''}
+            <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:8px">${esc(t.name||'')}</h3>
+            <div style="font-size:2rem;font-weight:800;color:${t.highlight?'#6366f1':'#0f172a'}">${esc(t.price||'')}</div>
+            <div style="font-size:.78rem;color:#94a3b8;margin-bottom:16px">${esc(t.period||'')}</div>
+            <ul style="list-style:none;padding:0;margin:0 0 20px;font-size:.88rem;color:#374151;text-align:left">
+              ${(t.features||[]).map(f=>`<li style="padding:5px 0;border-bottom:1px solid #f1f5f9">✅ ${esc(f)}</li>`).join('')}
+            </ul>
+            <a href="${esc(t.btnUrl||'#')}" class="lpb-blk-cta-btn" style="background:${t.highlight?'#6366f1':'#f1f5f9'};color:${t.highlight?'#fff':'#374151'};font-size:.85rem;padding:10px 20px;display:block">${esc(t.btnText||'Get Started')}</a>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    case 'trust': {
+      const items = d.items || [];
+      return `<div style="padding:32px;background:${esc(d.bgColor||'#f8fafc')}">
+        ${d.heading?`<h3 style="text-align:center;font-size:1rem;font-weight:600;color:#64748b;margin-bottom:20px">${esc(d.heading)}</h3>`:''}
+        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:24px">
+          ${items.map(it=>`<div style="display:flex;align-items:center;gap:8px;color:#374151;font-size:.88rem;font-weight:600">
+            <i class="fa-solid ${esc(it.icon||'fa-check')}" style="color:#10b981;font-size:1.1rem"></i>
+            ${esc(it.label||'')}
+          </div>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    case 'section': {
+      const numCols = parseInt(d.cols||2);
+      const colItems = d.items || Array.from({length:numCols}, ()=>[]);
+      const colW = `repeat(${numCols},1fr)`;
+      return `<div style="padding:${esc(d.padding||'32')}px;background:${esc(d.bgColor||'transparent')}">
+        <div style="display:grid;grid-template-columns:${colW};gap:${esc(d.gap||'24')}px;max-width:900px;margin:0 auto">
+          ${colItems.map((col,ci)=>`<div class="lpb-section-col" data-section="${block.id}" data-col="${ci}" style="min-height:80px;border:2px dashed #e2e8f0;border-radius:8px;padding:8px;position:relative">
+            <div style="font-size:.7rem;color:#94a3b8;text-align:center;margin-bottom:6px;font-weight:600">Column ${ci+1}</div>
+            ${col.map(sb=>`<div class="lpb-section-sub" data-section="${block.id}" data-col="${ci}" data-sub="${sb.id}" style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:6px;overflow:hidden;cursor:pointer" onclick="event.stopPropagation();selectSubBlock('${block.id}',${ci},'${sb.id}')">
+              <div style="font-size:.7rem;color:#94a3b8;padding:3px 8px;background:#f8fafc;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center">
+                <span>${esc(blockLabel(sb.type))}</span>
+                <button onclick="event.stopPropagation();removeSubBlock('${block.id}',${ci},'${sb.id}')" style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:.7rem;padding:0"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <div style="padding:6px;font-size:.8rem;pointer-events:none;max-height:100px;overflow:hidden">${safeRenderBlock(sb)}</div>
+            </div>`).join('')}
+            <button onclick="event.stopPropagation();addSubBlock('${block.id}',${ci})" style="width:100%;border:1px dashed #cbd5e1;background:#f8fafc;color:#94a3b8;font-size:.78rem;padding:5px;border-radius:5px;cursor:pointer;margin-top:4px"><i class="fa-solid fa-plus"></i> Add block</button>
+          </div>`).join('')}
+        </div>
       </div>`;
     }
 
@@ -589,6 +729,12 @@ function defaultData(type) {
     case 'countdown':   return { targetDate:'', label:'Offer ends in', textColor:'#1e293b' };
     case 'testimonial': return { heading:'What People Say', items:[{quote:'"Amazing experience!"',name:'Jane D.',title:'Customer'},{quote:'"Highly recommended."',name:'Mark R.',title:'User'}] };
     case 'faq':         return { heading:'Frequently Asked Questions', items:[{q:'What is this?',a:'This is your answer.'},{q:'How does it work?',a:'Another answer here.'}] };
+    case 'buy_button':  return { text:'Buy Now — $49', url:'#', color:'#6366f1', textColor:'#fff', size:'large', align:'center', icon:'fa-cart-shopping', subtext:'Secure checkout · Instant access' };
+    case 'gallery':     return { images:[], cols:3, gap:12, radius:8 };
+    case 'product':     return { image:'', name:'Product Name', price:'$49', originalPrice:'$99', description:'Describe your product here. What makes it special?', btnText:'Buy Now', btnUrl:'#', btnColor:'#6366f1', badge:'Best Seller', layout:'horizontal' };
+    case 'pricing':     return { heading:'Simple Pricing', tiers:[{name:'Basic',price:'$29',period:'one-time',features:['Feature one','Feature two','Email support'],btnText:'Get Basic',btnUrl:'#',highlight:false},{name:'Pro',price:'$49',period:'one-time',features:['Everything in Basic','Feature three','Priority support'],btnText:'Get Pro',btnUrl:'#',highlight:true}] };
+    case 'trust':       return { heading:'', bgColor:'#f8fafc', items:[{icon:'fa-shield-halved',label:'Secure Payment'},{icon:'fa-truck-fast',label:'Fast Delivery'},{icon:'fa-rotate-left',label:'30-Day Returns'},{icon:'fa-headset',label:'24/7 Support'}] };
+    case 'section':     return { cols:2, gap:24, padding:32, bgColor:'transparent', items:[[],[]] };
     case 'columns':     return { col1:'<h3>Left Column</h3><p>Content goes here.</p>', col2:'<h3>Right Column</h3><p>Content goes here.</p>' };
     case 'divider':     return { color:'#e2e8f0', thickness:'1', paddingV:'16' };
     case 'spacer':      return { height:'60' };
@@ -654,7 +800,7 @@ function deselectBlock() {
 window.deselectBlock = deselectBlock;
 
 function blockLabel(type) {
-  const map = { hero:'Hero Banner', text:'Text / HTML', features:'Feature List', cta:'Call to Action', image:'Image', video:'Video', countdown:'Countdown', testimonial:'Testimonials', faq:'FAQ', columns:'2 Columns', divider:'Divider', spacer:'Spacer', html:'Custom HTML' };
+  const map = { hero:'Hero Banner', text:'Text / HTML', features:'Feature List', cta:'Call to Action', buy_button:'Buy Button', image:'Image', gallery:'Image Gallery', video:'Video', countdown:'Countdown', testimonial:'Testimonials', product:'Product Card', pricing:'Pricing Table', trust:'Trust Badges', faq:'FAQ', section:'Columns Section', columns:'2 Columns', divider:'Divider', spacer:'Spacer', html:'Custom HTML' };
   return map[type] || type;
 }
 
@@ -774,6 +920,142 @@ function buildPropsHTML(block) {
       <label class="lpb-label">Right Column HTML</label>
       <textarea class="lpb-input" data-field="col2" rows="6" style="font-family:monospace;font-size:.78rem">${esc(d.col2||'')}</textarea>`;
 
+    case 'buy_button': return `
+      <label class="lpb-label">Button Text</label>
+      <input type="text" class="lpb-input" data-field="text" value="${esc(d.text||'Buy Now')}" />
+      <label class="lpb-label">Link URL</label>
+      <input type="text" class="lpb-input" data-field="url" value="${esc(d.url||'#')}" />
+      <label class="lpb-label">Sub-text (optional)</label>
+      <input type="text" class="lpb-input" data-field="subtext" value="${esc(d.subtext||'')}" placeholder="e.g. Secure checkout · Instant access" />
+      <label class="lpb-label">Alignment</label>
+      <select class="lpb-input" data-field="align">
+        <option value="left" ${d.align==='left'?'selected':''}>Left</option>
+        <option value="center" ${!d.align||d.align==='center'?'selected':''}>Center</option>
+        <option value="right" ${d.align==='right'?'selected':''}>Right</option>
+      </select>
+      <label class="lpb-label">Size</label>
+      <select class="lpb-input" data-field="size">
+        <option value="small" ${d.size==='small'?'selected':''}>Small</option>
+        <option value="medium" ${!d.size||d.size==='medium'?'selected':''}>Medium</option>
+        <option value="large" ${d.size==='large'?'selected':''}>Large</option>
+      </select>
+      <div class="lpb-section-divider">Colors</div>
+      <label class="lpb-label">Button Color</label>
+      <input type="color" class="lpb-color-input" data-field="color" value="${d.color||'#6366f1'}" />
+      <label class="lpb-label">Text Color</label>
+      <input type="color" class="lpb-color-input" data-field="textColor" value="${d.textColor||'#ffffff'}" />`;
+
+    case 'gallery': return `
+      <label class="lpb-label">Columns</label>
+      <select class="lpb-input" data-field="cols">
+        <option value="2" ${(d.cols||3)==2?'selected':''}>2</option>
+        <option value="3" ${(d.cols||3)==3?'selected':''}>3</option>
+        <option value="4" ${(d.cols||3)==4?'selected':''}>4</option>
+      </select>
+      <label class="lpb-label">Gap (px)</label>
+      <input type="number" class="lpb-input" data-field="gap" value="${d.gap||12}" min="0" max="48" />
+      <label class="lpb-label">Border Radius (px)</label>
+      <input type="number" class="lpb-input" data-field="radius" value="${d.radius||8}" min="0" max="50" />
+      <label class="lpb-label" style="margin-top:12px">Image URLs</label>
+      <div class="lpb-list-items" id="galleryItems">
+        ${(d.images||[]).map((url,i)=>`<div class="lpb-list-item">
+          <input type="text" placeholder="https://…" value="${esc(url)}" data-gallery-idx="${i}" style="flex:1;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-size:.82rem" />
+          <button class="lpb-list-remove" onclick="removeGalleryImg(${i})"><i class="fa-solid fa-xmark"></i></button>
+        </div>`).join('')}
+      </div>
+      <button class="lpb-add-item" onclick="addGalleryImg()"><i class="fa-solid fa-plus"></i> Add image URL</button>`;
+
+    case 'product': return `
+      <label class="lpb-label">Product Name</label>
+      <input type="text" class="lpb-input" data-field="name" value="${esc(d.name||'')}" />
+      <label class="lpb-label">Image URL</label>
+      <input type="text" class="lpb-input" data-field="image" value="${esc(d.image||'')}" placeholder="https://…" />
+      <label class="lpb-label">Price</label>
+      <input type="text" class="lpb-input" data-field="price" value="${esc(d.price||'')}" placeholder="$49" />
+      <label class="lpb-label">Original Price (strikethrough)</label>
+      <input type="text" class="lpb-input" data-field="originalPrice" value="${esc(d.originalPrice||'')}" placeholder="$99" />
+      <label class="lpb-label">Description</label>
+      <textarea class="lpb-input" data-field="description" rows="3">${esc(d.description||'')}</textarea>
+      <label class="lpb-label">Badge Text</label>
+      <input type="text" class="lpb-input" data-field="badge" value="${esc(d.badge||'')}" placeholder="e.g. Best Seller, 50% OFF" />
+      <label class="lpb-label">Layout</label>
+      <select class="lpb-input" data-field="layout">
+        <option value="horizontal" ${(!d.layout||d.layout==='horizontal')?'selected':''}>Horizontal (image + text)</option>
+        <option value="vertical" ${d.layout==='vertical'?'selected':''}>Vertical (stacked)</option>
+      </select>
+      <div class="lpb-section-divider">Button</div>
+      <label class="lpb-label">Button Text</label>
+      <input type="text" class="lpb-input" data-field="btnText" value="${esc(d.btnText||'Buy Now')}" />
+      <label class="lpb-label">Button URL</label>
+      <input type="text" class="lpb-input" data-field="btnUrl" value="${esc(d.btnUrl||'#')}" />
+      <label class="lpb-label">Button Color</label>
+      <input type="color" class="lpb-color-input" data-field="btnColor" value="${d.btnColor||'#6366f1'}" />`;
+
+    case 'pricing': return `
+      <label class="lpb-label">Section Heading</label>
+      <input type="text" class="lpb-input" data-field="heading" value="${esc(d.heading||'')}" style="margin-bottom:12px" />
+      <label class="lpb-label">Pricing Tiers</label>
+      <div id="pricingTiers">
+        ${(d.tiers||[]).map((t,i)=>`
+        <div style="background:#f8fafc;border-radius:8px;padding:12px;margin-bottom:10px;border:1px solid #e2e8f0">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <strong style="font-size:.82rem">Tier ${i+1}</strong>
+            <label style="display:flex;align-items:center;gap:5px;font-size:.78rem;cursor:pointer">
+              <input type="checkbox" data-pricing-idx="${i}" data-pricing-field="highlight" ${t.highlight?'checked':''} onchange="updatePricingField(${i},'highlight',this.checked)" /> Highlight
+            </label>
+          </div>
+          <input type="text" placeholder="Name" value="${esc(t.name||'')}" data-pricing-idx="${i}" data-pricing-field="name" class="lpb-input" style="margin-bottom:5px" />
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:5px">
+            <input type="text" placeholder="Price ($49)" value="${esc(t.price||'')}" data-pricing-idx="${i}" data-pricing-field="price" class="lpb-input" />
+            <input type="text" placeholder="Period (/mo)" value="${esc(t.period||'')}" data-pricing-idx="${i}" data-pricing-field="period" class="lpb-input" />
+          </div>
+          <div style="margin-bottom:5px">
+            ${(t.features||[]).map((f,fi)=>`<div style="display:flex;gap:4px;margin-bottom:4px">
+              <input type="text" value="${esc(f)}" data-pricing-idx="${i}" data-pricing-feat="${fi}" class="lpb-input" style="font-size:.8rem" onchange="updatePricingFeat(${i},${fi},this.value)" />
+              <button onclick="removePricingFeat(${i},${fi})" class="lpb-list-remove"><i class="fa-solid fa-xmark"></i></button>
+            </div>`).join('')}
+            <button onclick="addPricingFeat(${i})" class="lpb-add-item" style="margin-top:4px"><i class="fa-solid fa-plus"></i> Add feature</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <input type="text" placeholder="Button text" value="${esc(t.btnText||'')}" data-pricing-idx="${i}" data-pricing-field="btnText" class="lpb-input" />
+            <input type="text" placeholder="Button URL" value="${esc(t.btnUrl||'#')}" data-pricing-idx="${i}" data-pricing-field="btnUrl" class="lpb-input" />
+          </div>
+          <button onclick="removePricingTier(${i})" class="lpb-list-remove" style="margin-top:6px;width:auto;padding:4px 10px;font-size:.78rem"><i class="fa-solid fa-xmark"></i> Remove tier</button>
+        </div>`).join('')}
+      </div>
+      <button class="lpb-add-item" onclick="addPricingTier()"><i class="fa-solid fa-plus"></i> Add tier</button>`;
+
+    case 'trust': return `
+      <label class="lpb-label">Heading (optional)</label>
+      <input type="text" class="lpb-input" data-field="heading" value="${esc(d.heading||'')}" placeholder="Why trust us" />
+      <label class="lpb-label">Background Color</label>
+      <input type="color" class="lpb-color-input" data-field="bgColor" value="${d.bgColor||'#f8fafc'}" />
+      <label class="lpb-label" style="margin-top:12px">Trust Items</label>
+      <div id="trustItems">
+        ${(d.items||[]).map((it,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <input type="text" placeholder="fa-shield-halved" value="${esc(it.icon||'')}" data-trust-idx="${i}" data-trust-field="icon" class="lpb-input" style="width:140px;flex-shrink:0" />
+          <input type="text" placeholder="Label" value="${esc(it.label||'')}" data-trust-idx="${i}" data-trust-field="label" class="lpb-input" style="flex:1" />
+          <button class="lpb-list-remove" onclick="removeTrustItem(${i})"><i class="fa-solid fa-xmark"></i></button>
+        </div>`).join('')}
+      </div>
+      <button class="lpb-add-item" onclick="addTrustItem()"><i class="fa-solid fa-plus"></i> Add badge</button>
+      <p style="font-size:.72rem;color:#94a3b8;margin-top:6px">Icon: use Font Awesome name like <code>fa-shield-halved</code></p>`;
+
+    case 'section': return `
+      <label class="lpb-label">Number of Columns</label>
+      <select class="lpb-input" data-field="cols" onchange="changeSectionCols(this.value)">
+        <option value="2" ${(d.cols||2)==2?'selected':''}>2 Columns</option>
+        <option value="3" ${(d.cols||2)==3?'selected':''}>3 Columns</option>
+        <option value="4" ${(d.cols||2)==4?'selected':''}>4 Columns</option>
+      </select>
+      <label class="lpb-label">Gap (px)</label>
+      <input type="number" class="lpb-input" data-field="gap" value="${d.gap||24}" min="0" max="80" />
+      <label class="lpb-label">Padding (px)</label>
+      <input type="number" class="lpb-input" data-field="padding" value="${d.padding||32}" min="0" max="120" />
+      <label class="lpb-label">Background Color</label>
+      <input type="color" class="lpb-color-input" data-field="bgColor" value="${d.bgColor||'#ffffff'}" />
+      <p style="font-size:.78rem;color:#94a3b8;margin-top:10px">Click <strong>Add block</strong> inside a column on the canvas to add content to each column.</p>`;
+
     case 'divider': return `
       <label class="lpb-label">Line Color</label>
       <input type="color" class="lpb-color-input" data-field="color" value="${d.color||'#e2e8f0'}" />
@@ -848,6 +1130,43 @@ function attachPropsHandlers(block) {
       scheduleAutoSave();
     });
   });
+
+  // Gallery image URLs
+  body.querySelectorAll('[data-gallery-idx]').forEach(el => {
+    el.addEventListener('input', () => {
+      const idx = parseInt(el.dataset.galleryIdx);
+      if (!block.data.images) block.data.images = [];
+      block.data.images[idx] = el.value;
+      refreshBlockEl(block);
+      setSaveStatus('Unsaved changes'); scheduleAutoSave();
+    });
+  });
+
+  // Trust badge items
+  body.querySelectorAll('[data-trust-idx]').forEach(el => {
+    el.addEventListener('input', () => {
+      const idx = parseInt(el.dataset.trustIdx);
+      const field = el.dataset.trustField;
+      if (!block.data.items) block.data.items = [];
+      if (!block.data.items[idx]) block.data.items[idx] = {};
+      block.data.items[idx][field] = el.value;
+      refreshBlockEl(block);
+      setSaveStatus('Unsaved changes'); scheduleAutoSave();
+    });
+  });
+
+  // Pricing tier fields
+  body.querySelectorAll('[data-pricing-idx][data-pricing-field]').forEach(el => {
+    el.addEventListener('input', () => {
+      const idx = parseInt(el.dataset.pricingIdx);
+      const field = el.dataset.pricingField;
+      if (!block.data.tiers) block.data.tiers = [];
+      if (!block.data.tiers[idx]) block.data.tiers[idx] = {};
+      block.data.tiers[idx][field] = el.value;
+      refreshBlockEl(block);
+      setSaveStatus('Unsaved changes'); scheduleAutoSave();
+    });
+  });
 }
 
 function refreshBlockEl(block) {
@@ -906,6 +1225,165 @@ window.removeFaqItem = function(idx) {
   refreshBlockEl(block);
   setSaveStatus('Unsaved changes');
   scheduleAutoSave();
+};
+
+// ── Gallery item helpers ───────────────────────────────────────────────────
+window.addGalleryImg = function() {
+  const block = blocks.find(b => b.id === selectedBlockId);
+  if (!block) return;
+  if (!block.data.images) block.data.images = [];
+  block.data.images.push('');
+  selectBlock(selectedBlockId);
+  refreshBlockEl(block);
+  setSaveStatus('Unsaved changes'); scheduleAutoSave();
+};
+window.removeGalleryImg = function(idx) {
+  const block = blocks.find(b => b.id === selectedBlockId);
+  if (!block) return;
+  block.data.images.splice(idx, 1);
+  selectBlock(selectedBlockId);
+  refreshBlockEl(block);
+  setSaveStatus('Unsaved changes'); scheduleAutoSave();
+};
+
+// ── Pricing helpers ────────────────────────────────────────────────────────
+window.addPricingTier = function() {
+  const block = blocks.find(b => b.id === selectedBlockId);
+  if (!block) return;
+  if (!block.data.tiers) block.data.tiers = [];
+  block.data.tiers.push({name:'New Plan',price:'$0',period:'one-time',features:['Feature'],btnText:'Get Started',btnUrl:'#',highlight:false});
+  selectBlock(selectedBlockId); refreshBlockEl(block);
+  setSaveStatus('Unsaved changes'); scheduleAutoSave();
+};
+window.removePricingTier = function(idx) {
+  const block = blocks.find(b => b.id === selectedBlockId);
+  if (!block) return;
+  block.data.tiers.splice(idx, 1);
+  selectBlock(selectedBlockId); refreshBlockEl(block);
+  setSaveStatus('Unsaved changes'); scheduleAutoSave();
+};
+window.updatePricingField = function(idx, field, val) {
+  const block = blocks.find(b => b.id === selectedBlockId);
+  if (!block||!block.data.tiers[idx]) return;
+  block.data.tiers[idx][field] = val;
+  refreshBlockEl(block);
+  setSaveStatus('Unsaved changes'); scheduleAutoSave();
+};
+window.addPricingFeat = function(tierIdx) {
+  const block = blocks.find(b => b.id === selectedBlockId);
+  if (!block) return;
+  if (!block.data.tiers[tierIdx].features) block.data.tiers[tierIdx].features = [];
+  block.data.tiers[tierIdx].features.push('New feature');
+  selectBlock(selectedBlockId); refreshBlockEl(block);
+  setSaveStatus('Unsaved changes'); scheduleAutoSave();
+};
+window.removePricingFeat = function(tierIdx, featIdx) {
+  const block = blocks.find(b => b.id === selectedBlockId);
+  if (!block) return;
+  block.data.tiers[tierIdx].features.splice(featIdx, 1);
+  selectBlock(selectedBlockId); refreshBlockEl(block);
+  setSaveStatus('Unsaved changes'); scheduleAutoSave();
+};
+window.updatePricingFeat = function(tierIdx, featIdx, val) {
+  const block = blocks.find(b => b.id === selectedBlockId);
+  if (!block) return;
+  block.data.tiers[tierIdx].features[featIdx] = val;
+  refreshBlockEl(block);
+  setSaveStatus('Unsaved changes'); scheduleAutoSave();
+};
+
+// ── Trust badge helpers ────────────────────────────────────────────────────
+window.addTrustItem = function() {
+  const block = blocks.find(b => b.id === selectedBlockId);
+  if (!block) return;
+  if (!block.data.items) block.data.items = [];
+  block.data.items.push({icon:'fa-check-circle', label:'Trust Point'});
+  selectBlock(selectedBlockId); refreshBlockEl(block);
+  setSaveStatus('Unsaved changes'); scheduleAutoSave();
+};
+window.removeTrustItem = function(idx) {
+  const block = blocks.find(b => b.id === selectedBlockId);
+  if (!block) return;
+  block.data.items.splice(idx, 1);
+  selectBlock(selectedBlockId); refreshBlockEl(block);
+  setSaveStatus('Unsaved changes'); scheduleAutoSave();
+};
+
+// ── Section / Columns helpers ──────────────────────────────────────────────
+let subBlockPickerContext = null; // { sectionId, colIdx }
+
+window.addSubBlock = function(sectionId, colIdx) {
+  subBlockPickerContext = { sectionId, colIdx };
+  document.getElementById('subBlockPicker').style.display = 'flex';
+};
+
+window.closeSubPicker = function() {
+  document.getElementById('subBlockPicker').style.display = 'none';
+  subBlockPickerContext = null;
+};
+
+window.pickSubBlock = function(type) {
+  if (!subBlockPickerContext) return;
+  const { sectionId, colIdx } = subBlockPickerContext;
+  const section = blocks.find(b => b.id === sectionId);
+  if (!section) return;
+  pushUndo();
+  if (!section.data.items[colIdx]) section.data.items[colIdx] = [];
+  section.data.items[colIdx].push({ id: uid(), type, data: defaultData(type) });
+  closeSubPicker();
+  renderCanvas();
+  selectBlock(sectionId);
+  setSaveStatus('Unsaved changes'); scheduleAutoSave();
+};
+
+window.removeSubBlock = function(sectionId, colIdx, subId) {
+  const section = blocks.find(b => b.id === sectionId);
+  if (!section) return;
+  pushUndo();
+  section.data.items[colIdx] = section.data.items[colIdx].filter(sb => sb.id !== subId);
+  renderCanvas();
+  selectBlock(sectionId);
+  setSaveStatus('Unsaved changes'); scheduleAutoSave();
+};
+
+let selectedSubCtx = null; // { sectionId, colIdx, subId }
+window.selectSubBlock = function(sectionId, colIdx, subId) {
+  const section = blocks.find(b => b.id === sectionId);
+  if (!section) return;
+  const sub = section.data.items[colIdx]?.find(sb => sb.id === subId);
+  if (!sub) return;
+  selectedSubCtx = { sectionId, colIdx, subId };
+  document.getElementById('propsPanelTitle').textContent = blockLabel(sub.type) + ' (in column)';
+  const body = document.getElementById('propsContent');
+  body.innerHTML = `<div style="background:#eef2ff;border-radius:6px;padding:8px 10px;margin-bottom:10px;font-size:.78rem;color:#6366f1;display:flex;justify-content:space-between;align-items:center">
+    <span><i class="fa-solid fa-table-columns"></i> Editing sub-block in column ${colIdx+1}</span>
+    <button onclick="selectBlock('${sectionId}')" style="background:none;border:none;cursor:pointer;color:#6366f1;font-size:.78rem"><i class="fa-solid fa-arrow-left"></i> Back to Section</button>
+  </div>${buildPropsHTML(sub)}`;
+  attachSubPropsHandlers(sub, sectionId, colIdx);
+};
+
+function attachSubPropsHandlers(sub, sectionId, colIdx) {
+  const body = document.getElementById('propsContent');
+  body.querySelectorAll('[data-field]').forEach(el => {
+    el.addEventListener('input', () => {
+      sub.data[el.dataset.field] = el.value;
+      const section = blocks.find(b => b.id === sectionId);
+      if (section) refreshBlockEl(section);
+      setSaveStatus('Unsaved changes'); scheduleAutoSave();
+    });
+  });
+}
+
+window.changeSectionCols = function(val) {
+  const block = blocks.find(b => b.id === selectedBlockId);
+  if (!block) return;
+  const n = parseInt(val) || 2;
+  block.data.cols = n;
+  while (block.data.items.length < n) block.data.items.push([]);
+  if (block.data.items.length > n) block.data.items = block.data.items.slice(0, n);
+  renderCanvas();
+  selectBlock(selectedBlockId);
+  setSaveStatus('Unsaved changes'); scheduleAutoSave();
 };
 
 window.addFaqItem = function() {
@@ -1009,7 +1487,47 @@ window.openSettings = function() {
   document.getElementById('settingsFont').value      = settings.font;
   document.getElementById('settingsPrimary').value   = settings.primary_color;
   document.getElementById('settingsBg').value        = settings.bg_color;
+  const bgImgInput = document.getElementById('settingsBgImage');
+  bgImgInput.value = settings.bg_image || '';
+  updateBgImagePreview(settings.bg_image || '');
+  // live preview update
+  bgImgInput.oninput = () => updateBgImagePreview(bgImgInput.value);
   document.getElementById('settingsModal').style.display = 'flex';
+};
+
+function updateBgImagePreview(url) {
+  const prev = document.getElementById('bgImagePreview');
+  if (url) {
+    prev.style.display = 'block';
+    prev.style.backgroundImage = `url(${url})`;
+  } else {
+    prev.style.display = 'none';
+  }
+}
+
+window.uploadBgImage = async function(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (!settings.id) {
+    alert('Save the page first before uploading a background image.');
+    input.value = '';
+    return;
+  }
+  const fd = new FormData();
+  fd.append('image', file);
+  try {
+    const res = await fetch(`/pages/${settings.id}/upload-bg`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.url) {
+      document.getElementById('settingsBgImage').value = data.url;
+      updateBgImagePreview(data.url);
+    } else {
+      alert(data.error || 'Upload failed');
+    }
+  } catch(e) {
+    alert('Upload error: ' + e.message);
+  }
+  input.value = '';
 };
 
 window.closeSettings = function() {
@@ -1024,8 +1542,10 @@ window.saveSettings = function() {
   settings.font          = document.getElementById('settingsFont').value;
   settings.primary_color = document.getElementById('settingsPrimary').value;
   settings.bg_color      = document.getElementById('settingsBg').value;
+  settings.bg_image      = document.getElementById('settingsBgImage').value.trim();
   closeSettings();
   setSaveStatus('Unsaved changes');
+  scheduleAutoSave();
 };
 
 // ── Save ───────────────────────────────────────────────────────────────────
@@ -1047,6 +1567,7 @@ function buildPayload(status) {
     font:          settings.font,
     primary_color: settings.primary_color,
     bg_color:      settings.bg_color,
+    bg_image:      settings.bg_image || '',
   };
 }
 
@@ -1083,10 +1604,20 @@ window.publishPage = async () => {
     alert('Please give your page a title first.');
     return;
   }
+  const btn = document.getElementById('btnPublish');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publishing…';
   const ok = await doSave('published');
   if (ok) {
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Published';
+    btn.style.background = '#10b981';
+    btn.disabled = false;
     const slug = settings.slug;
     if (confirm(`Page published! Open /p/${slug}?`)) window.open('/p/' + slug, '_blank');
+  } else {
+    btn.innerHTML = '<i class="fa-solid fa-globe"></i> Publish';
+    btn.style.background = '';
+    btn.disabled = false;
   }
 };
 
@@ -1107,7 +1638,16 @@ document.getElementById('lpTitle').addEventListener('input', () => {
 });
 
 // ── Init ───────────────────────────────────────────────────────────────────
-renderCanvas();
+try { renderCanvas(); } catch(e) { console.error('Canvas init error:', e); }
+
+// Set initial publish button state
+(function() {
+  const btn = document.getElementById('btnPublish');
+  if (settings.status === 'published') {
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Published';
+    btn.style.background = '#10b981';
+  }
+})();
 
 // Warn on leave with unsaved changes
 window.addEventListener('beforeunload', e => {
