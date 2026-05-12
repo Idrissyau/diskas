@@ -76,6 +76,16 @@ textarea { resize: vertical; }
 .dropdown-divider { height: 1px; background: var(--border); margin: .25rem 0; }
 .text-danger { color: var(--danger) !important; }
 
+/* ── Dropdown submenu ───────────────────────────────────────────────────── */
+.dropdown-submenu-wrap { position: relative; }
+.dropdown-submenu-trigger { cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
+.dropdown-submenu-trigger:hover { background: var(--bg-light); color: var(--primary); }
+.dropdown-submenu-arrow { font-size: .65rem; color: #94a3b8; transition: transform .2s; margin-left: auto; flex-shrink: 0; }
+.dropdown-submenu-wrap.open .dropdown-submenu-arrow { transform: rotate(90deg); }
+.dropdown-submenu { display: none; background: var(--bg-light); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 4px 0; }
+.dropdown-submenu-wrap.open .dropdown-submenu { display: block; }
+.dropdown-submenu .dropdown-item { padding-left: 2rem; font-size: .85rem; }
+
 /* ── Buttons ──────────────────────────────────────────────────────────────── */
 .btn { display: inline-flex; align-items: center; gap: .4rem; padding: .6rem 1.25rem; border-radius: 8px; font-weight: 600; font-size: .9rem; cursor: pointer; border: none; transition: all .15s; white-space: nowrap; }
 .btn-primary { background: var(--primary); color: #fff; }
