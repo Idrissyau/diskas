@@ -46,7 +46,7 @@
   <!-- ── Stylesheet ───────────────────────────────────────────────────── -->
   <link rel="stylesheet" href="/css/style.css" />
 </head>
-<body>
+<body<% if (typeof builderNav !== 'undefined' && builderNav) { %> class="body-builder"<% } %>>
 
 <!-- ── NAVBAR ──────────────────────────────────────────────────────────────── -->
 <nav class="navbar" role="navigation" aria-label="Main navigation">
@@ -56,6 +56,7 @@
       <span class="logo-text">Diskas</span>
     </a>
 
+    <% if (typeof builderNav === 'undefined' || !builderNav) { %>
     <div class="nav-links">
       <% if (currentUser) { %>
         <a href="/home"        class="nav-link">Home</a>
@@ -72,6 +73,7 @@
       <input id="navSearch" type="search" name="q" placeholder="Search..." value="<%= typeof query !== 'undefined' ? query : '' %>" autocomplete="off" />
       <button type="submit" aria-label="Search"><i class="fa-solid fa-magnifying-glass"></i></button>
     </form>
+    <% } %>
 
     <div class="nav-actions">
       <% if (currentUser) { %>
@@ -171,6 +173,7 @@
   <%- body %>
 </main>
 
+<% if (typeof hideFooter === 'undefined' || !hideFooter) { %>
 <!-- ── FOOTER ─────────────────────────────────────────────────────────────── -->
 <footer class="footer" role="contentinfo">
   <div class="container footer-inner">
@@ -215,6 +218,24 @@
     </div>
   </div>
 </footer>
+<% } %>
+
+<% if (currentUser && (typeof hideFooter === 'undefined' || !hideFooter)) { %>
+<!-- ── MOBILE BOTTOM NAV ─────────────────────────────────────────────────── -->
+<nav class="mob-bottom-nav" aria-label="Mobile navigation">
+  <a href="/home"        class="mob-nav-item"><i class="fa-solid fa-house"></i><span>Home</span></a>
+  <a href="/discussions" class="mob-nav-item"><i class="fa-solid fa-comments"></i><span>Discuss</span></a>
+  <a href="/jobs"        class="mob-nav-item"><i class="fa-solid fa-briefcase"></i><span>Jobs</span></a>
+  <a href="/messages"    class="mob-nav-item" id="mobNavMsg">
+    <span style="position:relative;display:inline-flex">
+      <i class="fa-solid fa-comment-dots"></i>
+      <span class="mob-nav-badge" id="mobNavUnread" style="display:none"></span>
+    </span>
+    <span>Messages</span>
+  </a>
+  <a href="/profile"     class="mob-nav-item"><i class="fa-solid fa-user"></i><span>Profile</span></a>
+</nav>
+<% } %>
 
 <!-- ── Scripts ─────────────────────────────────────────────────────────────── -->
 <script src="/js/main.js" defer></script>
@@ -234,15 +255,17 @@
   document.querySelectorAll('.flash').forEach(f => {
     setTimeout(() => { f.style.transition='opacity .5s'; f.style.opacity='0'; setTimeout(()=>f.remove(),500); }, 5000);
   });
-  // Unread message badge
+  // Unread message badge (desktop + mobile)
   (async function pollUnread() {
-    const badge = document.getElementById('navUnreadBadge');
-    if (!badge) return;
     try {
       const r = await fetch('/messages/unread');
       const d = await r.json();
-      if (d.count > 0) { badge.textContent = d.count > 9 ? '9+' : d.count; badge.style.display = 'flex'; }
-      else { badge.style.display = 'none'; }
+      const count = d.count || 0;
+      const label = count > 9 ? '9+' : count;
+      const desktopBadge = document.getElementById('navUnreadBadge');
+      const mobileBadge  = document.getElementById('mobNavUnread');
+      if (desktopBadge) { desktopBadge.textContent = label; desktopBadge.style.display = count > 0 ? 'flex' : 'none'; }
+      if (mobileBadge)  { mobileBadge.textContent  = label; mobileBadge.style.display  = count > 0 ? 'flex' : 'none'; }
     } catch(e) {}
     setTimeout(pollUnread, 30000);
   })();

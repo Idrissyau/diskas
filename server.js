@@ -55,6 +55,10 @@ app.response.render = function(view, options, fn) {
   const isAdmin   = view.startsWith('admin/');
   const isMinimal = view === 'pages/public' || (options && options.layout === 'minimal');
 
+  // Full-screen app views: hide footer; builder also gets a simplified nav
+  const isBuilder   = view === 'pages/builder';
+  const isMessaging = view === 'messages/index' || view === 'messages/show';
+
   const layoutFile = isAdmin
     ? path.join(__dirname, 'views/admin/layout.ejs')
     : isMinimal
@@ -62,6 +66,8 @@ app.response.render = function(view, options, fn) {
       : path.join(__dirname, 'views/layouts/main.ejs');
 
   const opts = Object.assign({}, self.locals, options || {});
+  if (isBuilder)   { opts.hideFooter = true; opts.builderNav = true; }
+  if (isMessaging) { opts.hideFooter = true; }
 
   // Render the inner view first
   ejs.renderFile(path.join(__dirname, 'views', `${view}.ejs`), opts, {}, (err, body) => {

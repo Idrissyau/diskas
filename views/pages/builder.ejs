@@ -105,6 +105,7 @@
     </main>
 
     <!-- Right Panel: Block Properties -->
+    <div class="lpb-props-backdrop" id="propsBackdrop" onclick="deselectBlock()" style="display:none"></div>
     <aside class="lpb-props" id="propsPanel">
       <div class="lpb-props-header">
         <span id="propsPanelTitle">Properties</span>
@@ -337,6 +338,9 @@ textarea.lpb-input{resize:vertical}
 .lpm-close{background:none;border:none;font-size:1.4rem;cursor:pointer;color:#94a3b8}
 .lpm-body{padding:20px;max-height:70vh;overflow-y:auto}
 .lpm-footer{display:flex;gap:8px;margin-top:16px}
+/* Props backdrop (mobile) */
+.lpb-props-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:49}
+@media(max-width:768px){.lpb-props-backdrop.visible{display:block}}
 /* Block renderers - canvas previews */
 .lpb-blk-hero{display:flex;align-items:center;justify-content:center;min-height:240px;text-align:center;flex-direction:column;gap:12px;padding:60px 40px}
 .lpb-blk-hero h1{font-size:2rem;font-weight:800;margin:0;line-height:1.2}
@@ -797,6 +801,9 @@ function selectBlock(id) {
   document.getElementById('propsPanelTitle').textContent = blockLabel(block.type);
   document.getElementById('propsContent').innerHTML = buildPropsHTML(block);
   attachPropsHandlers(block);
+  // On mobile open the props drawer + backdrop
+  document.getElementById('propsPanel').classList.add('open');
+  document.getElementById('propsBackdrop').classList.add('visible');
 }
 
 function deselectBlock() {
@@ -804,6 +811,8 @@ function deselectBlock() {
   document.querySelectorAll('.lpb-block-wrapper').forEach(el => el.classList.remove('selected'));
   document.getElementById('propsPanelTitle').textContent = 'Properties';
   document.getElementById('propsContent').innerHTML = '<p style="color:#94a3b8;font-size:.85rem;text-align:center;padding:24px">Select a block to edit its properties</p>';
+  document.getElementById('propsPanel').classList.remove('open');
+  document.getElementById('propsBackdrop').classList.remove('visible');
 }
 window.deselectBlock = deselectBlock;
 
